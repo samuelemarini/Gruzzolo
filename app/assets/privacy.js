@@ -1,12 +1,51 @@
 /*
- * Modalita' "importi nascosti": quando <html data-privacy="on">, il CSS sfoca gli importi.
- * Gli importi si riconoscono dal formato ("1.247,80 €", "−4,50 €", "650 €") e si avvolgono in
- * <span class="money"> a ogni pagina; i grandi saldi (.hero-amount__value) sono gia' marcati dal CSS.
+ * Modalita' "importi nascosti": quando <html data-privacy="on">, le cifre degli importi diventano
+ * lettere maiuscole e numeri a caso capovolti (segno e € restano). Gli importi si riconoscono dal formato ("1.247,80 €",
+ * "−4,50 €", "650 €") e si avvolgono in <span class="money"> a ogni pagina; i grandi saldi, il centro
+ * delle ciambelle e le scale dei grafici sono gia' marcati (SCRAMBLE). Il testo vero resta in
+ * data-privacy-text e torna quando si rimostrano gli importi.
  * La scelta vale per questo dispositivo (localStorage), letta in <head> prima del disegno.
  */
 const MONEY = /[−+-]?\d{1,3}(?:\.\d{3})*(?:,\d+)?\s?€(?:\/[a-zA-Z]+)?/g;
 const SKIP = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'SELECT', 'OPTION', 'TITLE']);
 const KEY = 'gruzzolo-privacy';
+const SCRAMBLE = '.money, .hero-amount__value, .donut__value, .lc__ticks span';
+const DIGITS = /\d[\d.,]*/g;
+const RANDOM = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+
+function randomText(length) {
+    let out = '';
+    for (let i = 0; i < length; i++) out += RANDOM[Math.floor(Math.random() * RANDOM.length)];
+    return out;
+}
+
+/* Sostituisce le cifre (con i loro punti e virgole) con caratteri a caso, capovolti dal CSS. */
+function scramble(el) {
+    if (el.dataset.privacyText !== undefined || el.closest('[data-privacy-skip]')) return;
+    const text = el.textContent;
+    DIGITS.lastIndex = 0;
+    if (!DIGITS.test(text)) return;
+    el.dataset.privacyText = text;
+    const fragment = document.createDocumentFragment();
+    let last = 0;
+    text.replace(DIGITS, (match, offset) => {
+        if (offset > last) fragment.append(text.slice(last, offset));
+        const span = document.createElement('span');
+        span.className = 'scrambled';
+        span.textContent = randomText(match.length);
+        fragment.append(span);
+        last = offset + match.length;
+        return match;
+    });
+    if (last < text.length) fragment.append(text.slice(last));
+    el.replaceChildren(fragment);
+}
+
+function unscramble(el) {
+    if (el.dataset.privacyText === undefined) return;
+    el.textContent = el.dataset.privacyText;
+    delete el.dataset.privacyText;
+}
 
 function wrap(root) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
@@ -71,6 +110,7 @@ export function setHidden(hidden) {
 
 export function refresh() {
     wrap(document.body);
+    document.querySelectorAll(SCRAMBLE).forEach(isHidden() ? scramble : unscramble);
     syncTooltips(isHidden());
     document.querySelectorAll('.privacy-toggle').forEach((button) => {
         button.setAttribute('aria-pressed', isHidden() ? 'true' : 'false');

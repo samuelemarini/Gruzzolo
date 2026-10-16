@@ -582,12 +582,8 @@ a.list-row:hover { background: color-mix(in srgb, var(--surface-2) 50%, transpar
 html[data-privacy="on"] .privacy-toggle__show { display: none; }
 html[data-privacy="on"] .privacy-toggle__hide { display: inline-block; }
 html[data-privacy="on"] .privacy-toggle { color: var(--accent-text); }
-html[data-privacy="on"] :is(.money, .hero-amount__value, .donut__value) {
-  filter: blur(0.3em);
-  user-select: none;
-  -webkit-user-select: none;
-}
-html[data-privacy="on"] :is(.money, .hero-amount__value, .donut__value) { transition: filter .15s; }
+/* Cifre sostituite da caratteri a caso (assets/privacy.js), capovolti */
+.scrambled { display: inline-block; transform: rotate(180deg); user-select: none; -webkit-user-select: none; }
 
 /* ---------- Grafici a linee (ChartBuilder::lines) ---------- */
 .lc { position: relative; display: flex; gap: 8px; width: 100%; }
@@ -602,7 +598,6 @@ html[data-privacy="on"] :is(.money, .hero-amount__value, .donut__value) { transi
 .lc__dot { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 999px; background: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 25%, transparent), 0 0 0 1.5px var(--surface); pointer-events: none; }
 .lc__hit { position: absolute; top: 0; bottom: 0; transform: translateX(-50%); }
 .lc__hit:hover { background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--text) 6%, transparent)); border-radius: 6px; }
-html[data-privacy="on"] .lc__ticks { opacity: 0; }
 
 /* ---------- Trascina giu' per aggiornare (assets/pull_refresh.js) ---------- */
 .ptr {
