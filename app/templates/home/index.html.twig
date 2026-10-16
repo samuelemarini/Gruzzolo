@@ -7,7 +7,7 @@
         {{ ui.month_nav(month, 'app_home') }}
         <div class="topbar__actions">
             {{ ui.privacy_toggle() }}
-            <a href="{{ path('movement_index') }}" class="icon-btn" aria-label="Cerca">{{ icon('search') }}</a>
+            <a href="{{ path('movement_index', scope) }}" class="icon-btn" aria-label="Cerca">{{ icon('search') }}</a>
         </div>
     </div>
 
@@ -23,11 +23,11 @@
                     </div>
                 </div>
                 <div class="grid-2">
-                    <a class="stat stat--inner" href="{{ path('movement_index', {kind: 'income', month: month|date('Y-m')}) }}">
+                    <a class="stat stat--inner" href="{{ path('movement_index', {kind: 'income', month: month|date('Y-m')}|merge(scope)) }}">
                         <span class="stat__label"><span class="tile tile--xs" style="--c: var(--accent)">{{ icon('arrow-down-left', 15) }}</span>Entrate</span>
                         <span class="stat__value">{{ summary.income|money }}</span>
                     </a>
-                    <a class="stat stat--inner" href="{{ path('movement_index', {kind: 'expense', month: month|date('Y-m')}) }}">
+                    <a class="stat stat--inner" href="{{ path('movement_index', {kind: 'expense', month: month|date('Y-m')}|merge(scope)) }}">
                         <span class="stat__label"><span class="tile tile--xs" style="--c: #FF8A80">{{ icon('arrow-up-right', 15) }}</span>Uscite</span>
                         <span class="stat__value">{{ summary.expense|money }}</span>
                     </a>
@@ -38,7 +38,7 @@
             <section class="stack-sm" style="gap: 12px; padding: 0 2px">
                 <div class="section-head">
                     <h2>Dove vanno i soldi</h2>
-                    <a href="{{ path('report_index', {month: month|date('Y-m')}) }}">Report</a>
+                    <a href="{{ path('report_index', {month: month|date('Y-m')}|merge(scope)) }}">Report</a>
                 </div>
                 <div class="split" role="img" aria-label="Uscite per categoria">
                     {% for s in split %}<span style="--c: {{ s.color }}; flex: {{ s.total }} 1 0" title="{{ s.name }} {{ s.total|money }}"></span>{% endfor %}
@@ -54,13 +54,13 @@
             <section>
                 <div class="section-head">
                     <h2>Ultimi movimenti</h2>
-                    <a href="{{ path('movement_index') }}">Vedi tutti</a>
+                    <a href="{{ path('movement_index', scope) }}">Vedi tutti</a>
                 </div>
                 {% if latest is empty %}
                     {{ ui.empty('receipt', 'Ancora nessun movimento. Inizia dalla prima spesa!', path('movement_new'), 'Aggiungi') }}
                 {% else %}
                     <div class="list">
-                        {% for m in latest %}{{ ui.movement_row(m, {date: true}) }}{% endfor %}
+                        {% for m in latest %}{{ ui.movement_row(m, {date: true, scope: scopeIds}) }}{% endfor %}
                     </div>
                 {% endif %}
             </section>
@@ -76,7 +76,7 @@
                     {% for a in accounts %}
                         <a class="list-row" href="{{ path('account_show', {id: a.id}) }}">
                             {{ ui.tile(a.icon, a.color, 'sm') }}
-                            <div class="list-row__body"><span class="list-row__title">{{ a.name }}</span></div>
+                            <div class="list-row__body"><span class="list-row__title">{{ a.name }}</span>{% if a.shared or a.user != app.user or not a.onHomeFor(app.user) %}<span class="list-row__meta">{% if a.shared or a.user != app.user %}{{ icon('users', 13) }} {{ a.user != app.user ? 'di ' ~ a.user.displayName : 'condiviso' }}{% endif %}{% if not a.onHomeFor(app.user) %}{{ a.shared or a.user != app.user ? ' · ' }}{{ icon('eye-off', 13) }} fuori dai totali{% endif %}</span>{% endif %}</div>
                             <span class="list-row__amount">{{ (balances[a.id] ?? 0)|money }}</span>
                         </a>
                     {% endfor %}

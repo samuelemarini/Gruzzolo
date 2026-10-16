@@ -3,17 +3,22 @@
 {% set hide_tabbar = true %}
 {% block title %}Anteprima importazione{% endblock %}
 
-{% macro category_select(index, c, suggestion, categories) %}
+{% macro category_select(index, c, suggestion, groups) %}
     <select name="cat_to[{{ index }}]" aria-label="Destinazione per {{ c.name }}">
         <optgroup label="Dal file">
             <option value="new" {{ suggestion == 'new' ? 'selected' }}>Crea categoria «{{ c.name }}»</option>
             <option value="skip">Non importare</option>
         </optgroup>
-        <optgroup label="Le tue categorie">
-            {% for cat in categories %}
-                <option value="{{ cat.id }}" {{ suggestion == cat.id ~ '' ? 'selected' }}>{{ cat.parent ? '— ' }}{{ cat.name }}</option>
-            {% endfor %}
-        </optgroup>
+        {% for g in groups %}
+            {% set list = c.kind == 'income' ? g.income : g.expense %}
+            {% if list is not empty %}
+            <optgroup label="Categorie di «{{ g.account.name }}»">
+                {% for cat in list %}
+                    <option value="{{ cat.id }}" {{ suggestion == cat.id ~ '' ? 'selected' }}>{{ cat.parent ? '— ' }}{{ cat.name }}</option>
+                {% endfor %}
+            </optgroup>
+            {% endif %}
+        {% endfor %}
     </select>
 {% endmacro %}
 
@@ -89,12 +94,12 @@
                             </div>
                             <input type="hidden" name="cat_key[{{ idx }}]" value="{{ c.key }}">
                             <label class="field map-row__to"><span class="sr-only">Categoria per {{ c.name }}</span>
-                                {{ _self.category_select(idx, c, suggestion, kind == 'expense' ? expenseCategories : incomeCategories) }}
+                                {{ _self.category_select(idx, c, suggestion, categoryGroups) }}
                             </label>
                         </div>
                     {% endfor %}
                 </div>
-                <p class="hint">Le categorie nuove nascono come principali: poi in Categorie puoi spostarle sotto un'altra, cambiarne icona e colore.</p>
+                <p class="hint">Le categorie nuove nascono nel conto in cui finiscono i movimenti, come principali: poi in Categorie puoi spostarle sotto un'altra, cambiarne icona e colore.</p>
             </section>
             {% endif %}
         {% endfor %}

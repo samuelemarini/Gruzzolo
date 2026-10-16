@@ -26,6 +26,17 @@
         {% if errors.initial_balance is defined %}<span class="field__error">{{ errors.initial_balance }}</span>{% endif %}
     </label>
     <p class="hint">Il saldo del conto prima del primo movimento registrato qui.</p>
+    {% if isNew %}
+        <label class="field">
+            <span class="field__label">Categorie del conto</span>
+            <select name="categories_from">
+                {% for a in sources %}<option value="{{ a.id }}" {{ a == defaultSource ? 'selected' }}>Copia da «{{ a.name }}»</option>{% endfor %}
+                <option value="default" {{ defaultSource is null ? 'selected' }}>Categorie predefinite</option>
+                <option value="none">Nessuna, le creo io</option>
+            </select>
+        </label>
+        <p class="hint">Ogni conto ha le sue categorie: le puoi cambiare quando vuoi da Categorie.</p>
+    {% endif %}
     <section class="card card--tight">
         <span class="label-caps">Colore</span>
         {{ ui.color_picker('color', account.color) }}
@@ -34,6 +45,10 @@
         <label class="switch">
             <span class="switch__text"><span>Conto predefinito</span><small>proposto quando inserisci un movimento</small></span>
             <input type="checkbox" name="default" value="1" {{ account.default ? 'checked' }}>
+        </label>
+        <label class="switch">
+            <span class="switch__text"><span>Visualizza nella home</span><small>se spento resta il saldo, ma i movimenti non entrano nei totali e negli ultimi movimenti (solo per te)</small></span>
+            <input type="checkbox" name="home" value="1" {{ account.onHomeFor(app.user) ? 'checked' }}>
         </label>
         {% if not isNew %}
             <label class="switch">
@@ -45,6 +60,27 @@
     <button type="submit" class="btn btn--block">{{ icon('check', 20) }}Salva</button>
 </form>
 {% if not isNew %}
+    <section class="page page--plain" style="padding-top: 0">
+        <div class="card card--tight">
+            <div class="row">{{ icon('users', 20) }}<h2 class="h2 grow" style="font-size: 17px">Condivisione</h2></div>
+            <p class="small muted">Chi riceve il conto ne vede il saldo e tutti i movimenti e può aggiungerne, con le sue categorie. Modificarlo o eliminarlo resta a te.</p>
+            {% for u in account.members %}
+                <div class="row" style="min-height: 44px">
+                    <span class="tile tile--sm" style="--c: #8AB4FF">{{ icon('user', 18) }}</span>
+                    <span class="grow stack-sm" style="gap: 0"><span class="strong">{{ u.displayName }}</span><span class="xsmall muted">{{ u.username }}</span></span>
+                    <form method="post" action="{{ path('account_unshare', {id: account.id, userId: u.id}) }}" data-turbo-confirm="Togliere {{ u.displayName }} dal conto? I movimenti che ha inserito restano.">
+                        <input type="hidden" name="_token" value="{{ csrf_token('account-unshare-' ~ account.id ~ '-' ~ u.id) }}">
+                        <button type="submit" class="chip" style="height: 34px">{{ icon('x', 15) }}Togli</button>
+                    </form>
+                </div>
+            {% endfor %}
+            <form method="post" action="{{ path('account_share', {id: account.id}) }}" class="row" style="gap: 8px">
+                <input type="hidden" name="_token" value="{{ csrf_token('account-share-' ~ account.id) }}">
+                <label class="field grow" style="padding: 8px 14px"><span class="sr-only">Nome utente</span><input type="text" name="username" placeholder="nome utente con cui condividere" autocapitalize="none" autocomplete="off" required></label>
+                <button type="submit" class="btn btn--sm">Condividi</button>
+            </form>
+        </div>
+    </section>
     <form method="post" action="{{ path('account_delete', {id: account.id}) }}" class="page page--plain" style="padding-top: 0" data-turbo-confirm="Eliminare il conto?">
         <input type="hidden" name="_token" value="{{ csrf_token('delete-account-' ~ account.id) }}">
         <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}Elimina conto</button>

@@ -4,16 +4,27 @@ namespace App\Service;
 
 use App\Entity\Category;
 use App\Entity\User;
+use App\Repository\AccountRepository;
 use App\Repository\CategoryRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 
 /**
- * Aggregati per Home e Report. Contano solo entrate e uscite: i giroconti spostano soldi, non li spendono.
+ * Aggregati per Home e Report, visti dai conti considerati (tutti quelli accessibili o quelli scelti).
+ * Un giroconto che esce da quei conti e' un'uscita, uno che arriva da fuori un'entrata; fra due conti
+ * considerati e' solo uno spostamento e non conta. Un versamento negli investimenti esce dai conti.
  * Query SQL dirette: DQL non conosce YEAR()/MONTH() e qui servono solo numeri.
  */
 final class ReportService
 {
+    /** Importo che entra nei conti considerati (:scope), altrimenti NULL. */
+    private const INCOME = "CASE WHEN m.kind = 'income' OR (m.kind = 'transfer' AND m.to_account_id IN (:scope)
+        AND (m.account_id IS NULL OR m.account_id NOT IN (:scope))) THEN m.amount END";
+
+    /** Importo che esce dai conti considerati (:scope), altrimenti NULL. */
+    private const EXPENSE = "CASE WHEN m.kind = 'expense' OR (m.kind = 'transfer' AND m.account_id IN (:scope)
+        AND (m.to_account_id IS NULL OR m.to_account_id NOT IN (:scope))) THEN m.amount END";
+
     public function __construct(
         private readonly Connection $db,
         private readonly CategoryRepository $categories,
@@ -24,11 +35,12 @@ final class ReportService
     public function summary(User $user, \DateTimeImmutable $from, \DateTimeImmutable $to, array $accountIds = []): array
     {
         [$where, $params, $types] = $this->where($user, $from, $to, $accountIds);
+        $income = self::INCOME;
+        $expense = self::EXPENSE;
         $row = $this->db->fetchAssociative(<<<SQL
-            SELECT COALESCE(SUM(CASE WHEN kind = 'income' THEN amount END), 0) AS income,
-                   COALESCE(SUM(CASE WHEN kind = 'expense' THEN amount END), 0) AS expense,
-                   SUM(kind = 'income') AS income_count, SUM(kind = 'expense') AS expense_count
-            FROM movement m WHERE $where AND kind IN ('income', 'expense')
+            SELECT COALESCE(SUM($income), 0) AS income, COALESCE(SUM($expense), 0) AS expense,
+                   COUNT($income) AS income_count, COUNT($expense) AS expense_count
+            FROM movement m WHERE $where
             SQL, $params, $types);
         $income = (float) $row['income'];
         $expense = (float) $row['expense'];
@@ -48,35 +60,47 @@ final class ReportService
     public function byCategory(User $user, \DateTimeImmutable $from, \DateTimeImmutable $to, string $kind = 'expense', array $accountIds = []): array
     {
         [$where, $params, $types] = $this->where($user, $from, $to, $accountIds);
-        $params['kind'] = $kind;
+        $amount = $kind === Category::INCOME ? self::INCOME : self::EXPENSE;
         $rows = $this->db->fetchAllAssociative(<<<SQL
-            SELECT m.category_id, c.parent_id, SUM(m.amount) AS total, COUNT(*) AS n
+            SELECT m.category_id, c.parent_id, m.kind = 'transfer' AS transfer, SUM($amount) AS total, COUNT(*) AS n
             FROM movement m LEFT JOIN category c ON c.id = m.category_id
-            WHERE $where AND m.kind = :kind
-            GROUP BY m.category_id, c.parent_id
+            WHERE $where AND ($amount) IS NOT NULL
+            GROUP BY m.category_id, c.parent_id, transfer
             SQL, $params, $types);
 
+        $ids = array_filter(array_merge(array_column($rows, 'category_id'), array_column($rows, 'parent_id')));
         $byId = [];
-        foreach ($this->categories->findBy(['user' => $user]) as $category) {
+        foreach ($ids ? $this->categories->findBy(['id' => array_unique($ids)]) : [] as $category) {
             $byId[$category->getId()] = $category;
         }
 
+        // Sul conto condiviso ognuno usa le sue categorie: quelle con lo stesso nome finiscono insieme,
+        // rappresentate da quella dell'utente se c'e' (icona, colore, link).
         $groups = [];
         $grand = 0.0;
         foreach ($rows as $row) {
             $total = (float) $row['total'];
             $grand += $total;
             $topId = $row['parent_id'] ?? $row['category_id'];
-            $key = $topId ?? 0;
+            $top = $topId ? ($byId[(int) $topId] ?? null) : null;
+            $transfer = (bool) $row['transfer'];
+            $key = $transfer ? "\0giroconti" : ($top ? mb_strtolower(trim($top->getName())) : '');
             if (!isset($groups[$key])) {
-                $top = $topId ? ($byId[(int) $topId] ?? null) : null;
                 $groups[$key] = [
-                    'category' => $top,
-                    'name' => $top?->getName() ?? 'Senza categoria',
-                    'icon' => $top?->getIcon() ?? 'circle-ellipsis',
-                    'color' => $top?->getColor() ?? '#A3A59F',
+                    'category' => $top, 'ids' => [], 'transfer' => $transfer,
+                    'name' => $transfer ? 'Giroconti' : ($top?->getName() ?? 'Senza categoria'),
+                    'icon' => $transfer ? 'arrow-left-right' : ($top?->getIcon() ?? 'circle-ellipsis'),
+                    'color' => $transfer ? '#D9B48F' : ($top?->getColor() ?? '#A3A59F'),
                     'total' => 0.0, 'count' => 0, 'pct' => 0.0, 'children' => [],
                 ];
+            }
+            if ($top && $top->getUser() === $user && $groups[$key]['category']?->getUser() !== $user) {
+                $groups[$key]['category'] = $top;
+                $groups[$key]['icon'] = $top->getIcon();
+                $groups[$key]['color'] = $top->getColor();
+            }
+            if ($top && !in_array($top->getId(), $groups[$key]['ids'], true)) {
+                $groups[$key]['ids'][] = $top->getId();
             }
             $groups[$key]['total'] += $total;
             $groups[$key]['count'] += (int) $row['n'];
@@ -104,11 +128,12 @@ final class ReportService
     {
         $from = $from->modify('first day of this month');
         [$where, $params, $types] = $this->where($user, $from, $to, $accountIds);
+        $income = self::INCOME;
+        $expense = self::EXPENSE;
         $rows = $this->db->fetchAllAssociative(<<<SQL
             SELECT DATE_FORMAT(m.date, '%Y-%m') AS ym,
-                   COALESCE(SUM(CASE WHEN kind = 'income' THEN amount END), 0) AS income,
-                   COALESCE(SUM(CASE WHEN kind = 'expense' THEN amount END), 0) AS expense
-            FROM movement m WHERE $where AND kind IN ('income', 'expense')
+                   COALESCE(SUM($income), 0) AS income, COALESCE(SUM($expense), 0) AS expense
+            FROM movement m WHERE $where
             GROUP BY ym
             SQL, $params, $types);
         $byMonth = array_column($rows, null, 'ym');
@@ -127,16 +152,17 @@ final class ReportService
      *
      * @return list<array{id: int, name: string, title: ?string, color: string, expense: float, income: float, count: int}>
      */
-    public function byTag(User $user, \DateTimeImmutable $from, \DateTimeImmutable $to): array
+    public function byTag(User $user, \DateTimeImmutable $from, \DateTimeImmutable $to, array $accountIds = []): array
     {
-        [$where, $params, $types] = $this->where($user, $from, $to, []);
+        [$where, $params, $types] = $this->where($user, $from, $to, $accountIds);
+        $params['user'] = $user->getId();
         $rows = $this->db->fetchAllAssociative(<<<SQL
             SELECT t.id, t.name, t.title, t.color,
                    COALESCE(SUM(CASE WHEN m.kind = 'expense' THEN m.amount END), 0) AS expense,
                    COALESCE(SUM(CASE WHEN m.kind = 'income' THEN m.amount END), 0) AS income,
                    COUNT(*) AS n
             FROM movement m JOIN movement_tag mt ON mt.movement_id = m.id JOIN tag t ON t.id = mt.tag_id
-            WHERE $where AND m.kind IN ('income', 'expense')
+            WHERE $where AND m.kind IN ('income', 'expense') AND t.user_id = :user
             GROUP BY t.id, t.name, t.title, t.color
             ORDER BY expense DESC
             SQL, $params, $types);
@@ -163,15 +189,22 @@ final class ReportService
     /** @return array{0: string, 1: array<string, mixed>, 2: array<string, mixed>} */
     private function where(User $user, \DateTimeImmutable $from, \DateTimeImmutable $to, array $accountIds): array
     {
-        $where = 'm.user_id = :user AND m.date BETWEEN :from AND :to';
-        $params = ['user' => $user->getId(), 'from' => $from->format('Y-m-d'), 'to' => $to->format('Y-m-d')];
-        $types = [];
+        // Conti propri e condivisi (le spese del conto comune entrano nei report di entrambi), ristretti a
+        // quelli chiesti. Si prendono anche i giroconti che arrivano da fuori: sono entrate di questi conti.
+        $where = '(m.account_id IN (:scope) OR m.to_account_id IN (:scope)) AND m.date BETWEEN :from AND :to';
+        $params = ['scope' => $this->scope($user, $accountIds), 'from' => $from->format('Y-m-d'), 'to' => $to->format('Y-m-d')];
+
+        return [$where, $params, ['scope' => ArrayParameterType::INTEGER]];
+    }
+
+    /** @return non-empty-list<int> id dei conti considerati: gli accessibili, eventualmente solo quelli chiesti */
+    private function scope(User $user, array $accountIds): array
+    {
+        $ids = array_map('intval', $this->db->fetchFirstColumn(AccountRepository::ACCESSIBLE_SQL, ['user' => $user->getId()]));
         if ($accountIds) {
-            $where .= ' AND m.account_id IN (:accounts)';
-            $params['accounts'] = $accountIds;
-            $types['accounts'] = ArrayParameterType::INTEGER;
+            $ids = array_values(array_intersect($ids, array_map('intval', $accountIds)));
         }
 
-        return [$where, $params, $types];
+        return $ids ?: [0];
     }
 }

@@ -22,8 +22,8 @@
             <a class="list-row" href="{{ path('account_show', {id: a.id}) }}">
                 {{ ui.tile(a.icon, a.color) }}
                 <div class="list-row__body">
-                    <span class="list-row__title">{{ a.name }}{% if a.default %} <span class="badge badge--accent">predefinito</span>{% endif %}</span>
-                    <span class="list-row__meta">{{ a.kindLabel }}</span>
+                    <span class="list-row__title">{{ a.name }}{% if a.default and a.user == app.user %} <span class="badge badge--accent">predefinito</span>{% endif %}</span>
+                    <span class="list-row__meta">{{ a.kindLabel }}{% if a.user != app.user %} · {{ icon('users', 13) }} di {{ a.user.displayName }}{% elseif a.shared %} · {{ icon('users', 13) }} con {{ a.members|map(u => u.displayName)|join(', ') }}{% endif %}{% if not a.onHomeFor(app.user) %} · {{ icon('eye-off', 13) }} fuori dalla home{% endif %}</span>
                 </div>
                 <span class="list-row__amount">{{ (balances[a.id] ?? 0)|money }}</span>
                 {{ icon('chevron-right', 18, 'list-row__chev') }}

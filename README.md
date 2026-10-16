@@ -52,7 +52,10 @@ Backup: il volume `db_data`, oppure `mariadb-dump` dal container `database`.
 ## Come ragiona l'app
 
 - **Movimenti**: importo sempre positivo, il tipo dà il segno. I **giroconti** spostano soldi fra
-  conti (o verso un investimento) e non contano nei report di entrate e uscite.
+  conti (o verso un investimento). Nei totali (Home, Movimenti, Report) contano dal punto di vista dei
+  conti considerati — quelli filtrati, quelli mostrati in home o tutti: se escono sono uscite (fetta
+  "Giroconti"), se arrivano da fuori entrate, fra due conti considerati non contano. Stessa regola in
+  `ReportService` (SQL) e `MovementRepository::totals()`.
 - **Conti**: saldo = saldo iniziale + entrate − uscite ± giroconti. Il conto accantonamento si
   alimenta con giroconti e le spese annuali si pagano direttamente da lì.
 - **Rifornimenti**: categoria con l'opzione "Carburante" (di default *Trasporti › Carburante*).
@@ -62,9 +65,24 @@ Backup: il volume `db_data`, oppure `mariadb-dump` dal container `database`.
 - **Investimenti**: per ogni titolo si registrano versamenti/prelievi e il valore del momento.
   Rendimento = ultimo valore − somma dei versamenti. Un versamento può uscire da un conto
   (giroconto, non spesa).
-- **Importazione CSV** (Altro › Importa): oggi riconosce l'export di **Spendee**. Il file si parcheggia
-  in `app/var/imports`, l'anteprima propone gli abbinamenti (wallet → conti, categorie → categorie con lo
-  stesso nome, altrimenti nuove; le etichette mancanti si creano), poi si importa. Ogni riga ha
+- **Trascina giù per aggiornare** (touch, `assets/pull_refresh.js`): dalla cima della pagina ricarica
+  con Turbo. Spento nei form (`form.form`), nei pannelli `<dialog>` e su `[data-no-pull]`; il
+  pull-to-refresh nativo del browser è disattivato da `overscroll-behavior-y` per non ricaricare due volte.
+- **Visualizza nella home**: ogni utente sceglie quali conti entrano nei totali della home (tabella
+  `account_home_hidden`): un conto escluso resta nell'elenco Conti col suo saldo, ma i suoi movimenti
+  restano fuori da totali del mese, "Dove vanno i soldi" e ultimi movimenti. Il proprietario lo imposta
+  dalla modifica del conto, chi l'ha ricevuto in condivisione dalla pagina del conto.
+- **Conti in Movimenti e Report**: di default solo il conto principale (`?account[]=…` per sceglierne
+  altri, `?account=all` per tutti; `MovementFilter::accountsFrom()`). I link dalla home portano gli stessi
+  conti dei totali della home.
+- **Categorie per conto**: ogni conto ha le sue categorie (`category.account_id`); chi condivide il
+  conto usa e gestisce le stesse. Nel nuovo movimento le categorie proposte cambiano col conto scelto.
+  Un conto nuovo può partire dalle categorie di un altro conto, da quelle predefinite o vuoto; dalla
+  pagina Categorie si possono copiare in qualsiasi momento quelle di un altro conto (senza doppioni).
+- **Importazione CSV** (Altro › Importa): riconosce gli export di **Spendee** e di **Wallet (BudgetBakers)**.
+  Il file si parcheggia in `app/var/imports`, l'anteprima propone gli abbinamenti (wallet → conti,
+  categorie → categorie con lo stesso nome nel conto di destinazione, altrimenti nuove create in quel
+  conto; le etichette mancanti si creano), poi si importa. Ogni riga ha
   un'impronta (`movement.import_hash`): reimportando lo stesso file i doppioni vengono saltati. Ogni
   importazione è annullabile e toglie anche categorie, conti ed etichette creati apposta se inutilizzati.
   Per un nuovo formato basta una classe che implementa `App\Import\ImportFormat` (si registra da sola).
@@ -73,6 +91,11 @@ Backup: il volume `db_data`, oppure `mariadb-dump` dal container `database`.
   ("1.247,80 €") e li avvolge in `.money`; i saldi grandi sono `.hero-amount__value`.
 - **Multi-utente**: ogni tabella ha l'utente proprietario; i controller usano
   `AppController::own()`, che risponde 404 sui dati altrui.
+- **Conti condivisi**: il proprietario condivide un conto con altri utenti (tabella `account_member`,
+  dalla modifica del conto). I membri vedono saldo e movimenti e ne aggiungono con le
+  categorie del conto; `movement.user` resta l'autore. Visibilità dei movimenti = conto accessibile
+  (`AccountRepository::ACCESSIBLE_DQL/SQL`, `AppController::accessibleMovement()`); nei report le
+  categorie con lo stesso nome dei due utenti si sommano. Modifica ed eliminazione del conto solo al proprietario.
 
 ## Struttura
 

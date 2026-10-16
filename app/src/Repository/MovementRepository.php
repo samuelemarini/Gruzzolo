@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Movement;
 use App\Entity\User;
+use App\Repository\AccountRepository;
 use App\Model\MovementFilter;
 use App\Util\Money;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -34,7 +35,9 @@ class MovementRepository extends ServiceEntityRepository
     }
 
     /**
-     * Conteggio e totali di cio' che corrisponde ai filtri (i giroconti non sono ne' entrate ne' uscite).
+     * Conteggio e totali di cio' che corrisponde ai filtri, visti dai conti filtrati (o da tutti quelli
+     * accessibili): un giroconto che ne esce e' un'uscita, uno che arriva da fuori un'entrata, uno fra
+     * due di quei conti non conta. Stessa regola di ReportService.
      *
      * @return array{count: int, income: float, expense: float}
      */
@@ -45,17 +48,45 @@ class MovementRepository extends ServiceEntityRepository
             ->addSelect("COALESCE(SUM(CASE WHEN m.kind = 'income' THEN m.amount ELSE 0 END), 0) AS income")
             ->addSelect("COALESCE(SUM(CASE WHEN m.kind = 'expense' THEN m.amount ELSE 0 END), 0) AS expense")
             ->getQuery()->getSingleResult();
+        $income = (float) $row['income'];
+        $expense = (float) $row['expense'];
 
-        return ['count' => (int) $row['n'], 'income' => (float) $row['income'], 'expense' => (float) $row['expense']];
+        $accessible = array_map('intval', $this->getEntityManager()->getConnection()
+            ->fetchFirstColumn(AccountRepository::ACCESSIBLE_SQL, ['user' => $user->getId()]));
+        $scope = array_flip($filter->accounts ? array_intersect($accessible, array_map('intval', $filter->accounts)) : $accessible);
+        $transfers = $this->filtered($user, $filter)
+            ->select('IDENTITY(m.account) AS src, IDENTITY(m.toAccount) AS dst, m.amount')
+            ->andWhere('m.kind = :transfer')->setParameter('transfer', Movement::TRANSFER)
+            ->getQuery()->getArrayResult();
+        foreach ($transfers as $t) {
+            $out = $t['src'] !== null && isset($scope[(int) $t['src']]);
+            $in = $t['dst'] !== null && isset($scope[(int) $t['dst']]);
+            if ($out && !$in) {
+                $expense += (float) $t['amount'];
+            } elseif ($in && !$out) {
+                $income += (float) $t['amount'];
+            }
+        }
+
+        return ['count' => (int) $row['n'], 'income' => round($income, 2), 'expense' => round($expense, 2)];
     }
 
-    /** @return list<Movement> */
-    public function latest(User $user, int $limit): array
+    /**
+     * @param list<int>|null $accountIds solo questi conti (null = tutti quelli visibili)
+     *
+     * @return list<Movement>
+     */
+    public function latest(User $user, int $limit, ?array $accountIds = null): array
     {
-        return $this->createQueryBuilder('m')
+        $qb = $this->createQueryBuilder('m');
+        if ($accountIds !== null) {
+            $qb->andWhere('IDENTITY(m.account) IN (:accounts) OR IDENTITY(m.toAccount) IN (:accounts)')->setParameter('accounts', $accountIds ?: [0]);
+        }
+
+        return $qb
             ->leftJoin('m.category', 'cat')->addSelect('cat')
             ->leftJoin('m.tags', 'tg')->addSelect('tg')
-            ->andWhere('m.user = :user')->setParameter('user', $user)
+            ->andWhere(self::visible('m'))->setParameter('user', $user)
             ->andWhere('m.date <= :today')->setParameter('today', new \DateTimeImmutable('today'), 'date_immutable')
             ->orderBy('m.date', \SortDirection::Descending)->addOrderBy('m.id', \SortDirection::Descending)
             ->setMaxResults($limit)
@@ -77,10 +108,19 @@ class MovementRepository extends ServiceEntityRepository
         return array_values($rows);
     }
 
+    /** Condizione DQL: il movimento sta su un conto (di partenza o di arrivo) che l'utente puo' vedere. */
+    public static function visible(string $alias): string
+    {
+        $sub = AccountRepository::ACCESSIBLE_DQL;
+
+        return "($alias.account IN ($sub) OR $alias.toAccount IN (".str_replace(['acc_a', 'acc_m'], ['acc_b', 'acc_n'], $sub).'))';
+    }
+
     private function filtered(User $user, MovementFilter $f): QueryBuilder
     {
+        // Visibili: i movimenti dei conti propri e di quelli condivisi, chiunque li abbia inseriti.
         $qb = $this->createQueryBuilder('m')
-            ->andWhere('m.user = :user')->setParameter('user', $user);
+            ->andWhere(self::visible('m'))->setParameter('user', $user);
 
         if ($f->from) {
             $qb->andWhere('m.date >= :from')->setParameter('from', $f->from, 'date_immutable');

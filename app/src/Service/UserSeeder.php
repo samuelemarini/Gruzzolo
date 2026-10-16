@@ -39,17 +39,22 @@ final class UserSeeder
     {
         $account = (new Account($user))->setName('Conto principale')->setKind('checking')->setColor('#8AB4FF')->setIsDefault(true);
         $this->em->persist($account);
+        $this->seedCategories($account);
+    }
 
+    /** Le categorie predefinite, per un conto nuovo che non le copia da un altro. */
+    public function seedCategories(Account $account): void
+    {
         foreach (self::EXPENSE as $pos => [$name, $icon, $color, $children]) {
-            $parent = (new Category($user))->setName($name)->setIcon($icon)->setColor($color)->setKind(Category::EXPENSE)->setPosition($pos);
+            $parent = (new Category($account))->setName($name)->setIcon($icon)->setColor($color)->setKind(Category::EXPENSE)->setPosition($pos);
             $this->em->persist($parent);
             foreach ($children as $childPos => $child) {
-                $this->em->persist((new Category($user))->setParent($parent)->setName($child[0])->setIcon($child[1])
+                $this->em->persist((new Category($account))->setParent($parent)->setName($child[0])->setIcon($child[1])
                     ->setColor($color)->setKind(Category::EXPENSE)->setFuel($child[2] ?? false)->setPosition($childPos));
             }
         }
         foreach (self::INCOME as $pos => [$name, $icon, $color]) {
-            $this->em->persist((new Category($user))->setName($name)->setIcon($icon)->setColor($color)->setKind(Category::INCOME)->setPosition($pos));
+            $this->em->persist((new Category($account))->setName($name)->setIcon($icon)->setColor($color)->setKind(Category::INCOME)->setPosition($pos));
         }
     }
 }

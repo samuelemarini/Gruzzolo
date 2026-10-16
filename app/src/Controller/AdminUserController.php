@@ -65,7 +65,9 @@ final class AdminUserController extends AppController
             return $this->redirectToRoute('admin_user_edit', ['id' => $id], 303);
         }
         // I dati dell'utente vanno via in cascata (ON DELETE CASCADE su tutte le tabelle).
-        $this->em->getConnection()->executeStatement('DELETE FROM movement WHERE user_id = ?', [$id]);
+        $conn = $this->em->getConnection();
+        $conn->executeStatement('DELETE FROM movement WHERE user_id = ?', [$id]);
+        $conn->executeStatement('DELETE FROM movement WHERE account_id IN (SELECT id FROM account WHERE user_id = ?) OR to_account_id IN (SELECT id FROM account WHERE user_id = ?)', [$id, $id]);
         $this->em->remove($user);
         $this->em->flush();
         $this->addFlash('success', 'Utente e dati eliminati');

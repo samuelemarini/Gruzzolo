@@ -7,7 +7,7 @@ import { Controller } from '@hotwired/stimulus';
  * - Categoria carburante: sezione rifornimento al posto del semplice "Veicolo".
  */
 export default class extends Controller {
-    static targets = ['categories', 'sign', 'transferOnly', 'accountLabel', 'vehicleRow', 'vehicleSelect', 'fuel'];
+    static targets = ['categories', 'sign', 'transferOnly', 'accountLabel', 'vehicleRow', 'vehicleSelect', 'fuel', 'account'];
 
     connect() {
         this.sync();
@@ -21,6 +21,11 @@ export default class extends Controller {
         this.sync();
     }
 
+    // Ogni conto ha le sue categorie: cambiando conto si vedono le sue.
+    accountChanged() {
+        this.sync();
+    }
+
     get kind() {
         return this.element.querySelector('input[name="kind"]:checked')?.value || 'expense';
     }
@@ -28,8 +33,9 @@ export default class extends Controller {
     sync() {
         const kind = this.kind;
 
+        const account = this.hasAccountTarget ? this.accountTarget.value : null;
         this.categoriesTargets.forEach((group) => {
-            const active = group.dataset.kind === kind;
+            const active = group.dataset.kind === kind && (!account || group.dataset.account === account);
             group.hidden = !active;
             group.querySelectorAll('input').forEach((input) => { input.disabled = !active; });
         });
@@ -44,7 +50,7 @@ export default class extends Controller {
         const checked = this.element.querySelector('input[name="category"]:checked:not(:disabled)');
         const parentId = checked?.dataset.parent;
         this.element.querySelectorAll('[data-children-of]').forEach((row) => {
-            row.hidden = row.dataset.childrenOf !== parentId || row.closest('[data-kind]').dataset.kind !== kind;
+            row.hidden = row.dataset.childrenOf !== parentId || row.closest('[data-kind]').hidden;
         });
         this.element.querySelectorAll('.cat-pick').forEach((pick) => pick.classList.remove('is-parent'));
         if (checked && checked.closest('.cat-children')) {

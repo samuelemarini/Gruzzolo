@@ -8,7 +8,10 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
-class Category implements OwnedInterface
+/**
+ * Categoria di un conto: ogni conto ha il suo insieme (il conto condiviso ha le sue, usate da entrambi).
+ */
+class Category
 {
     public const EXPENSE = 'expense';
     public const INCOME = 'income';
@@ -20,7 +23,7 @@ class Category implements OwnedInterface
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private User $user;
+    private Account $account;
 
     #[ORM\ManyToOne(inversedBy: 'children')]
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
@@ -53,14 +56,19 @@ class Category implements OwnedInterface
     #[ORM\Column(options: ['default' => 0])]
     private int $position = 0;
 
-    public function __construct(User $user)
+    public function __construct(Account $account)
     {
-        $this->user = $user;
+        $this->account = $account;
         $this->children = new ArrayCollection();
     }
 
     public function getId(): ?int { return $this->id; }
-    public function getUser(): User { return $this->user; }
+    public function getAccount(): Account { return $this->account; }
+
+    /** Proprietario del conto a cui appartiene la categoria. */
+    public function getUser(): User { return $this->account->getUser(); }
+
+    public function isAccessibleBy(User $user): bool { return $this->account->isAccessibleBy($user); }
 
     public function getParent(): ?Category { return $this->parent; }
     public function setParent(?Category $parent): static { $this->parent = $parent; return $this; }

@@ -7,12 +7,12 @@
 <form method="post" class="page page--plain form">
     <input type="hidden" name="_token" value="{{ csrf_token('category') }}">
     <div class="topbar">
-        <a href="{{ path('category_index', {kind: category.kind}) }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
-        <span class="topbar__center">{{ isNew ? 'Nuova categoria' : 'Modifica categoria' }}</span>
+        <a href="{{ path('category_index', {account: category.account.id, kind: category.kind}) }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">{{ isNew ? 'Nuova categoria' : 'Modifica categoria' }}<span class="xsmall muted" style="display: block; font-family: var(--font-ui); font-weight: 400">conto «{{ category.account.name }}»</span></span>
         <span style="width: 44px"></span>
     </div>
 
-    {% if isNew %}
+    {% if isNew and category.parent is null %}
         <div class="seg">
             <label><input type="radio" name="kind" value="expense" {{ category.kind == 'expense' ? 'checked' }}>Uscita</label>
             <label><input type="radio" name="kind" value="income" {{ category.kind == 'income' ? 'checked' }}>Entrata</label>

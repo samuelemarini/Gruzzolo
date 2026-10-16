@@ -32,14 +32,14 @@
      data-category-sort-url-value="{{ path('category_sort_save') }}"
      data-category-sort-token-value="{{ csrf_token('category-sort') }}">
     <div class="topbar">
-        <a href="{{ path('category_index', {kind: kind}) }}" class="icon-btn" aria-label="Fine">{{ icon('chevron-left') }}</a>
-        <span class="topbar__center">Ordina categorie</span>
+        <a href="{{ path('category_index', {account: account.id, kind: kind}) }}" class="icon-btn" aria-label="Fine">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">Ordina categorie<span class="xsmall muted" style="display: block; font-family: var(--font-ui); font-weight: 400">conto «{{ account.name }}»</span></span>
         <span class="small strong text-accent" style="width: 64px; text-align: right" data-category-sort-target="status" aria-live="polite"></span>
     </div>
 
     <div class="seg">
-        <a href="{{ path('category_sort') }}" class="{{ kind == 'expense' ? 'is-active' }}">Uscite</a>
-        <a href="{{ path('category_sort', {kind: 'income'}) }}" class="{{ kind == 'income' ? 'is-active' }}">Entrate</a>
+        <a href="{{ path('category_sort', {account: account.id}) }}" class="{{ kind == 'expense' ? 'is-active' }}">Uscite</a>
+        <a href="{{ path('category_sort', {account: account.id, kind: 'income'}) }}" class="{{ kind == 'income' ? 'is-active' }}">Entrate</a>
     </div>
 
     <p class="small muted">Trascina dalla maniglia a sinistra o usa le frecce. È l'ordine con cui le categorie ti vengono proposte quando inserisci un movimento; le sottocategorie si ordinano dentro la loro categoria. Si salva da solo.</p>
@@ -47,6 +47,7 @@
     <form method="post" action="{{ path('category_sort_usage') }}" data-turbo-confirm="Riordinare le categorie dalla più usata alla meno usata?">
         <input type="hidden" name="_token" value="{{ csrf_token('category-sort') }}">
         <input type="hidden" name="kind" value="{{ kind }}">
+        <input type="hidden" name="account" value="{{ account.id }}">
         <button type="submit" class="btn btn--ghost btn--block btn--sm">{{ icon('chart-bar-decreasing', 18) }}Ordina per utilizzo</button>
     </form>
 

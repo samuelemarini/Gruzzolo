@@ -181,8 +181,9 @@ final class ImportService
             'categories' => array_values($cats),
             'tags' => array_keys(array_filter($tagNames, fn ($v, $k) => $k !== '', ARRAY_FILTER_USE_BOTH)),
             'suggestions' => [
-                'accounts' => $this->suggestAccounts($user, array_keys($wallets)),
-                'categories' => $this->suggestCategories($user, $cats),
+                'accounts' => $accountSuggestions = $this->suggestAccounts($user, array_keys($wallets)),
+                // Categorie proposte dal conto in cui finira' il wallet con piu' righe.
+                'categories' => $this->suggestCategories($this->mainTarget($wallets, $accountSuggestions), $cats),
             ],
         ];
     }
@@ -206,7 +207,7 @@ final class ImportService
             if ($choice !== 'new') {
                 $found = $this->accounts->find((int) $choice);
 
-                return $found && $found->getUser() === $user ? $found : null;
+                return $found && $found->isAccessibleBy($user) ? $found : null;
             }
             if (!isset($newAccounts[$wallet])) {
                 $newAccounts[$wallet] = (new Account($user))->setName($wallet)->setKind('checking')
@@ -217,22 +218,36 @@ final class ImportService
 
             return $newAccounts[$wallet];
         };
-        $category = function (ImportRow $row) use ($user, $categoryMap, &$newCategories, &$created): Category|false|null {
+        // Ogni conto ha le sue categorie: si cerca (o si crea) quella giusta nel conto della riga.
+        $category = function (ImportRow $row, Account $account) use ($user, $categoryMap, &$newCategories, &$created): Category|false|null {
             $choice = $categoryMap[$row->categoryKey()] ?? 'new';
             if ($choice === 'skip') {
                 return false;
             }
+            $name = $row->category ?? 'Importate';
+            $template = null;
             if ($choice !== 'new') {
                 $found = $this->categories->find((int) $choice);
-
-                return $found && $found->getUser() === $user && $found->getKind() === $row->kind ? $found : null;
+                if (!$found || !$found->isAccessibleBy($user) || $found->getKind() !== $row->kind) {
+                    return null;
+                }
+                if ($found->getAccount() === $account) {
+                    return $found;
+                }
+                $template = $found;
+                $name = $found->getName();
             }
-            $k = $row->categoryKey();
+            $k = spl_object_id($account).'|'.$row->kind.'|'.mb_strtolower($name);
             if (!isset($newCategories[$k])) {
-                $name = $row->category ?? 'Importate';
-                $newCategories[$k] = (new Category($user))->setName(mb_substr($name, 0, 60))->setKind($row->kind)
-                    ->setIcon($this->guessIcon($name))->setColor(self::COLORS[count($newCategories) % count(self::COLORS)])
-                    ->setPosition($this->categories->nextPosition($user, null) + count($newCategories));
+                $existing = $account->getId() ? $this->categories->findOneByName($account, $row->kind, $name) : null;
+                if ($existing) {
+                    return $newCategories[$k] = $existing;
+                }
+                $newCategories[$k] = (new Category($account))->setName(mb_substr($name, 0, 60))->setKind($row->kind)
+                    ->setIcon($template?->getIcon() ?? $this->guessIcon($name))
+                    ->setColor($template?->getColor() ?? self::COLORS[count($created['categories']) % count(self::COLORS)])
+                    ->setFuel($template?->isFuel() ?? false)
+                    ->setPosition(($account->getId() ? $this->categories->nextPosition($account, null) : 0) + count($created['categories']));
                 $this->em->persist($newCategories[$k]);
                 $created['categories'][] = $newCategories[$k];
             }
@@ -276,7 +291,7 @@ final class ImportService
                 }
                 $m->setToAccount($to);
             } else {
-                $cat = $category($row);
+                $cat = $category($row, $from);
                 if ($cat === false) {
                     continue;
                 }
@@ -374,10 +389,19 @@ final class ImportService
         return $out;
     }
 
-    /** @return array<string, string> chiave => id categoria proposta | 'new' */
-    private function suggestCategories(User $user, array $cats): array
+    /** Il conto proposto per il wallet con piu' righe, se gia' esiste. */
+    private function mainTarget(array $wallets, array $suggestions): ?Account
     {
-        $all = $this->categories->findBy(['user' => $user, 'archived' => false]);
+        arsort($wallets);
+        $choice = $suggestions[array_key_first($wallets) ?? ''] ?? 'new';
+
+        return $choice !== 'new' ? $this->accounts->find((int) $choice) : null;
+    }
+
+    /** @return array<string, string> chiave => id categoria proposta | 'new' */
+    private function suggestCategories(?Account $account, array $cats): array
+    {
+        $all = $account ? $this->categories->findBy(['account' => $account, 'archived' => false]) : [];
         $out = [];
         foreach ($cats as $key => $c) {
             // Solo stesso nome (senza badare a maiuscole e accenti): le categorie che non ci sono si creano.

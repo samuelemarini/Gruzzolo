@@ -74,8 +74,12 @@ final class ImportController extends AppController
         return $this->render('import/review.html.twig', [
             'a' => $this->imports->analyze($user, $key),
             'accounts' => $accounts->findForUser($user),
-            'expenseCategories' => $categories->findFlat($user, Category::EXPENSE),
-            'incomeCategories' => $categories->findFlat($user, Category::INCOME),
+            // Ogni conto ha le sue categorie: nel menu sono raggruppate per conto.
+            'categoryGroups' => array_map(fn ($a) => [
+                'account' => $a,
+                'expense' => $categories->findFlat($a, Category::EXPENSE),
+                'income' => $categories->findFlat($a, Category::INCOME),
+            ], $accounts->findForUser($user)),
         ]);
     }
 

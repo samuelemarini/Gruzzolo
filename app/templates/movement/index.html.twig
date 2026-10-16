@@ -36,10 +36,14 @@
         {% else %}
             <button type="button" class="chip is-active" data-action="sheet#open">{{ periodLabels[filter.period] }}{% if filter.period == 'custom' %} · {{ filter.from ? filter.from|it_date('d MMM') }}–{{ filter.to ? filter.to|it_date('d MMM yy') }}{% endif %}</button>
         {% endif %}
+        {% if accounts|length > 1 %}
+            {% set chosen = accounts|filter(a => a.id in filter.accounts) %}
+            <button type="button" class="chip {{ filter.accountsChosen ? 'is-active' }}" data-action="sheet#open">{{ icon('landmark', 15) }}{{ chosen is empty ? 'Tutti i conti' : (chosen|length == 1 ? (chosen|first).name : chosen|length ~ ' conti') }}</button>
+        {% endif %}
         {% for kind, label in {expense: 'Uscite', income: 'Entrate', transfer: 'Giroconti'} %}
             <a class="chip {{ filter.kind == kind ? 'is-active' }}" href="{{ path('movement_index', q.all|merge({kind: filter.kind == kind ? null : kind, page: null})) }}">{{ label }}</a>
         {% endfor %}
-        {% if filter.categories or filter.tags or filter.accounts or filter.vehicle or filter.min is not null or filter.max is not null %}
+        {% if filter.categories or filter.tags or filter.vehicle or filter.min is not null or filter.max is not null %}
             <button type="button" class="chip is-active" data-action="sheet#open">{{ icon('sliders-horizontal', 15) }}Altri filtri</button>
         {% endif %}
         {% if filter.countAdvanced or filter.q %}
@@ -51,6 +55,7 @@
         <span>{{ totals.count }} moviment{{ totals.count == 1 ? 'o' : 'i' }}</span>
         {% if totals.income %}<span><span class="dot" style="--c: var(--accent)"></span>+{{ totals.income|money }}</span>{% endif %}
         {% if totals.expense %}<span><span class="dot" style="--c: #FF8A80"></span>−{{ totals.expense|money }}</span>{% endif %}
+        {% if totals.income or totals.expense %}{% set net = totals.income - totals.expense %}<span class="summary-line__net">Saldo <strong class="{{ net < 0 ? 'text-expense' : (net > 0 ? 'text-income') }}">{{ net|money(true) }}</strong></span>{% endif %}
     </div>
 
     {% if groups is empty %}
@@ -62,7 +67,7 @@
                     <span>{{ group.date|day_label }}</span>
                     {% if group.total %}<span>{{ group.total|money(true) }}</span>{% endif %}
                 </div>
-                {% for m in group.movements %}{{ ui.movement_row(m, {account: accounts|length > 1}) }}{% endfor %}
+                {% for m in group.movements %}{{ ui.movement_row(m, {account: accounts|length > 1, scope: scope}) }}{% endfor %}
             {% endfor %}
         </div>
         {% if hasMore %}
@@ -106,10 +111,11 @@
                 </div>
             </div>
 
+            {% for t in categoryTrees|filter(t => t.tree is not empty) %}
             <div class="stack-sm">
-                <span class="label-caps">Categorie</span>
+                <span class="label-caps">Categorie{{ categoryTrees|length > 1 ? ' · ' ~ t.account.name }}</span>
                 <div class="chips">
-                    {% for parent in categoryTree %}
+                    {% for parent in t.tree %}
                         <label class="chip"><input type="checkbox" name="cat[]" value="{{ parent.id }}" {{ parent.id in filter.categories ? 'checked' }}><span class="chip__dot" style="--c: {{ parent.color }}"></span>{{ parent.name }}</label>
                         {% for child in parent.children|filter(c => not c.archived) %}
                             <label class="chip"><input type="checkbox" name="cat[]" value="{{ child.id }}" {{ child.id in filter.categories ? 'checked' }}><span class="chip__dot" style="--c: {{ child.color }}"></span>{{ child.name }}</label>
@@ -117,6 +123,7 @@
                     {% endfor %}
                 </div>
             </div>
+            {% endfor %}
 
             {% if tags is not empty %}
             <div class="stack-sm">
@@ -132,9 +139,12 @@
             {% if accounts|length > 1 %}
             <div class="stack-sm">
                 <span class="label-caps">Conti</span>
-                <div class="chips">
+                {# Nessun conto spuntato = tutti (senza parametro si tornerebbe al solo predefinito) #}
+                <input type="hidden" name="account[]" value="all">
+                <div class="chips" data-controller="account-chips">
+                    <label class="chip"><input type="checkbox" data-account-chips-target="all" data-action="account-chips#all" {{ filter.accounts is empty ? 'checked' }}>Tutti</label>
                     {% for a in accounts %}
-                        <label class="chip"><input type="checkbox" name="account[]" value="{{ a.id }}" {{ a.id in filter.accounts ? 'checked' }}><span class="chip__dot" style="--c: {{ a.color }}"></span>{{ a.name }}</label>
+                        <label class="chip"><input type="checkbox" name="account[]" value="{{ a.id }}" data-account-chips-target="one" data-action="account-chips#one" {{ a.id in filter.accounts ? 'checked' }}><span class="chip__dot" style="--c: {{ a.color }}"></span>{{ a.name }}</label>
                     {% endfor %}
                 </div>
             </div>

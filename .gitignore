@@ -1,2 +1,5 @@
 /.env
 /mysql/
+
+# export bancari/app lasciati nella root per importarli
+/*.csv

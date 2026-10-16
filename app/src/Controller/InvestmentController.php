@@ -185,7 +185,7 @@ final class InvestmentController extends AppController
             $entry->setNote((string) $data->get('note'));
             $accountId = Param::int($data, 'account') ?: null;
             $account = $accountId ? $this->accounts->find($accountId) : null;
-            if ($account && $account->getUser() !== $user) {
+            if ($account && !$account->isAccessibleBy($user)) {
                 $account = null;
             }
 

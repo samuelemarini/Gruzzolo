@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Entity\Account;
+use App\Entity\Movement;
 use App\Entity\OwnedInterface;
 use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -36,6 +38,28 @@ abstract class AppController extends AbstractController
         }
 
         return $entity;
+    }
+
+    /** Conto proprio o condiviso con l'utente (404 altrimenti). */
+    protected function accessibleAccount(?Account $account): Account
+    {
+        if ($account === null || !$account->isAccessibleBy($this->me())) {
+            throw $this->createNotFoundException();
+        }
+
+        return $account;
+    }
+
+    /** Movimento proprio o che sta su un conto condiviso con l'utente. */
+    protected function accessibleMovement(?Movement $movement): Movement
+    {
+        $me = $this->me();
+        if ($movement === null || !($movement->getUser() === $me || $movement->getAccount()->isAccessibleBy($me)
+            || $movement->getToAccount()?->isAccessibleBy($me))) {
+            throw $this->createNotFoundException();
+        }
+
+        return $movement;
     }
 
     protected function checkCsrf(Request $request, string $id): void

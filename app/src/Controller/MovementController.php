@@ -40,10 +40,13 @@ final class MovementController extends AppController
     public function index(Request $request): Response
     {
         $user = $this->me();
-        $filter = MovementFilter::fromRequest($request);
+        $filter = MovementFilter::fromRequest($request, $this->accounts->findDefault($user)?->getId());
         $page = max(1, Param::int($request->query, 'page', 1));
         $list = $this->movements->search($user, $filter, self::PAGE * $page);
 
+        // Conti che si stanno guardando: i giroconti che ne escono o vi entrano da fuori contano come
+        // uscite/entrate (anche nel totale del giorno), quelli fra due di questi conti no.
+        $scope = $filter->accounts ?: array_map(fn ($a) => $a->getId(), $this->accounts->findForUser($user, true));
         $groups = [];
         foreach ($list as $m) {
             $key = $m->getDate()->format('Y-m-d');
@@ -51,6 +54,10 @@ final class MovementController extends AppController
             $groups[$key]['movements'][] = $m;
             if (!$m->isTransfer()) {
                 $groups[$key]['total'] += $m->getSignedAmount();
+            } else {
+                $out = in_array($m->getAccount()->getId(), $scope, true);
+                $in = $m->getToAccount() !== null && in_array($m->getToAccount()->getId(), $scope, true);
+                $groups[$key]['total'] += $out === $in ? 0 : ($in ? 1 : -1) * (float) $m->getAmount();
             }
         }
         $totals = $this->movements->totals($user, $filter);
@@ -59,9 +66,10 @@ final class MovementController extends AppController
             'filter' => $filter,
             'groups' => $groups,
             'totals' => $totals,
+            'scope' => $scope,
             'hasMore' => $totals['count'] > count($list),
             'page' => $page,
-            'categoryTree' => $this->categories->findTree($user),
+            'categoryTrees' => array_map(fn ($a) => ['account' => $a, 'tree' => $this->categories->findTree($a)], $this->accounts->findForUser($user)),
             'tags' => $this->tags->findForUser($user),
             'accounts' => $this->accounts->findForUser($user, true),
             'vehicles' => $this->vehicles->findForUser($user, true),
@@ -74,7 +82,7 @@ final class MovementController extends AppController
     public function export(Request $request): StreamedResponse
     {
         $user = $this->me();
-        $filter = MovementFilter::fromRequest($request);
+        $filter = MovementFilter::fromRequest($request, $this->accounts->findDefault($user)?->getId());
         $list = $this->movements->search($user, $filter, 100000);
 
         $response = new StreamedResponse(function () use ($list) {
@@ -111,7 +119,8 @@ final class MovementController extends AppController
     public function new(Request $request, VehicleStats $vehicleStats): Response
     {
         $user = $this->me();
-        $account = $this->accounts->findDefault($user);
+        // Chi ha solo conti condivisi con lui parte dal primo di quelli.
+        $account = $this->accounts->findDefault($user) ?? ($this->accounts->findForUser($user)[0] ?? null);
         if (!$account) {
             $this->addFlash('error', 'Crea prima un conto.');
 
@@ -120,15 +129,14 @@ final class MovementController extends AppController
         $movement = new Movement($user, $account);
         $kind = (string) $request->query->get('kind', Movement::EXPENSE);
         $movement->setKind($kind);
-        if ($request->query->getBoolean('fuel')) {
-            $fuelCategory = $this->categories->findOneBy(['user' => $user, 'fuel' => true, 'archived' => false]);
-            $movement->setCategory($fuelCategory);
-        }
         if ($accountId = Param::int($request->query, 'account')) {
             $chosen = $this->accounts->find($accountId);
-            if ($chosen && $chosen->getUser() === $user) {
+            if ($chosen && $chosen->isAccessibleBy($user)) {
                 $movement->setAccount($chosen);
             }
+        }
+        if ($request->query->getBoolean('fuel')) {
+            $movement->setCategory($this->categories->findOneBy(['account' => $movement->getAccount(), 'fuel' => true, 'archived' => false]));
         }
 
         return $this->handleForm($request, $movement, $vehicleStats);
@@ -137,7 +145,7 @@ final class MovementController extends AppController
     #[Route('/{id}', name: 'movement_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
     public function edit(Request $request, int $id, VehicleStats $vehicleStats): Response
     {
-        $movement = $this->own($this->movements->find($id));
+        $movement = $this->accessibleMovement($this->movements->find($id));
         if ($entry = $movement->getInvestmentEntry()) {
             // I versamenti si modificano dall'investimento, che tiene allineato il giroconto.
             return $this->redirectToRoute('investment_entry_edit', ['id' => $entry->getId()]);
@@ -149,7 +157,7 @@ final class MovementController extends AppController
     #[Route('/{id}/duplica', name: 'movement_duplicate', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
     public function duplicate(Request $request, int $id, VehicleStats $vehicleStats): Response
     {
-        $source = $this->own($this->movements->find($id));
+        $source = $this->accessibleMovement($this->movements->find($id));
         $copy = (new Movement($this->me(), $source->getAccount()))
             ->setKind($source->getKind())->setAmount($source->getAmount())
             ->setDescription($source->getDescription())->setNote($source->getNote())
@@ -164,7 +172,7 @@ final class MovementController extends AppController
     #[Route('/{id}/elimina', name: 'movement_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function delete(Request $request, int $id): Response
     {
-        $movement = $this->own($this->movements->find($id));
+        $movement = $this->accessibleMovement($this->movements->find($id));
         $this->checkCsrf($request, 'delete-movement-'.$id);
         $this->em->remove($movement);
         $this->em->flush();
@@ -197,7 +205,8 @@ final class MovementController extends AppController
         }
 
         $vehicles = $this->vehicles->findForUser($user);
-        if ($movement->getVehicle() && $movement->getVehicle()->isArchived()) {
+        // Anche il veicolo gia' scelto se archiviato o di chi ha inserito il movimento (conto condiviso).
+        if ($movement->getVehicle() && !in_array($movement->getVehicle(), $vehicles, true)) {
             $vehicles[] = $movement->getVehicle();
         }
         $lastOdometers = [];
@@ -208,12 +217,16 @@ final class MovementController extends AppController
         return $this->render('movement/form.html.twig', [
             'movement' => $movement,
             'errors' => $errors,
-            'expenseTree' => $this->categories->findTree($user, Category::EXPENSE),
-            'incomeTree' => $this->categories->findTree($user, Category::INCOME),
-            'accounts' => $this->accounts->findForUser($user),
+            // Le categorie di ogni conto: il form mostra quelle del conto scelto.
+            'categoryTrees' => array_map(fn ($a) => [
+                'account' => $a,
+                'expense' => $this->categories->findTree($a, Category::EXPENSE),
+                'income' => $this->categories->findTree($a, Category::INCOME),
+            ], $accounts = $this->accounts->findForUser($user)),
+            'accounts' => $accounts,
             'vehicles' => $vehicles,
             'lastOdometers' => $lastOdometers,
-            'allTags' => array_map(fn (Tag $t) => $t->getName(), $this->tags->findForUser($user)),
+            'tagOptions' => $this->tags->findForUser($user),
             'descriptions' => $this->movements->recentDescriptions($user),
             'back' => (string) ($data->get('_back') ?: $request->query->get('back', '')),
         ], new Response(status: $errors ? 422 : 200));
@@ -234,7 +247,7 @@ final class MovementController extends AppController
         $date ? $m->setDate($date) : $errors['date'] = 'Data non valida';
 
         $account = $this->accounts->find(Param::int($data, 'account'));
-        if ($account && $account->getUser() === $user) {
+        if ($account && $account->isAccessibleBy($user)) {
             $m->setAccount($account);
         } else {
             $errors['account'] = 'Scegli un conto';
@@ -246,7 +259,9 @@ final class MovementController extends AppController
         $category = null;
         if (!$m->isTransfer()) {
             $category = $this->categories->find(Param::int($data, 'category'));
-            if (!$category || $category->getUser() !== $user || $category->getKind() !== $m->getKind()) {
+            // Solo categorie del conto del movimento (ogni conto ha le sue).
+            $usable = $category && ($category->getAccount() === $m->getAccount() || $category === $m->getCategory());
+            if (!$usable || $category->getKind() !== $m->getKind()) {
                 $category = null;
                 $errors['category'] = 'Scegli una categoria';
             }
@@ -257,14 +272,14 @@ final class MovementController extends AppController
         $vehicle = null;
         if ($vehicleId = Param::int($data, 'vehicle')) {
             $vehicle = $this->vehicles->find($vehicleId);
-            if (!$vehicle || $vehicle->getUser() !== $user) {
+            if (!$vehicle || ($vehicle->getUser() !== $user && $vehicle !== $m->getVehicle())) {
                 $vehicle = null;
             }
         }
 
         if ($m->isTransfer()) {
             $to = $this->accounts->find(Param::int($data, 'to_account'));
-            if (!$to || $to->getUser() !== $user) {
+            if (!$to || !$to->isAccessibleBy($user)) {
                 $errors['to_account'] = 'Scegli il conto di destinazione';
             } elseif ($account === $to) {
                 $errors['to_account'] = 'I due conti devono essere diversi';
@@ -311,9 +326,13 @@ final class MovementController extends AppController
             $m->setAmount($amount);
         }
 
+        $current = [];
+        foreach ($m->getTags() as $tag) {
+            $current[$tag->getName()] = $tag;
+        }
         $m->clearTags();
         foreach (array_unique(array_filter(array_map([Tag::class, 'normalize'], $data->all('tags')))) as $name) {
-            $tag = $this->tags->findOneByName($user, $name) ?? $this->newTag($name);
+            $tag = $current[$name] ?? $this->tags->findOneByName($user, $name) ?? $this->newTag($name);
             $m->addTag($tag);
         }
 

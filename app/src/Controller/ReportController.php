@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Model\MovementFilter;
+use App\Repository\AccountRepository;
 use App\Util\Param;
 use App\Service\ChartBuilder;
 use App\Service\ReportService;
@@ -12,9 +14,11 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ReportController extends AppController
 {
     #[Route('/report', name: 'report_index')]
-    public function index(Request $request, ReportService $reports, ChartBuilder $charts): Response
+    public function index(Request $request, ReportService $reports, ChartBuilder $charts, AccountRepository $accountRepository): Response
     {
         $user = $this->me();
+        // Di default solo il conto principale; gli altri si aggiungono dai chip (?account=all per tutti).
+        [$accounts, $chosen] = MovementFilter::accountsFrom($request, $accountRepository->findDefault($user)?->getId());
         $today = new \DateTimeImmutable('today');
         $period = (string) $request->query->get('period', 'month');
         $kind = $request->query->get('kind') === 'income' ? 'income' : 'expense';
@@ -44,9 +48,9 @@ final class ReportController extends AppController
                 $label = null;
         }
 
-        $byCategory = $reports->byCategory($user, $from, $to, $kind);
-        $summary = $reports->summary($user, $from, $to);
-        $trend = $reports->monthly($user, $trendFrom, $to);
+        $byCategory = $reports->byCategory($user, $from, $to, $kind, $accounts);
+        $summary = $reports->summary($user, $from, $to, $accounts);
+        $trend = $reports->monthly($user, $trendFrom, $to, $accounts);
         foreach ($trend as &$row) {
             $row['partial'] = $row['month']->format('Y-m') === $today->format('Y-m');
         }
@@ -70,8 +74,11 @@ final class ReportController extends AppController
             'savedTrend' => $savedTrend,
             'days' => $days,
             'dailyAverage' => $days > 0 ? $summary['expense'] / $days : null,
-            'biggest' => $reports->biggestExpense($user, $from, $to),
-            'tags' => $reports->byTag($user, $from, $to),
+            'biggest' => $reports->biggestExpense($user, $from, $to, $accounts),
+            'tags' => $reports->byTag($user, $from, $to, $accounts),
+            'accounts' => $accountRepository->findForUser($user, true),
+            'selected' => $accounts,
+            'accountParam' => MovementFilter::accountsParam($accounts, $chosen),
         ]);
     }
 }

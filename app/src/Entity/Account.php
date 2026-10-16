@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\AccountRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: AccountRepository::class)]
@@ -54,9 +56,29 @@ class Account implements OwnedInterface
     #[ORM\Column(options: ['default' => 0])]
     private int $position = 0;
 
+    /**
+     * Utenti con cui il proprietario condivide il conto: vedono saldo e movimenti e possono aggiungerne.
+     *
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(name: 'account_member')]
+    #[ORM\JoinColumn(onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(onDelete: 'CASCADE')]
+    private Collection $members;
+
+    /** Utenti che non vogliono il conto nella home (saldo, totali e ultimi movimenti): scelta di ognuno, anche sui conti condivisi. */
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(name: 'account_home_hidden')]
+    #[ORM\JoinColumn(onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(onDelete: 'CASCADE')]
+    private Collection $hiddenFromHome;
+
     public function __construct(User $user)
     {
         $this->user = $user;
+        $this->members = new ArrayCollection();
+        $this->hiddenFromHome = new ArrayCollection();
     }
 
     public function getId(): ?int { return $this->id; }
@@ -81,6 +103,33 @@ class Account implements OwnedInterface
 
     public function isArchived(): bool { return $this->archived; }
     public function setArchived(bool $archived): static { $this->archived = $archived; return $this; }
+
+    /** @return Collection<int, User> */
+    public function getMembers(): Collection { return $this->members; }
+    public function addMember(User $user): static { if ($user !== $this->user && !$this->members->contains($user)) { $this->members->add($user); } return $this; }
+    public function removeMember(User $user): static { $this->members->removeElement($user); return $this; }
+    public function isShared(): bool { return !$this->members->isEmpty(); }
+
+    /** Proprietario o membro: puo' vedere il conto e registrarci movimenti. */
+    public function isAccessibleBy(User $user): bool
+    {
+        return $this->user === $user || $this->members->contains($user);
+    }
+
+    public function isOwnedBy(User $user): bool { return $this->user === $user; }
+
+    public function isOnHomeFor(User $user): bool { return !$this->hiddenFromHome->contains($user); }
+
+    public function setOnHomeFor(User $user, bool $show): static
+    {
+        if ($show) {
+            $this->hiddenFromHome->removeElement($user);
+        } elseif (!$this->hiddenFromHome->contains($user)) {
+            $this->hiddenFromHome->add($user);
+        }
+
+        return $this;
+    }
 
     public function getPosition(): int { return $this->position; }
     public function setPosition(int $position): static { $this->position = $position; return $this; }

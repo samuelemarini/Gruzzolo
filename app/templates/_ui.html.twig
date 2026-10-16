@@ -24,14 +24,17 @@
                 {%- if m.transfer -%}
                     <span>{{ m.account.name }} → {{ m.toAccount ? m.toAccount.name : (m.investmentEntry ? m.investmentEntry.holding.name : 'Investimenti') }}</span>
                 {%- else -%}
-                    <span>{{ m.category ? m.category.fullName : 'Senza categoria' }}{% if opts.date ?? false %} · {{ m.date|short_day }}{% endif %}{% if opts.account ?? false %} · {{ m.account.name }}{% endif %}</span>
+                    <span>{{ m.category ? m.category.fullName : 'Senza categoria' }}{% if opts.date ?? false %} · {{ m.date|short_day }}{% endif %}{% if opts.account ?? false %} · {{ m.account.name }}{% endif %}{% if m.user != app.user %} · di {{ m.user.displayName }}{% endif %}</span>
                 {%- endif -%}
                 {%- if m.refuel -%}<span class="tag-pill">{{ icon('fuel', 12) }}{{ m.refuel.liters|num(2) }} {{ m.vehicle and m.vehicle.electric ? 'kWh' : 'l' }}</span>{%- elseif m.vehicle and not (opts.hideVehicle ?? false) -%}<span class="tag-pill">{{ icon(m.vehicle.icon, 12) }}{{ m.vehicle.name }}</span>{%- endif -%}
                 {%- for tag in m.tags -%}<span class="tag-pill">#{{ tag.name }}</span>{%- endfor -%}
             </span>
         </div>
-        {%- set incoming = m.transfer and opts.perspective is defined and m.toAccount == opts.perspective -%}
-        {%- if m.transfer and opts.perspective is defined -%}
+        {#- scope: id dei conti che si stanno guardando; un giroconto che ne esce e' −, uno che arriva da fuori + -#}
+        {%- set scope = opts.scope ?? [] -%}
+        {%- set incoming = m.transfer and m.toAccount and m.toAccount.id in scope and m.account.id not in scope -%}
+        {%- set outgoing = m.transfer and m.account.id in scope and not (m.toAccount and m.toAccount.id in scope) -%}
+        {%- if incoming or outgoing -%}
             <span class="list-row__amount {{ incoming ? 'is-income' }}">{{ incoming ? '+' : '−' }}{{ m.amount|money }}</span>
         {%- else -%}
             <span class="list-row__amount {{ m.income ? 'is-income' }}">{{ m|movement_amount }}</span>

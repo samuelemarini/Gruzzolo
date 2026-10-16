@@ -26,7 +26,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 #[AsCommand('app:demo', 'Crea (o ricrea) un utente demo con dati di esempio')]
 final class DemoCommand
 {
-    /** @var array<string, Category> */
+    /** @var array<int, array<string, Category>> categorie per conto e nome */
     private array $cat = [];
     /** @var array<string, Tag> */
     private array $tags = [];
@@ -65,15 +65,22 @@ final class DemoCommand
         $this->seeder->seed($this->user);
         $this->em->flush();
 
-        foreach ($this->em->getRepository(Category::class)->findBy(['user' => $this->user]) as $c) {
-            $this->cat[$c->getName()] = $c;
-        }
         $main = $this->em->getRepository(Account::class)->findOneBy(['user' => $this->user]);
         $main->setInitialBalance('6800.00');
         $savings = (new Account($this->user))->setName('Accantonamento')->setKind('savings')->setColor('#C3A6FF')->setInitialBalance('900.00')->setPosition(1);
         $cash = (new Account($this->user))->setName('Contanti')->setKind('cash')->setColor('#9BE7A0')->setInitialBalance('450.00')->setPosition(2);
         $this->em->persist($savings);
         $this->em->persist($cash);
+        // Ogni conto ha le sue categorie: gli altri conti partono da una copia di quelle del principale.
+        $categories = $this->em->getRepository(Category::class);
+        $categories->copyAll($main, $savings);
+        $categories->copyAll($main, $cash);
+        $this->em->flush();
+        foreach ([$main, $savings, $cash] as $account) {
+            foreach ($categories->findBy(['account' => $account]) as $c) {
+                $this->cat[$account->getId()][$c->getName()] = $c;
+            }
+        }
 
         $panda = (new Vehicle($this->user))->setName('Fiat Panda')->setKind('car')->setFuelType('petrol')->setPlate('GH482KL')->setInitialOdometer(41500)->setColor('#6FDCCB');
         $sh = (new Vehicle($this->user))->setName('Honda SH 125')->setKind('scooter')->setFuelType('petrol')->setPlate('EX19302')->setInitialOdometer(11200)->setColor('#FFB86B');
@@ -165,7 +172,7 @@ final class DemoCommand
         if ($date > new \DateTimeImmutable('today')) {
             return null;
         }
-        $m = (new Movement($this->user, $account))->setKind($kind)->setCategory($this->cat[$category])
+        $m = (new Movement($this->user, $account))->setKind($kind)->setCategory($this->cat[$account->getId()][$category])
             ->setDate($date)->setAmount(number_format($amount, 2, '.', ''))->setDescription($description)->setVehicle($vehicle);
         foreach ($tags as $name) {
             $this->tags[$name] ??= new Tag($this->user, $name);

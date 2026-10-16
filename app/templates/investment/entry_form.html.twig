@@ -48,7 +48,7 @@
             {% for a in accounts %}<option value="{{ a.id }}" {{ accountId == a.id ? 'selected' }}>{{ a.name }}</option>{% endfor %}
         </select>
     </label>
-    <p class="hint" data-entry-form-target="accountHint">Se scegli un conto, il versamento esce da lì come giroconto: cala il saldo, ma non conta come spesa nei report.</p>
+    <p class="hint" data-entry-form-target="accountHint">Se scegli un conto, il versamento esce da lì come giroconto: cala il saldo e nei totali conta come uscita (verso gli investimenti).</p>
 
     <label class="field">
         <span class="field__label">Nota</span>

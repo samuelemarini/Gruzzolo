@@ -5,14 +5,17 @@
 {% set refuel = movement.refuel %}
 {% block title %}{{ isNew ? 'Nuovo movimento' : 'Modifica movimento' }}{% endblock %}
 
-{% macro category_picker(tree, movement, kind) %}
+{% macro category_picker(tree, movement, kind, account) %}
     {% import '_ui.html.twig' as ui %}
-    <div class="cat-groups" data-movement-form-target="categories" data-kind="{{ kind }}" {{ movement.kind != kind ? 'hidden' }}>
+    {% set active = movement.kind == kind and movement.account == account %}
+    <div class="cat-groups" data-movement-form-target="categories" data-kind="{{ kind }}" data-account="{{ account.id }}" {{ not active ? 'hidden' }}>
+        {% if tree is empty %}
+            <p class="small muted">Il conto «{{ account.name }}» non ha categorie di {{ kind == 'income' ? 'entrata' : 'uscita' }}. <a class="link" href="{{ path('category_index', {account: account.id, kind: kind}) }}">Aggiungile</a></p>
+        {% endif %}
         <div class="cat-picker" role="radiogroup" aria-label="Categoria">
             {% for parent in tree %}
-                {% set selected = movement.category and (movement.category == parent or movement.category.parent == parent) %}
                 <label class="cat-pick" data-fuel="{{ parent.fuel ? 1 : 0 }}">
-                    <input type="radio" name="category" value="{{ parent.id }}" {{ movement.category == parent ? 'checked' }} {{ movement.kind != kind ? 'disabled' }}
+                    <input type="radio" name="category" value="{{ parent.id }}" {{ movement.category == parent ? 'checked' }} {{ not active ? 'disabled' }}
                            data-action="movement-form#categoryChanged" data-parent="{{ parent.id }}" data-fuel="{{ parent.fuel ? 1 : 0 }}">
                     {{ ui.tile(parent.icon, parent.color) }}
                     <span>{{ parent.name }}</span>
@@ -25,7 +28,7 @@
             <div class="cat-children chips" data-children-of="{{ parent.id }}" {{ not open ? 'hidden' }}>
                 {% for child in parent.children|filter(c => not c.archived) %}
                     <label class="chip">
-                        <input type="radio" name="category" value="{{ child.id }}" {{ movement.category == child ? 'checked' }} {{ movement.kind != kind ? 'disabled' }}
+                        <input type="radio" name="category" value="{{ child.id }}" {{ movement.category == child ? 'checked' }} {{ not active ? 'disabled' }}
                                data-action="movement-form#categoryChanged" data-parent="{{ parent.id }}" data-fuel="{{ child.fuel ? 1 : 0 }}">
                         <span class="chip__dot" style="--c: {{ child.color }}"></span>{{ child.name }}
                     </label>
@@ -68,8 +71,10 @@
         {% if errors.amount is defined %}<p class="field__error" style="text-align: center">{{ errors.amount }}</p>{% endif %}
     </div>
 
-    {{ _self.category_picker(expenseTree, movement, 'expense') }}
-    {{ _self.category_picker(incomeTree, movement, 'income') }}
+    {% for t in categoryTrees %}
+        {{ _self.category_picker(t.expense, movement, 'expense', t.account) }}
+        {{ _self.category_picker(t.income, movement, 'income', t.account) }}
+    {% endfor %}
     {% if errors.category is defined %}<p class="field__error">{{ errors.category }}</p>{% endif %}
 
     <div class="rows">
@@ -84,8 +89,8 @@
         <label class="rowf">
             <span class="rowf__icon">{{ icon('landmark') }}</span>
             <span class="rowf__label" data-movement-form-target="accountLabel">{{ movement.transfer ? 'Da conto' : 'Conto' }}</span>
-            <select name="account">
-                {% for a in accounts %}<option value="{{ a.id }}" {{ movement.account == a ? 'selected' }}>{{ a.name }}</option>{% endfor %}
+            <select name="account" data-movement-form-target="account" data-action="movement-form#accountChanged">
+                {% for a in accounts %}<option value="{{ a.id }}" {{ movement.account == a ? 'selected' }}>{{ a.name }}{{ a.shared or a.user != app.user ? ' (condiviso)' }}</option>{% endfor %}
             </select>
         </label>
         <label class="rowf">
@@ -98,15 +103,30 @@
             <span class="rowf__label">Data</span>
             <input type="date" name="date" value="{{ movement.date|date('Y-m-d') }}" required>
         </label>
-        <div class="rowf" data-controller="tags-input" data-tags-input-suggestions-value="{{ allTags|json_encode }}">
-            <span class="rowf__icon">{{ icon('tag') }}</span>
-            <span class="rowf__label">Etichette</span>
-            <div class="tags-input grow" data-tags-input-target="list">
-                {% for tag in movement.tags %}
-                    <button type="button" class="tag-chip" data-action="tags-input#remove" aria-label="Togli {{ tag.name }}">#{{ tag.name }}{{ icon('x', 14) }}<input type="hidden" name="tags[]" value="{{ tag.name }}"></button>
+        {# Etichette: tendina a scelta multipla fra quelle esistenti (si creano dalla sezione Etichette) #}
+        {% set tagNames = tagOptions|map(t => t.name) %}
+        {% set options = tagOptions|merge(movement.tags|filter(t => t.name not in tagNames)) %}
+        {% set chosen = movement.tags|map(t => t.name) %}
+        <div class="rowf-wrap" data-controller="tag-select" data-action="click@window->tag-select#outside keydown.esc@window->tag-select#close">
+            <div class="rowf">
+                <span class="rowf__icon">{{ icon('tag') }}</span>
+                <span class="rowf__label">Etichette</span>
+                <button type="button" class="tag-select__toggle" data-tag-select-target="toggle" data-action="tag-select#toggle" aria-expanded="false" aria-controls="tag-menu">
+                    <span class="ellipsis" data-tag-select-target="summary">{{ chosen ? chosen|map(n => '#' ~ n)|join(', ') : 'nessuna' }}</span>
+                    {{ icon('chevron-down', 18, 'tag-select__chev') }}
+                </button>
+            </div>
+            <div class="tag-select__menu" id="tag-menu" data-tag-select-target="menu" hidden>
+                {% for t in options %}
+                    <label class="tag-option">
+                        <input type="checkbox" name="tags[]" value="{{ t.name }}" data-action="tag-select#changed" {{ t.name in chosen ? 'checked' }}>
+                        <span class="dot" style="--c: {{ t.color }}"></span>
+                        <span class="grow ellipsis">#{{ t.name }}{% if t.title %} <span class="muted">· {{ t.title }}</span>{% endif %}</span>
+                        {{ icon('check', 18, 'tag-option__check') }}
+                    </label>
+                {% else %}
+                    <p class="small muted" style="margin: 12px 0">Nessuna etichetta. <a class="link" href="{{ path('tag_index') }}">Creale dalla sezione Etichette</a>.</p>
                 {% endfor %}
-                <input type="text" placeholder="aggiungi…" list="tag-suggestions" autocapitalize="none" autocomplete="off" aria-label="Nuova etichetta"
-                       data-tags-input-target="input" data-action="keydown->tags-input#keydown change->tags-input#commit blur->tags-input#commit">
             </div>
         </div>
         <label class="rowf" data-movement-form-target="vehicleRow" {{ not movement.expense or (movement.category and movement.category.fuel) or vehicles is empty ? 'hidden' }}>
@@ -214,7 +234,6 @@
     </div>
 
     <datalist id="descriptions">{% for d in descriptions %}<option value="{{ d }}">{% endfor %}</datalist>
-    <datalist id="tag-suggestions">{% for t in allTags %}<option value="{{ t }}">{% endfor %}</datalist>
 </form>
 
 {% if not isNew %}

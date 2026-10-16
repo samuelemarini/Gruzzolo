@@ -78,39 +78,6 @@ final class SpendeeFormat implements ImportFormat
 
     public function finalize(array $rows): array
     {
-        // I trasferimenti fra wallet arrivano come due righe con lo stesso istante: si uniscono in un giroconto.
-        $outs = [];
-        foreach ($rows as $i => $row) {
-            if ($row->kind === 'transfer:out') {
-                $outs[$row->date->getTimestamp().'|'.$row->amount][] = $i;
-            }
-        }
-        $drop = [];
-        foreach ($rows as $i => $row) {
-            if ($row->kind !== 'transfer:in') {
-                continue;
-            }
-            $key = $row->date->getTimestamp().'|'.$row->amount;
-            if (!empty($outs[$key])) {
-                $j = array_shift($outs[$key]);
-                $rows[$j]->kind = 'transfer';
-                $rows[$j]->toWallet = $row->wallet;
-                $drop[$i] = true;
-            }
-        }
-        $result = [];
-        foreach ($rows as $i => $row) {
-            if (isset($drop[$i])) {
-                continue;
-            }
-            if ($row->kind === 'transfer:out') {
-                $row->kind = 'expense';
-            } elseif ($row->kind === 'transfer:in') {
-                $row->kind = 'income';
-            }
-            $result[] = $row;
-        }
-
-        return $result;
+        return TransferPairing::pair($rows);
     }
 }

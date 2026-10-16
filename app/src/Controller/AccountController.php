@@ -6,7 +6,10 @@ use App\Entity\Account;
 use App\Entity\Movement;
 use App\Model\MovementFilter;
 use App\Repository\AccountRepository;
+use App\Repository\CategoryRepository;
+use App\Service\UserSeeder;
 use App\Repository\MovementRepository;
+use App\Repository\UserRepository;
 use App\Service\BalanceService;
 use App\Service\ChartBuilder;
 use App\Service\Palette;
@@ -42,7 +45,7 @@ final class AccountController extends AppController
     #[Route('/{id}', name: 'account_show', requirements: ['id' => '\d+'], methods: ['GET'])]
     public function show(int $id, MovementRepository $movements, ChartBuilder $charts): Response
     {
-        $account = $this->own($this->accounts->find($id));
+        $account = $this->accessibleAccount($this->accounts->find($id));
         $user = $this->me();
         $filter = new MovementFilter();
         $filter->accounts = [$account->getId()];
@@ -68,11 +71,18 @@ final class AccountController extends AppController
     }
 
     #[Route('/nuovo', name: 'account_new', methods: ['GET', 'POST'])]
-    public function new(Request $request): Response
+    public function new(Request $request, CategoryRepository $categories, UserSeeder $seeder): Response
     {
         $account = new Account($this->me());
 
-        return $this->form($request, $account);
+        return $this->form($request, $account, function (Account $account, string $source) use ($categories, $seeder) {
+            // Un conto nuovo parte con categorie copiate da un altro, con quelle predefinite o vuoto.
+            if ($source === 'default') {
+                $seeder->seedCategories($account);
+            } elseif ($source !== 'none' && ($from = $this->accounts->find((int) $source)) && $from->isAccessibleBy($this->me())) {
+                $categories->copyAll($from, $account);
+            }
+        });
     }
 
     #[Route('/{id}/modifica', name: 'account_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
@@ -99,7 +109,67 @@ final class AccountController extends AppController
         return $this->redirectToRoute('account_index', [], 303);
     }
 
-    private function form(Request $request, Account $account): Response
+    /** Il proprietario condivide il conto con un altro utente, indicandone il nome utente. */
+    #[Route('/{id}/condividi', name: 'account_share', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function share(Request $request, int $id, UserRepository $users): Response
+    {
+        $account = $this->own($this->accounts->find($id));
+        $this->checkCsrf($request, 'account-share-'.$id);
+        $other = $users->findOneByUsername((string) $request->request->get('username'));
+        if (!$other || !$other->isActive()) {
+            $this->addFlash('error', 'Nessun utente con questo nome');
+        } elseif ($other === $this->me()) {
+            $this->addFlash('error', 'Il conto è già tuo');
+        } else {
+            $account->addMember($other);
+            $this->em->flush();
+            $this->addFlash('success', sprintf('Conto condiviso con %s', $other->getDisplayName()));
+        }
+
+        return $this->redirectToRoute('account_edit', ['id' => $id], 303);
+    }
+
+    #[Route('/{id}/condividi/{userId}/togli', name: 'account_unshare', requirements: ['id' => '\d+', 'userId' => '\d+'], methods: ['POST'])]
+    public function unshare(Request $request, int $id, int $userId, UserRepository $users): Response
+    {
+        $account = $this->own($this->accounts->find($id));
+        $this->checkCsrf($request, 'account-unshare-'.$id.'-'.$userId);
+        if ($other = $users->find($userId)) {
+            $account->removeMember($other);
+            $this->em->flush();
+            $this->addFlash('success', sprintf('%s non vede più il conto', $other->getDisplayName()));
+        }
+
+        return $this->redirectToRoute('account_edit', ['id' => $id], 303);
+    }
+
+    /** Chi ha ricevuto un conto condiviso puo' uscirne: i movimenti che ha inserito restano sul conto. */
+    #[Route('/{id}/esci', name: 'account_leave', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function leave(Request $request, int $id): Response
+    {
+        $account = $this->accessibleAccount($this->accounts->find($id));
+        $this->checkCsrf($request, 'account-leave-'.$id);
+        $account->removeMember($this->me());
+        $this->em->flush();
+        $this->addFlash('success', 'Sei uscito dal conto condiviso');
+
+        return $this->redirectToRoute('account_index', [], 303);
+    }
+
+    /** Include o esclude i movimenti del conto dai totali della propria home (serve a chi l'ha ricevuto in condivisione: non apre la modifica). */
+    #[Route('/{id}/home', name: 'account_home', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function home(Request $request, int $id): Response
+    {
+        $account = $this->accessibleAccount($this->accounts->find($id));
+        $this->checkCsrf($request, 'account-home-'.$id);
+        $account->setOnHomeFor($this->me(), $request->request->getBoolean('show'));
+        $this->em->flush();
+        $this->addFlash('success', $account->isOnHomeFor($this->me()) ? 'I movimenti del conto tornano nei totali della home' : 'I movimenti del conto non entrano più nei totali della home');
+
+        return $this->redirectToRoute('account_show', ['id' => $id], 303);
+    }
+
+    private function form(Request $request, Account $account, ?callable $onCreate = null): Response
     {
         $user = $this->me();
         $errors = [];
@@ -115,6 +185,7 @@ final class AccountController extends AppController
                 $errors['name'] = 'Dai un nome al conto';
             }
             $account->setArchived($data->getBoolean('archived'));
+            $account->setOnHomeFor($user, $data->getBoolean('home'));
             $makeDefault = $data->getBoolean('default') && !$account->isArchived();
 
             if (!$errors) {
@@ -127,6 +198,9 @@ final class AccountController extends AppController
                     $account->setIsDefault(false);
                 }
                 $this->em->persist($account);
+                if ($onCreate) {
+                    $onCreate($account, (string) $data->get('categories_from', 'default'));
+                }
                 $this->em->flush();
                 $this->addFlash('success', 'Conto salvato');
 
@@ -134,7 +208,8 @@ final class AccountController extends AppController
             }
         }
 
-        return $this->render('account/form.html.twig', ['account' => $account, 'errors' => $errors, 'kinds' => Account::KINDS],
+        return $this->render('account/form.html.twig', ['account' => $account, 'errors' => $errors, 'kinds' => Account::KINDS,
+            'sources' => $this->accounts->findForUser($user), 'defaultSource' => $this->accounts->findDefault($user)],
             new Response(status: $errors ? 422 : 200));
     }
 }

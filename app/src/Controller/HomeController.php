@@ -29,7 +29,14 @@ final class HomeController extends AppController
         $from = $month;
         $to = $month->modify('last day of this month');
 
-        $byCategory = $reports->byCategory($user, $from, $to);
+        // I conti esclusi dalla home restano nell'elenco col saldo, ma i loro movimenti non entrano nei
+        // totali del mese ne' negli ultimi movimenti. Gli archiviati non sono in elenco ma contano, se non esclusi.
+        $all = $accounts->findForUser($user, true);
+        $onHome = array_filter($all, fn ($a) => $a->isOnHomeFor($user));
+        $accountIds = count($onHome) === count($all) ? null : (array_values(array_map(fn ($a) => $a->getId(), $onHome)) ?: [0]);
+        $accountList = array_values(array_filter($all, fn ($a) => !$a->isArchived()));
+
+        $byCategory = $reports->byCategory($user, $from, $to, 'expense', $accountIds ?? []);
         $split = array_slice($byCategory, 0, 3);
         $rest = array_slice($byCategory, 3);
         if ($rest) {
@@ -37,15 +44,17 @@ final class HomeController extends AppController
                 'pct' => array_sum(array_column($rest, 'pct')), 'icon' => 'circle-ellipsis', 'category' => null];
         }
 
-        $accountList = $accounts->findForUser($user);
         $holdingList = $holdings->findForUser($user);
 
         return $this->render('home/index.html.twig', [
             'month' => $month,
             'isCurrentMonth' => $month->format('Y-m') === date('Y-m'),
-            'summary' => $reports->summary($user, $from, $to),
+            'summary' => $reports->summary($user, $from, $to, $accountIds ?? []),
             'split' => $split,
-            'latest' => $movements->latest($user, 6),
+            'latest' => $movements->latest($user, 6, $accountIds),
+            // Per i link a Movimenti e Report: gli stessi conti dei totali della home.
+            'scope' => ['account' => $accountIds ?? 'all'],
+            'scopeIds' => $accountIds ?? array_map(fn ($a) => $a->getId(), $all),
             'accounts' => $accountList,
             'balances' => $balances->balances($user),
             'portfolio' => $holdingList ? $investments->portfolio($holdingList) : null,
