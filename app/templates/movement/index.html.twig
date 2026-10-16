@@ -27,6 +27,18 @@
         </label>
     </form>
 
+    {# Conti: un tocco aggiunge o toglie il conto (come nel Report); "Tutti i conti" li mostra tutti #}
+    {% if accounts|length > 1 %}
+        {% set selected = filter.accounts %}
+        <div class="chips chips--scroll" aria-label="Conti">
+            <a class="chip {{ selected is empty ? 'is-active' }}" href="{{ path('movement_index', q.all|merge({account: 'all', page: null})) }}">Tutti i conti</a>
+            {% for a in accounts|filter(a => not a.archived or a.id in selected) %}
+                {% set toggled = a.id in selected ? selected|filter(x => x != a.id) : selected|merge([a.id]) %}
+                <a class="chip {{ a.id in selected ? 'is-active' }}" href="{{ path('movement_index', q.all|merge({account: toggled is empty ? 'all' : toggled, page: null})) }}"><span class="chip__dot" style="--c: {{ a.color }}"></span>{{ a.name }}</a>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <div class="chips chips--scroll">
         {% if filter.period == 'month' %}
             {% set prev = month|date_modify('-1 month') %}{% set next = month|date_modify('+1 month') %}
@@ -35,10 +47,6 @@
             <a class="chip" href="{{ path('movement_index', q.all|merge({month: next|date('Y-m'), page: null})) }}" aria-label="Mese successivo" style="padding: 0 8px">{{ icon('chevron-right', 16) }}</a>
         {% else %}
             <button type="button" class="chip is-active" data-action="sheet#open">{{ periodLabels[filter.period] }}{% if filter.period == 'custom' %} · {{ filter.from ? filter.from|it_date('d MMM') }}–{{ filter.to ? filter.to|it_date('d MMM yy') }}{% endif %}</button>
-        {% endif %}
-        {% if accounts|length > 1 %}
-            {% set chosen = accounts|filter(a => a.id in filter.accounts) %}
-            <button type="button" class="chip {{ filter.accountsChosen ? 'is-active' }}" data-action="sheet#open">{{ icon('landmark', 15) }}{{ chosen is empty ? 'Tutti i conti' : (chosen|length == 1 ? (chosen|first).name : chosen|length ~ ' conti') }}</button>
         {% endif %}
         {% for kind, label in {expense: 'Uscite', income: 'Entrate', transfer: 'Giroconti'} %}
             <a class="chip {{ filter.kind == kind ? 'is-active' }}" href="{{ path('movement_index', q.all|merge({kind: filter.kind == kind ? null : kind, page: null})) }}">{{ label }}</a>
