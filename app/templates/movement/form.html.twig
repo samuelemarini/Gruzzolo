@@ -150,6 +150,7 @@
     {# --- Rifornimento: compare con una categoria carburante --- #}
     <section class="card card--tight" data-movement-form-target="fuel" data-controller="fuel"
              data-fuel-odometers-value="{{ lastOdometers|json_encode }}"
+             data-fuel-averages-value="{{ averages|json_encode }}"
              {{ not (movement.category and movement.category.fuel and movement.expense) ? 'hidden' }}>
         <div class="row row--between">
             <h2 class="h2" style="font-size: 17px">Rifornimento</h2>
@@ -214,6 +215,13 @@
                 <div class="stack-sm" style="align-items: center; gap: 2px"><span class="display strong text-accent" style="font-size: 18px" data-fuel-target="effValue">—</span><span class="xsmall muted" data-fuel-target="effUnit">km/l</span></div>
                 <div class="stack-sm" style="align-items: center; gap: 2px"><span class="display strong" style="font-size: 18px" data-fuel-target="per100Value">—</span><span class="xsmall muted" data-fuel-target="per100Unit">l/100 km</span></div>
                 <div class="stack-sm" style="align-items: center; gap: 2px"><span class="display strong" style="font-size: 18px" data-fuel-target="perKmValue">—</span><span class="xsmall muted">€ al km</span></div>
+            </div>
+            <div class="fuel-average" data-fuel-target="average" hidden>
+                <div class="row row--between">
+                    <span class="small muted">Media dell'auto · <span data-fuel-target="averageLabel">12 mesi</span></span>
+                    <strong class="small" style="white-space: nowrap" data-fuel-target="averageValue">—</strong>
+                </div>
+                <span class="xsmall strong" data-fuel-target="averageCompare"></span>
             </div>
         {% endif %}
     </section>

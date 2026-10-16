@@ -425,6 +425,7 @@ a.list-row:hover { background: color-mix(in srgb, var(--surface-2) 50%, transpar
 .form-dock__actions { display: grid; gap: 8px; }
 .form-dock__actions.has-another { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
 .form-dock__actions .btn { height: 52px; padding: 0 12px; }
+.fuel-average { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: 16px; background: var(--surface-2); }
 .form-dock__another { order: -1; gap: 6px; font-size: 15px; white-space: nowrap; }
 /* Mentre si scrive in un altro campo (si apre la tastiera di sistema) il tastierino lascia spazio */
 .form:has(:is(input[type="text"], input[type="date"], input[type="search"]):not([name="amount"]):focus, textarea:focus) .form-dock .keypad { display: none; }

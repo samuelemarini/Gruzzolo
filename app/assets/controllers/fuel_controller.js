@@ -3,14 +3,15 @@ import { Controller } from '@hotwired/stimulus';
 /*
  * Rifornimento: dei tre valori prezzo/litri/totale si calcola quello che non e' fra gli ultimi due
  * modificati. Il totale e' l'importo del movimento (l'input grande in alto), tenuto allineato.
- * Mostra anche i km dall'ultimo rifornimento e una stima del consumo.
+ * Mostra anche i km dall'ultimo rifornimento, una stima del consumo e, col pieno, la media dell'auto
+ * con lo scarto di questo pieno.
  */
 export default class extends Controller {
     static targets = ['vehicle', 'odometer', 'lastKm', 'delta', 'price', 'liters', 'total', 'full', 'missed',
         'priceBox', 'litersBox', 'totalBox', 'priceLabel', 'litersLabel',
-        'preview', 'effValue', 'effUnit', 'per100Value', 'per100Unit', 'perKmValue'];
+        'preview', 'effValue', 'effUnit', 'per100Value', 'per100Unit', 'perKmValue', 'average', 'averageValue', 'averageLabel', 'averageCompare'];
 
-    static values = { odometers: Object };
+    static values = { odometers: Object, averages: Object };
 
     connect() {
         if (!this.hasPriceTarget) return;
@@ -106,6 +107,20 @@ export default class extends Controller {
             this.effValueTarget.textContent = this.fmt(km / liters, 1);
             this.per100ValueTarget.textContent = this.fmt((liters / km) * 100, 2);
             this.perKmValueTarget.textContent = total ? this.fmt(total / km, 2) : '—';
+        }
+
+        // Media dell'auto: col pieno, se l'auto ha gia' almeno un consumo calcolato.
+        const average = vehicle ? this.averagesValue[vehicle.value] : null;
+        this.averageTarget.hidden = !(average && this.fullTarget.checked);
+        if (average) {
+            const unit = vehicle.dataset.electric === '1' ? 'km/kWh' : 'km/l';
+            this.averageValueTarget.textContent = `${this.fmt(average.value, 1)} ${unit}`;
+            this.averageLabelTarget.textContent = average.label;
+            const diff = show ? ((km / liters) / average.value - 1) * 100 : null;
+            this.averageCompareTarget.textContent = diff !== null ? `Questo pieno: ${diff >= 0 ? '+' : '−'}${this.fmt(Math.abs(diff), 0)}% rispetto alla media` : '';
+            this.averageCompareTarget.hidden = diff === null;
+            this.averageCompareTarget.classList.toggle('text-income', diff !== null && diff >= 0);
+            this.averageCompareTarget.classList.toggle('text-expense', diff !== null && diff < 0);
         }
     }
 

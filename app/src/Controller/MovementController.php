@@ -218,8 +218,18 @@ final class MovementController extends AppController
             $vehicles[] = $movement->getVehicle();
         }
         $lastOdometers = [];
+        $averages = [];
         foreach ($vehicles as $vehicle) {
             $lastOdometers[$vehicle->getId()] = $vehicleStats->lastOdometer($vehicle, $movement->getId());
+            // Consumo medio dell'auto negli ultimi 12 mesi (come nella pagina del veicolo), mostrato nel
+            // riquadro rifornimento col pieno; senza pieni recenti, quello di sempre.
+            $efficiency = $vehicleStats->compute($vehicle, new \DateTimeImmutable('today -12 months'))['efficiency'];
+            $label = '12 mesi';
+            if ($efficiency === null) {
+                $efficiency = $vehicleStats->compute($vehicle)['efficiency'];
+                $label = 'da sempre';
+            }
+            $averages[$vehicle->getId()] = $efficiency !== null ? ['value' => round($efficiency, 2), 'label' => $label] : null;
         }
 
         return $this->render('movement/form.html.twig', [
@@ -234,6 +244,7 @@ final class MovementController extends AppController
             'accounts' => $accounts,
             'vehicles' => $vehicles,
             'lastOdometers' => $lastOdometers,
+            'averages' => $averages,
             'tagOptions' => $this->tags->findForUser($user),
             'descriptions' => $this->movements->recentDescriptions($user),
             'back' => (string) ($data->get('_back') ?: $request->query->get('back', '')),
