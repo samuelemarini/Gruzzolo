@@ -3,10 +3,15 @@
 {% block title %}Etichette{% endblock %}
 {% block body %}
 <div class="page">
-    <div class="topbar"><h1 class="topbar__title">Etichette</h1></div>
-    <p class="small muted">Le etichette raggruppano movimenti di categorie diverse: un viaggio, una festa, un progetto. Si creano scrivendole quando inserisci un movimento.</p>
+    <div class="topbar">
+        <h1 class="topbar__title">Etichette</h1>
+        <div class="topbar__actions">
+            <a href="{{ path('tag_new') }}" class="icon-btn" aria-label="Nuova etichetta">{{ icon('plus') }}</a>
+        </div>
+    </div>
+    <p class="small muted">Le etichette raggruppano movimenti di categorie diverse: un viaggio, una festa, un progetto. Le crei qui e le scegli quando inserisci un movimento.</p>
     {% if tags is empty %}
-        {{ ui.empty('tag', 'Nessuna etichetta ancora. Aggiungine una a un movimento, ad esempio #vacanze-2026.') }}
+        {{ ui.empty('tag', 'Nessuna etichetta ancora. Creane una, ad esempio #vacanze-2026.', path('tag_new'), 'Nuova etichetta') }}
     {% else %}
         <div class="card card--list">
             {% for tag in tags %}

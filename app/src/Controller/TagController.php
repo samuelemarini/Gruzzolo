@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Tag;
 use App\Model\MovementFilter;
 use App\Repository\MovementRepository;
 use App\Repository\TagRepository;
@@ -73,14 +74,24 @@ final class TagController extends AppController
         ]);
     }
 
+    #[Route('/nuova', name: 'tag_new', methods: ['GET', 'POST'])]
+    public function new(Request $request): Response
+    {
+        return $this->form($request, new Tag($this->me(), ''));
+    }
+
     #[Route('/{id}/modifica', name: 'tag_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
     public function edit(Request $request, int $id): Response
     {
-        $tag = $this->own($this->tags->find($id));
+        return $this->form($request, $this->own($this->tags->find($id)));
+    }
+
+    private function form(Request $request, Tag $tag): Response
+    {
         $errors = [];
         if ($request->isMethod('POST')) {
             $this->checkCsrf($request, 'tag');
-            $name = \App\Entity\Tag::normalize((string) $request->request->get('name'));
+            $name = Tag::normalize((string) $request->request->get('name'));
             $other = $name !== '' ? $this->tags->findOneByName($this->me(), $name) : null;
             if ($name === '') {
                 $errors['name'] = 'Il nome non può essere vuoto';
@@ -91,10 +102,12 @@ final class TagController extends AppController
                 $color = (string) $request->request->get('color');
                 $tag->setName($name)->setTitle((string) $request->request->get('title'))
                     ->setColor(array_key_exists($color, Palette::COLORS) ? $color : '#C3A6FF');
+                $isNew = $tag->getId() === null;
+                $this->em->persist($tag);
                 $this->em->flush();
-                $this->addFlash('success', 'Etichetta salvata');
+                $this->addFlash('success', $isNew ? 'Etichetta #'.$tag->getName().' creata' : 'Etichetta salvata');
 
-                return $this->redirectToRoute('tag_show', ['id' => $tag->getId()], 303);
+                return $isNew ? $this->redirectToRoute('tag_index', [], 303) : $this->redirectToRoute('tag_show', ['id' => $tag->getId()], 303);
             }
         }
 
