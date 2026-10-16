@@ -75,6 +75,13 @@ Backup: il volume `db_data`, oppure `mariadb-dump` dal container `database`.
 - **Conti in Movimenti e Report**: di default solo il conto principale (`?account[]=…` per sceglierne
   altri, `?account=all` per tutti; `MovementFilter::accountsFrom()`). I link dalla home portano gli stessi
   conti dei totali della home.
+- **Patrimonio** (pagina Conti): saldo dei conti più il valore attuale degli investimenti; dai chip si
+  sceglie cosa contare (es. togliere il conto in comune). La scelta è per utente (`app_user.net_worth_excluded`,
+  voci escluse: id dei conti o "inv"), così un conto nuovo entra da solo.
+- **Investimenti nel Report**: il chip "Investimenti" li aggiunge come un conto (`?account[]=inv`, anche
+  insieme ad altri conti o a `all`): versamenti nei titoli = entrate, prelievi = uscite, una voce per titolo;
+  un versamento partito da un conto considerato è uno spostamento interno. La card "Rendimento del periodo"
+  mostra valore a inizio e fine periodo, versato e rendimento (`ReportService::investmentPeriod()`).
 - **Categorie per conto**: ogni conto ha le sue categorie (`category.account_id`); chi condivide il
   conto usa e gestisce le stesse. Nel nuovo movimento le categorie proposte cambiano col conto scelto.
   Un conto nuovo può partire dalle categorie di un altro conto, da quelle predefinite o vuoto; dalla

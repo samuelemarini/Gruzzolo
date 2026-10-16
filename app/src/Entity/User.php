@@ -41,6 +41,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
+    /** Voci tolte dal patrimonio nella pagina Conti: id dei conti e "inv" per gli investimenti. */
+    #[ORM\Column(nullable: true)]
+    private ?array $netWorthExcluded = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -78,6 +82,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getPassword(): string { return $this->password; }
     public function setPassword(string $password): static { $this->password = $password; return $this; }
+
+    /** @param string $key id del conto oppure "inv" */
+    public function isInNetWorth(string $key): bool { return !in_array($key, $this->netWorthExcluded ?? [], true); }
+
+    public function toggleNetWorth(string $key): static
+    {
+        $excluded = $this->netWorthExcluded ?? [];
+        $this->netWorthExcluded = in_array($key, $excluded, true) ? array_values(array_diff($excluded, [$key])) : [...$excluded, $key];
+
+        return $this;
+    }
 
     public function getTheme(): string { return $this->theme; }
     public function setTheme(string $theme): static

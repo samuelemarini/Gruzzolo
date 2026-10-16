@@ -7,6 +7,8 @@ use App\Entity\Movement;
 use App\Model\MovementFilter;
 use App\Repository\AccountRepository;
 use App\Repository\CategoryRepository;
+use App\Repository\HoldingRepository;
+use App\Service\InvestmentStats;
 use App\Service\UserSeeder;
 use App\Repository\MovementRepository;
 use App\Repository\UserRepository;
@@ -30,16 +32,51 @@ final class AccountController extends AppController
     }
 
     #[Route('', name: 'account_index', methods: ['GET'])]
-    public function index(): Response
+    public function index(HoldingRepository $holdings, InvestmentStats $stats): Response
     {
         $user = $this->me();
         $list = $this->accounts->findForUser($user, true);
+        $balances = $this->balances->balances($user);
+        $holdingList = $holdings->findForUser($user);
+        $investments = $holdingList ? $stats->portfolio($holdingList)['value'] : null;
+
+        // Patrimonio: i conti (non archiviati) e gli investimenti che l'utente ha scelto di contare.
+        $items = [];
+        foreach ($list as $account) {
+            if (!$account->isArchived()) {
+                $key = (string) $account->getId();
+                $items[] = ['key' => $key, 'label' => $account->getName(), 'color' => $account->getColor(), 'icon' => null,
+                    'value' => $balances[$account->getId()] ?? 0.0, 'included' => $user->isInNetWorth($key)];
+            }
+        }
+        if ($investments !== null) {
+            $items[] = ['key' => 'inv', 'label' => 'Investimenti', 'color' => null, 'icon' => 'trending-up',
+                'value' => $investments, 'included' => $user->isInNetWorth('inv')];
+        }
+        $included = array_filter($items, fn ($i) => $i['included']);
 
         return $this->render('account/index.html.twig', [
             'accounts' => $list,
-            'balances' => $this->balances->balances($user),
-            'total' => $this->balances->total($user, $list),
+            'balances' => $balances,
+            'netWorth' => round(array_sum(array_column($included, 'value')), 2),
+            'netWorthItems' => $items,
+            'netWorthAll' => count($included) === count($items),
+            'investments' => $investments,
         ]);
+    }
+
+    /** Conta o toglie una voce (conto o investimenti) dal patrimonio: la scelta resta salvata per l'utente. */
+    #[Route('/patrimonio/{key}', name: 'account_net_worth', requirements: ['key' => '\d+|inv'], methods: ['POST'])]
+    public function netWorth(Request $request, string $key): Response
+    {
+        $this->checkCsrf($request, 'net-worth');
+        if ($key !== 'inv') {
+            $this->accessibleAccount($this->accounts->find((int) $key));
+        }
+        $this->me()->toggleNetWorth($key);
+        $this->em->flush();
+
+        return $this->redirectToRoute('account_index', [], 303);
     }
 
     #[Route('/{id}', name: 'account_show', requirements: ['id' => '\d+'], methods: ['GET'])]

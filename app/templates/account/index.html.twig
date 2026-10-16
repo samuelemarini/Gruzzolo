@@ -11,9 +11,25 @@
         </div>
     </div>
 
-    <section class="card">
-        <span class="small muted">Totale sui conti</span>
-        <div class="hero-amount"><span class="hero-amount__value">{{ total < 0 ? '−' }}{{ total|abs|num(2) }}</span><span class="hero-amount__cur">€</span></div>
+    {# Patrimonio: si sceglie cosa contare toccando i chip (la scelta resta salvata) #}
+    <section class="card" aria-label="Patrimonio">
+        <div class="stack-sm" style="gap: 4px">
+            <span class="small muted">Patrimonio{{ not netWorthAll ? ' · voci scelte' }}</span>
+            <div class="hero-amount"><span class="hero-amount__value {{ netWorth < 0 ? 'text-expense' }}">{{ netWorth < 0 ? '−' }}{{ netWorth|abs|num(2) }}</span><span class="hero-amount__cur">€</span></div>
+        </div>
+        {% if netWorthItems|length > 1 %}
+            <div class="chips" role="group" aria-label="Cosa contare nel patrimonio">
+                {% for i in netWorthItems %}
+                    <form method="post" action="{{ path('account_net_worth', {key: i.key}) }}" style="display: contents">
+                        <input type="hidden" name="_token" value="{{ csrf_token('net-worth') }}">
+                        <button type="submit" class="chip {{ i.included ? 'is-active' }}" aria-pressed="{{ i.included ? 'true' : 'false' }}">
+                            {% if i.icon %}{{ icon(i.icon, 15) }}{% else %}<span class="chip__dot" style="--c: {{ i.color }}"></span>{% endif %}{{ i.label }}
+                        </button>
+                    </form>
+                {% endfor %}
+            </div>
+            <p class="xsmall muted" style="margin: 0">Tocca una voce per contarla o toglierla dal patrimonio.</p>
+        {% endif %}
         <a href="{{ path('movement_new', {kind: 'transfer'}) }}" class="btn btn--ghost btn--sm">{{ icon('arrow-left-right', 18) }}Nuovo giroconto</a>
     </section>
 
@@ -29,8 +45,19 @@
                 {{ icon('chevron-right', 18, 'list-row__chev') }}
             </a>
         {% endfor %}
+        {% if investments is not null %}
+            <a class="list-row" href="{{ path('investment_index') }}">
+                {{ ui.tile('trending-up', '#7FD6FF') }}
+                <div class="list-row__body">
+                    <span class="list-row__title">Investimenti</span>
+                    <span class="list-row__meta">valore attuale dei titoli</span>
+                </div>
+                <span class="list-row__amount">{{ investments|money }}</span>
+                {{ icon('chevron-right', 18, 'list-row__chev') }}
+            </a>
+        {% endif %}
     </div>
-    <p class="small muted">Per il conto accantonamento: versa con un <strong>giroconto</strong> dal conto principale e paga le spese annuali (assicurazione, bollo…) direttamente da lì. Le spese contano nei report, i giroconti no.</p>
+    <p class="small muted">Per il conto accantonamento: versa con un <strong>giroconto</strong> dal conto principale e paga le spese annuali (assicurazione, bollo…) direttamente da lì. Guardando un conto, i giroconti contano come entrate e uscite; fra conti che guardi insieme no.</p>
 
     {% set archived = accounts|filter(a => a.archived) %}
     {% if archived|length %}

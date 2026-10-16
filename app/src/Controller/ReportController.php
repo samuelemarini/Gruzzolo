@@ -2,8 +2,8 @@
 
 namespace App\Controller;
 
-use App\Model\MovementFilter;
 use App\Repository\AccountRepository;
+use App\Repository\HoldingRepository;
 use App\Util\Param;
 use App\Service\ChartBuilder;
 use App\Service\ReportService;
@@ -14,11 +14,28 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ReportController extends AppController
 {
     #[Route('/report', name: 'report_index')]
-    public function index(Request $request, ReportService $reports, ChartBuilder $charts, AccountRepository $accountRepository): Response
+    public function index(Request $request, ReportService $reports, ChartBuilder $charts, AccountRepository $accountRepository, HoldingRepository $holdingRepository): Response
     {
         $user = $this->me();
-        // Di default solo il conto principale; gli altri si aggiungono dai chip (?account=all per tutti).
-        [$accounts, $chosen] = MovementFilter::accountsFrom($request, $accountRepository->findDefault($user)?->getId());
+        // Conti considerati, dalla query: id dei conti, "all" per tutti, "inv" per gli investimenti
+        // (come un conto in piu'). Senza parametro solo il conto principale.
+        $raw = $request->query->all()['account'] ?? null;
+        $chosen = $raw !== null && $raw !== '' && $raw !== [];
+        $tokens = $chosen ? array_map('strval', (array) $raw) : [];
+        $investments = in_array('inv', $tokens, true);
+        $all = in_array('all', $tokens, true);
+        $ids = array_values(array_unique(array_filter(array_map('intval', $tokens))));
+        if (!$chosen) {
+            $default = $accountRepository->findDefault($user)?->getId();
+            $default ? $ids = [$default] : $all = true;
+        } elseif (!$all && !$ids && !$investments) {
+            $all = true;
+        }
+        if ($all) {
+            $ids = [];
+        }
+        // Per i servizi: [] = tutti i conti, [0] = nessun conto (solo investimenti).
+        $accounts = $all ? [] : ($ids ?: [0]);
         $today = new \DateTimeImmutable('today');
         $period = (string) $request->query->get('period', 'month');
         $kind = $request->query->get('kind') === 'income' ? 'income' : 'expense';
@@ -48,9 +65,9 @@ final class ReportController extends AppController
                 $label = null;
         }
 
-        $byCategory = $reports->byCategory($user, $from, $to, $kind, $accounts);
-        $summary = $reports->summary($user, $from, $to, $accounts);
-        $trend = $reports->monthly($user, $trendFrom, $to, $accounts);
+        $byCategory = $reports->byCategory($user, $from, $to, $kind, $accounts, $investments);
+        $summary = $reports->summary($user, $from, $to, $accounts, $investments);
+        $trend = $reports->monthly($user, $trendFrom, $to, $accounts, $investments);
         foreach ($trend as &$row) {
             $row['partial'] = $row['month']->format('Y-m') === $today->format('Y-m');
         }
@@ -76,9 +93,51 @@ final class ReportController extends AppController
             'dailyAverage' => $days > 0 ? $summary['expense'] / $days : null,
             'biggest' => $reports->biggestExpense($user, $from, $to, $accounts),
             'tags' => $reports->byTag($user, $from, $to, $accounts),
-            'accounts' => $accountRepository->findForUser($user, true),
-            'selected' => $accounts,
-            'accountParam' => MovementFilter::accountsParam($accounts, $chosen),
+            'chips' => self::chips($accountRepository->findForUser($user, true), $holdingRepository->findForUser($user) !== [], $ids, $all, $investments),
+            'accountParam' => $chosen ? self::tokens($ids, $all, $investments) : null,
+            // I link alla lista movimenti portano gli stessi conti (la lista non ha gli investimenti).
+            'movementAccounts' => $all || !$ids ? 'all' : $ids,
+            'investments' => $investments ? $reports->investmentPeriod($user, $from, $to) : null,
         ]);
+    }
+
+    /**
+     * Chip dei conti: ognuno porta alla selezione con quel conto aggiunto o tolto.
+     *
+     * @param list<\App\Entity\Account> $accounts
+     * @param list<int> $ids
+     *
+     * @return list<array{label: string, color: ?string, icon: ?string, active: bool, param: list<string>}>
+     */
+    private static function chips(array $accounts, bool $hasHoldings, array $ids, bool $all, bool $investments): array
+    {
+        $chips = [['label' => 'Tutti i conti', 'color' => null, 'icon' => null, 'active' => $all, 'param' => self::tokens([], true, $investments)]];
+        foreach ($accounts as $account) {
+            $id = $account->getId();
+            if ($account->isArchived() && !in_array($id, $ids, true)) {
+                continue;
+            }
+            $active = !$all && in_array($id, $ids, true);
+            $next = $all ? [$id] : ($active ? array_values(array_diff($ids, [$id])) : [...$ids, $id]);
+            $chips[] = ['label' => $account->getName(), 'color' => $account->getColor(), 'icon' => null, 'active' => $active,
+                'param' => self::tokens($next, !$next && !$investments, $investments)];
+        }
+        if ($hasHoldings) {
+            $chips[] = ['label' => 'Investimenti', 'color' => null, 'icon' => 'trending-up', 'active' => $investments,
+                'param' => self::tokens($ids, $all || (!$ids && $investments), !$investments)];
+        }
+
+        return $chips;
+    }
+
+    /** @return list<string> valori del parametro "account" */
+    private static function tokens(array $ids, bool $all, bool $investments): array
+    {
+        $tokens = $all ? ['all'] : array_map('strval', $ids);
+        if ($investments) {
+            $tokens[] = 'inv';
+        }
+
+        return $tokens ?: ['all'];
     }
 }
