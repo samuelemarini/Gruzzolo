@@ -364,6 +364,11 @@ a.list-row:hover { background: color-mix(in srgb, var(--surface-2) 50%, transpar
   font: 500 15px var(--font-ui); text-align: right; outline: none; padding: 12px 0;
 }
 .rowf select { text-align-last: right; appearance: none; }
+/* Safari (iOS) ignora text-align sui campi data e allinea a sinistra il suo elemento interno:
+   va allineato quello, e tolto l'aspetto nativo che restringe il campo */
+.rowf input[type="date"] { -webkit-appearance: none; appearance: none; display: block; min-height: 1.45em; }
+.rowf input[type="date"]::-webkit-date-and-time-value { text-align: right; }
+.rowf input[type="date"]::-webkit-datetime-edit { justify-content: flex-end; }
 
 /* Interruttore */
 .switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; cursor: pointer; }
