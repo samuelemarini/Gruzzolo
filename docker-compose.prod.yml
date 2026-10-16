@@ -3,6 +3,7 @@
 # Variabili da impostare nello stack (Portainer: "Environment variables"), vedi .env.example:
 #   DB_PASSWORD, APP_SECRET        obbligatorie
 #   ADMIN_PASSWORD                 crea l'utente "admin" al primo avvio
+#   TUNNEL_TOKEN                   obbligatoria, tunnel Cloudflare (Zero Trust) che pubblica il sito
 #   WEB_PORT, DB_PORT, DB_BIND     facoltative (porte sull'host)
 #
 # Il codice e' dentro l'immagine (niente bind mount di ./app): dopo un git pull va rifatto il build.
@@ -49,6 +50,17 @@ services:
     depends_on:
       database:
         condition: service_healthy
+    restart: unless-stopped
+
+  # Pubblica il sito su Internet in HTTPS senza aprire porte sul router. Nel tunnel (Cloudflare
+  # Zero Trust > Networks > Tunnels > Public Hostname) il servizio da indicare e' http://web:80.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?imposta TUNNEL_TOKEN (Cloudflare Zero Trust)}
+    depends_on:
+      - web
     restart: unless-stopped
 
 volumes:

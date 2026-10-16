@@ -37,11 +37,15 @@ Compose: `docker-compose.prod.yml`. Variabili dello stack:
 | `DB_PASSWORD` | obbligatoria, solo lettere e numeri |
 | `APP_SECRET` | obbligatoria, `openssl rand -hex 16` |
 | `ADMIN_PASSWORD` | crea l'utente `admin` al primo avvio (poi cambiala dalle Impostazioni) |
+| `TUNNEL_TOKEN` | obbligatoria, token del tunnel Cloudflare (Zero Trust › Networks › Tunnels) |
 | `WEB_PORT`, `DB_PORT`, `DB_BIND` | facoltative, default 8080 / 3308 / 127.0.0.1 |
 
 All'avvio il container esegue le migration (`docker/entrypoint.d/60-gruzzolo.sh`). Il codice è
 dentro l'immagine: dopo un aggiornamento del repository serve "Pull and redeploy" con rebuild.
-Dietro un reverse proxy HTTPS va bene così (`TRUSTED_PROXIES=private_ranges`).
+Il sito esce su Internet dal tunnel Cloudflare (servizio `cloudflared`): nel *Public Hostname*
+del tunnel il servizio è `http://web:80`, nessuna porta da aprire sul router. Gli header
+`X-Forwarded-*` del tunnel sono accettati (`TRUSTED_PROXIES=private_ranges`), altrimenti il login
+fallirebbe per il controllo CSRF.
 
 Backup: il volume `db_data`, oppure `mariadb-dump` dal container `database`.
 
