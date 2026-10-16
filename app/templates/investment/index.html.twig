@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% block title %}Investimenti{% endblock %}
+{% block body %}
+<div class="page page--wide">
+    <div class="topbar">
+        <h1 class="topbar__title">Investimenti</h1>
+        <div class="topbar__actions">
+            {{ ui.privacy_toggle() }}
+            <a href="{{ path('investment_new') }}" class="icon-btn" aria-label="Nuovo titolo">{{ icon('plus') }}</a>
+        </div>
+    </div>
+
+    {% if portfolio.holdings is empty %}
+        {{ ui.empty('trending-up', 'Aggiungi i tuoi titoli (ETF, azioni, crypto) e ogni tanto registra quanto hai versato e quanto valgono: Gruzzolo calcola il rendimento.', path('investment_new'), 'Aggiungi titolo') }}
+    {% else %}
+    <div class="cols">
+        <div class="col-main">
+            <section class="card">
+                <span class="small muted">Valore del portafoglio</span>
+                <div class="hero-amount"><span class="hero-amount__value">{{ portfolio.value|num(2) }}</span><span class="hero-amount__cur">€</span></div>
+                <div class="grid-2">
+                    <div class="stat stat--inner"><span class="stat__label">Versati</span><span class="stat__value">{{ portfolio.invested|money }}</span></div>
+                    <div class="stat stat--inner"><span class="stat__label">Rendimento</span><span class="stat__value {{ portfolio.gain >= 0 ? 'text-income' : 'text-expense' }}">{{ portfolio.gain|money(true) }}</span><span class="stat__sub">{{ portfolio.pct|pct(1, true) }}</span></div>
+                </div>
+                {% if timeline|length >= 2 %}
+                    {{ ui.line_chart(chart, {value: 'var(--accent-text)', invested: 'muted'}, 'Valore del portafoglio e somma versata nel tempo') }}
+                    <div class="chart-legend">
+                        <span><i class="line" style="--c: var(--accent-text)"></i>valore</span>
+                        <span><i class="dashed" style="--c: var(--muted)"></i>versato</span>
+                        <span style="margin-left: auto">{{ (timeline|first).date|it_date('MMM yyyy') }} – {{ (timeline|last).date|it_date('MMM yyyy') }}</span>
+                    </div>
+                {% endif %}
+            </section>
+        </div>
+        <div class="col-side">
+            <section class="stack-sm">
+                <div class="section-head"><h2>Titoli</h2></div>
+                {% for item in portfolio.holdings %}
+                    {% set h = item.holding %}{% set s = item.stats %}
+                    <a class="card card--tight" href="{{ path('investment_show', {id: h.id}) }}">
+                        <div class="row">
+                            {{ ui.tile(h.icon, h.color, 'sm') }}
+                            <div class="grow stack-sm" style="gap: 1px">
+                                <span class="strong ellipsis">{{ h.name }}</span>
+                                <span class="xsmall muted">{{ h.kindLabel }}{{ h.symbol ? ' · ' ~ h.symbol }}{{ s.lastDate ? ' · agg. ' ~ s.lastDate|short_day|lower }}</span>
+                            </div>
+                            <div class="stack-sm" style="gap: 1px; align-items: flex-end">
+                                <span class="strong">{{ s.value|money }}</span>
+                                <span class="xsmall strong {{ s.gain >= 0 ? 'text-income' : 'text-expense' }}">{{ s.gain|money(true) }} · {{ s.pct|pct(1, true) }}</span>
+                            </div>
+                        </div>
+                        {% if portfolio.value > 0 %}
+                            <div class="progress" style="--c: {{ h.color }}"><span style="width: {{ (s.value / portfolio.value * 100)|round(1) }}%"></span></div>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+                <a href="{{ path('investment_new') }}" class="btn btn--outline btn--block btn--sm">{{ icon('plus', 18) }}Aggiungi titolo</a>
+            </section>
+            {% if archived|length %}
+                <div class="section-head"><h2>Archiviati</h2></div>
+                <div class="card card--list">
+                    {% for h in archived %}
+                        <a class="list-row" href="{{ path('investment_show', {id: h.id}) }}" style="opacity: .65">
+                            {{ ui.tile(h.icon, h.color, 'sm') }}
+                            <div class="list-row__body"><span class="list-row__title">{{ h.name }}</span></div>
+                            {{ icon('chevron-right', 18, 'list-row__chev') }}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

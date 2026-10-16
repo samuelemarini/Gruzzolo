@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% block title %}{{ account.name }}{% endblock %}
+{% block body %}
+<div class="page">
+    <div class="topbar">
+        <a href="{{ path('account_index') }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
+        <a href="{{ path('account_edit', {id: account.id}) }}" class="icon-btn" aria-label="Modifica conto">{{ icon('pencil', 18) }}</a>
+    </div>
+
+    <div class="row" style="gap: 14px">
+        {{ ui.tile(account.icon, account.color, 'lg') }}
+        <div class="stack-sm" style="gap: 2px">
+            <h1 class="display" style="font-size: 28px; font-weight: 700; line-height: 1.1">{{ account.name }}</h1>
+            <span class="small muted">{{ account.kindLabel }}{{ account.archived ? ' · archiviato' }}</span>
+        </div>
+    </div>
+
+    <section class="card">
+        <span class="small muted">Saldo attuale</span>
+        <div class="hero-amount"><span class="hero-amount__value" style="font-size: 42px">{{ balance|money }}</span></div>
+        {{ ui.line_chart(chart, {balance: account.color}, 'Saldo negli ultimi 12 mesi') }}
+        <div class="row row--between xsmall muted"><span>{{ labels|first|it_date('MMM yyyy') }}</span><span>oggi</span></div>
+        <div class="grid-2">
+            <a href="{{ path('movement_new', {kind: 'transfer', account: account.id}) }}" class="btn btn--ghost btn--sm">{{ icon('arrow-left-right', 18) }}Giroconto</a>
+            <a href="{{ path('movement_new', {account: account.id}) }}" class="btn btn--ghost btn--sm">{{ icon('plus', 18) }}Movimento</a>
+        </div>
+    </section>
+
+    <section>
+        <div class="section-head">
+            <h2>Movimenti</h2>
+            <a href="{{ path('movement_index', {account: [account.id], period: 'all'}) }}">Tutti ({{ totals.count }})</a>
+        </div>
+        {% if movements is empty %}
+            {{ ui.empty('receipt', 'Nessun movimento su questo conto.') }}
+        {% else %}
+            <div class="list">{% for m in movements %}{{ ui.movement_row(m, {date: true, perspective: account}) }}{% endfor %}</div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

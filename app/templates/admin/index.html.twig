@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% block title %}Utenti{% endblock %}
+{% block body %}
+<div class="page">
+    <div class="topbar">
+        <h1 class="topbar__title">Utenti</h1>
+        <a href="{{ path('admin_user_new') }}" class="icon-btn" aria-label="Nuovo utente">{{ icon('plus') }}</a>
+    </div>
+    <p class="small muted">Ogni utente vede solo i propri dati. I nuovi utenti partono con un conto e un set di categorie da personalizzare.</p>
+    <div class="card card--list">
+        {% for u in users %}
+            <a class="list-row" href="{{ path('admin_user_edit', {id: u.id}) }}" style="{{ not u.active ? 'opacity: .55' }}">
+                {{ ui.tile('user', u.admin ? '#FF9EC7' : '#8AB4FF', 'sm') }}
+                <div class="list-row__body">
+                    <span class="list-row__title">{{ u.displayName }}{% if u.admin %} <span class="badge badge--accent">admin</span>{% endif %}{% if not u.active %} <span class="badge">disattivato</span>{% endif %}</span>
+                    <span class="list-row__meta">{{ u.username }} · {{ counts[u.id] ?? 0 }} movimenti · dal {{ u.createdAt|it_date('d MMM yyyy') }}</span>
+                </div>
+                {{ icon('chevron-right', 18, 'list-row__chev') }}
+            </a>
+        {% endfor %}
+    </div>
+    <a href="{{ path('admin_user_new') }}" class="btn btn--outline btn--block btn--sm">{{ icon('plus', 18) }}Nuovo utente</a>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{%- set route = app.request.attributes.get('_route') ?? '' -%}
+{%- set section = route starts with 'app_home' ? 'home'
+    : route starts with 'movement' ? 'movements'
+    : route starts with 'report' ? 'report'
+    : route starts with 'account' ? 'accounts'
+    : route starts with 'investment' ? 'investments'
+    : route starts with 'category' ? 'categories'
+    : route starts with 'tag' ? 'tags'
+    : route starts with 'vehicle' ? 'vehicles'
+    : route starts with 'admin' ? 'admin'
+    : route starts with 'settings' ? 'settings'
+    : route starts with 'import' ? 'import'
+    : 'more' -%}
+<!doctype html>
+<html lang="it" data-theme="{{ app.user ? app.user.theme : 'system' }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>{% block title %}Gruzzolo{% endblock %}{% if block('title') != 'Gruzzolo' %} · Gruzzolo{% endif %}</title>
+    <meta name="theme-color" content="#0D0E0C" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F4F3EE" media="(prefers-color-scheme: light)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Gruzzolo">
+    <link rel="manifest" href="{{ path('pwa_manifest') }}">
+    <link rel="icon" href="{{ asset('images/icon.svg') }}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{{ asset('images/icon-180.png') }}">
+    <link rel="preload" href="{{ asset('fonts/geist-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ asset('fonts/bricolage-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+    {# Prima del disegno, cosi' gli importi non compaiono nemmeno per un istante. #}
+    <script>try { if (localStorage.getItem('gruzzolo-privacy') === 'on') document.documentElement.dataset.privacy = 'on'; } catch (e) {}</script>
+    {% block importmap %}{{ importmap('app') }}{% endblock %}
+</head>
+<body>
+{% if app.user %}
+    <aside class="sidebar" aria-label="Menu">
+        <a href="{{ path('app_home') }}" class="brand"><span class="brand__mark">G</span><span class="brand__name">Gruzzolo</span></a>
+        <a href="{{ path('movement_new') }}" class="btn btn--sm">{{ icon('plus', 18) }}Nuovo movimento</a>
+        <nav>
+            {% for item in [
+                ['app_home', 'home', 'house', 'Home'],
+                ['movement_index', 'movements', 'list', 'Movimenti'],
+                ['report_index', 'report', 'chart-pie', 'Report'],
+                ['account_index', 'accounts', 'landmark', 'Conti'],
+                ['investment_index', 'investments', 'trending-up', 'Investimenti'],
+                ['vehicle_index', 'vehicles', 'car', 'Veicoli'],
+                ['category_index', 'categories', 'layout-grid', 'Categorie'],
+                ['tag_index', 'tags', 'tag', 'Etichette'],
+            ] %}
+                <a href="{{ path(item[0]) }}" class="{{ section == item[1] ? 'is-active' }}"{% if section == item[1] %} aria-current="page"{% endif %}>{{ icon(item[2]) }}{{ item[3] }}</a>
+            {% endfor %}
+        </nav>
+        <div class="sidebar__foot">
+            <nav>
+                <a href="#" class="privacy-toggle" data-controller="privacy" data-action="privacy#toggle">{{ icon('eye', 20, 'privacy-toggle__show') }}{{ icon('eye-off', 20, 'privacy-toggle__hide') }}<span class="privacy-toggle__show">Nascondi importi</span><span class="privacy-toggle__hide">Mostra importi</span></a>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('admin_user_index') }}" class="{{ section == 'admin' ? 'is-active' }}">{{ icon('users') }}Utenti</a>
+                {% endif %}
+                <a href="{{ path('import_index') }}" class="{{ section == 'import' ? 'is-active' }}">{{ icon('file-up') }}Importa</a>
+                <a href="{{ path('settings_index') }}" class="{{ section == 'settings' ? 'is-active' }}">{{ icon('settings') }}Impostazioni</a>
+            </nav>
+            <span class="sidebar__user">{{ app.user.displayName }}</span>
+        </div>
+    </aside>
+{% endif %}
+
+<main class="{{ app.user ? 'main' }}">
+    {% block body %}{% endblock %}
+</main>
+
+{% if app.user and not (hide_tabbar ?? false) %}
+    <div class="fade-bottom" aria-hidden="true"></div>
+    <nav class="tabbar" aria-label="Navigazione principale">
+        <a href="{{ path('app_home') }}" class="{{ section == 'home' ? 'is-active' }}">{{ icon('house', 22) }}Home</a>
+        <a href="{{ path('movement_index') }}" class="{{ section == 'movements' ? 'is-active' }}">{{ icon('list', 22) }}Movimenti</a>
+        <a href="{{ path('movement_new') }}" class="fab" aria-label="Nuovo movimento">{{ icon('plus', 26) }}</a>
+        <a href="{{ path('report_index') }}" class="{{ section == 'report' ? 'is-active' }}">{{ icon('chart-pie', 22) }}Report</a>
+        <a href="{{ path('more_index') }}" class="{{ section not in ['home', 'movements', 'report'] ? 'is-active' }}">{{ icon('layout-grid', 22) }}Altro</a>
+    </nav>
+{% endif %}
+
+<div class="flashes" aria-live="polite">
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="flash {{ type == 'error' ? 'flash--error' }}">{{ icon(type == 'error' ? 'info' : 'check', 18) }}{{ message }}</div>
+        {% endfor %}
+    {% endfor %}
+</div>
+</body>
+</html>

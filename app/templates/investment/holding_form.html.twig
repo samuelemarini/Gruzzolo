@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% set hide_tabbar = true %}
+{% set isNew = holding.id is null %}
+{% block title %}{{ isNew ? 'Nuovo titolo' : holding.name }}{% endblock %}
+{% block body %}
+<form method="post" class="page page--plain form">
+    <input type="hidden" name="_token" value="{{ csrf_token('holding') }}">
+    <div class="topbar">
+        <a href="{{ isNew ? path('investment_index') : path('investment_show', {id: holding.id}) }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">{{ isNew ? 'Nuovo titolo' : 'Modifica titolo' }}</span>
+        <span style="width: 44px"></span>
+    </div>
+    <label class="field {{ errors.name is defined ? 'has-error' }}">
+        <span class="field__label">Nome</span>
+        <input type="text" name="name" value="{{ holding.name }}" maxlength="80" required placeholder="es. S&P 500" {{ isNew ? 'autofocus' }}>
+        {% if errors.name is defined %}<span class="field__error">{{ errors.name }}</span>{% endif %}
+    </label>
+    <div class="grid-2">
+        <label class="field"><span class="field__label">Tipo</span>
+            <select name="kind">{% for k, label in kinds %}<option value="{{ k }}" {{ holding.kind == k ? 'selected' }}>{{ label }}</option>{% endfor %}</select>
+        </label>
+        <label class="field"><span class="field__label">Ticker / ISIN</span><input type="text" name="symbol" value="{{ holding.symbol }}" maxlength="40" placeholder="facoltativo" autocapitalize="characters"></label>
+    </div>
+    <label class="field">
+        <span class="field__label">Note</span>
+        <textarea name="note" rows="2" placeholder="es. piano di accumulo mensile su Scalable">{{ holding.note }}</textarea>
+    </label>
+    <section class="card card--tight">
+        <span class="label-caps">Colore</span>
+        {{ ui.color_picker('color', holding.color) }}
+    </section>
+    {% if not isNew %}
+        <div class="card card--tight" style="gap: 0">
+            <label class="switch">
+                <span class="switch__text"><span>Archiviato</span><small>venduto: esce dal totale del portafoglio</small></span>
+                <input type="checkbox" name="archived" value="1" {{ holding.archived ? 'checked' }}>
+            </label>
+        </div>
+    {% endif %}
+    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}{{ isNew ? 'Crea e registra il primo valore' : 'Salva' }}</button>
+</form>
+{% if not isNew %}
+    <form method="post" action="{{ path('investment_delete', {id: holding.id}) }}" class="page page--plain" style="padding-top: 0" data-turbo-confirm="Eliminare il titolo con tutto il suo storico?">
+        <input type="hidden" name="_token" value="{{ csrf_token('delete-holding-' ~ holding.id) }}">
+        <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}Elimina titolo</button>
+    </form>
+{% endif %}
+{% endblock %}

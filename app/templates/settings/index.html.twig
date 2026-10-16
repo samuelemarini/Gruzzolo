@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+{% block title %}Impostazioni{% endblock %}
+{% block body %}
+<div class="page">
+    <div class="topbar"><h1 class="topbar__title">Impostazioni</h1></div>
+
+    {# Il tema cambia l'attributo su <html>: serve un caricamento completo, niente Turbo. #}
+    <form method="post" class="card" data-turbo="false">
+        <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
+        <input type="hidden" name="section" value="theme">
+        <h2 class="h2">Tema</h2>
+        <div class="seg seg--inset">
+            {% for value, label in themes %}
+                <label><input type="radio" name="theme" value="{{ value }}" {{ app.user.theme == value ? 'checked' }} onchange="this.form.submit()">{{ icon(value == 'system' ? 'monitor' : (value == 'light' ? 'sun' : 'moon'), 16) }}&nbsp;{{ label }}</label>
+            {% endfor %}
+        </div>
+        <noscript><button type="submit" class="btn btn--sm">Applica</button></noscript>
+        <p class="small muted">"Automatico" segue il tema del telefono o del computer.</p>
+    </form>
+
+    <form method="post" class="card">
+        <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
+        <input type="hidden" name="section" value="profile">
+        <h2 class="h2">Profilo</h2>
+        <label class="field">
+            <span class="field__label">Nome visualizzato</span>
+            <input type="text" name="display_name" value="{{ app.user.displayName }}" maxlength="100" required>
+            {% if errors.display_name is defined %}<span class="field__error">{{ errors.display_name }}</span>{% endif %}
+        </label>
+        <p class="small muted">Nome utente per l'accesso: <strong>{{ app.user.username }}</strong></p>
+        <button type="submit" class="btn btn--sm btn--ghost">Salva</button>
+    </form>
+
+    <form method="post" class="card">
+        <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
+        <input type="hidden" name="section" value="password">
+        <h2 class="h2">Cambia password</h2>
+        <label class="field {{ errors.current_password is defined ? 'has-error' }}">
+            <span class="field__label">Password attuale</span>
+            <input type="password" name="current_password" autocomplete="current-password" required>
+            {% if errors.current_password is defined %}<span class="field__error">{{ errors.current_password }}</span>{% endif %}
+        </label>
+        <label class="field {{ errors.new_password is defined ? 'has-error' }}">
+            <span class="field__label">Nuova password</span>
+            <input type="password" name="new_password" autocomplete="new-password" minlength="8" required>
+            {% if errors.new_password is defined %}<span class="field__error">{{ errors.new_password }}</span>{% endif %}
+        </label>
+        <label class="field {{ errors.confirm_password is defined ? 'has-error' }}">
+            <span class="field__label">Ripeti la nuova password</span>
+            <input type="password" name="confirm_password" autocomplete="new-password" minlength="8" required>
+            {% if errors.confirm_password is defined %}<span class="field__error">{{ errors.confirm_password }}</span>{% endif %}
+        </label>
+        <button type="submit" class="btn btn--sm btn--ghost">Cambia password</button>
+    </form>
+
+    <form method="post" action="{{ path('app_logout') }}" data-turbo="false">
+        <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('logout') }}">
+        <button type="submit" class="btn btn--ghost btn--block btn--sm">{{ icon('log-out', 18) }}Esci</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,167 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% block title %}Movimenti{% endblock %}
+{% set q = app.request.query %}
+{% set periodLabels = {month: month ? month|month_label : 'Mese', 'last-month': 'Mese scorso', year: 'Quest’anno', all: 'Sempre', custom: 'Intervallo'} %}
+{% block body %}
+<div class="page" data-controller="sheet">
+    <div class="topbar">
+        <h1 class="topbar__title">Movimenti</h1>
+        <div class="topbar__actions">
+            {{ ui.privacy_toggle() }}
+            <a href="{{ path('movement_export', q.all) }}" class="icon-btn" aria-label="Esporta CSV" data-turbo="false">{{ icon('download', 19) }}</a>
+            <button type="button" class="icon-btn" data-action="sheet#open" aria-label="Filtri{{ filter.countAdvanced ? ', ' ~ filter.countAdvanced ~ ' attivi' }}">
+                {{ icon('sliders-horizontal') }}
+                {% if filter.countAdvanced %}<span class="icon-btn__badge">{{ filter.countAdvanced }}</span>{% endif %}
+            </button>
+        </div>
+    </div>
+
+    <form method="get" action="{{ path('movement_index') }}" role="search">
+        {% for key, value in q.all|filter((v, k) => k not in ['q', 'page']) %}
+            {% if value is iterable %}{% for v in value %}<input type="hidden" name="{{ key }}[]" value="{{ v }}">{% endfor %}{% else %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
+        {% endfor %}
+        <label class="field field--on-bg" style="flex-direction: row; align-items: center; gap: 10px; padding: 0 14px; height: 46px">
+            {{ icon('search', 20, 'muted') }}
+            <input type="search" name="q" value="{{ filter.q }}" placeholder="Cerca descrizione, nota, #etichetta, importo…" aria-label="Cerca movimenti" enterkeyhint="search">
+        </label>
+    </form>
+
+    <div class="chips chips--scroll">
+        {% if filter.period == 'month' %}
+            {% set prev = month|date_modify('-1 month') %}{% set next = month|date_modify('+1 month') %}
+            <a class="chip" href="{{ path('movement_index', q.all|merge({month: prev|date('Y-m'), page: null})) }}" aria-label="Mese precedente" style="padding: 0 8px">{{ icon('chevron-left', 16) }}</a>
+            <span class="chip is-active">{{ month|month_label }}</span>
+            <a class="chip" href="{{ path('movement_index', q.all|merge({month: next|date('Y-m'), page: null})) }}" aria-label="Mese successivo" style="padding: 0 8px">{{ icon('chevron-right', 16) }}</a>
+        {% else %}
+            <button type="button" class="chip is-active" data-action="sheet#open">{{ periodLabels[filter.period] }}{% if filter.period == 'custom' %} · {{ filter.from ? filter.from|it_date('d MMM') }}–{{ filter.to ? filter.to|it_date('d MMM yy') }}{% endif %}</button>
+        {% endif %}
+        {% for kind, label in {expense: 'Uscite', income: 'Entrate', transfer: 'Giroconti'} %}
+            <a class="chip {{ filter.kind == kind ? 'is-active' }}" href="{{ path('movement_index', q.all|merge({kind: filter.kind == kind ? null : kind, page: null})) }}">{{ label }}</a>
+        {% endfor %}
+        {% if filter.categories or filter.tags or filter.accounts or filter.vehicle or filter.min is not null or filter.max is not null %}
+            <button type="button" class="chip is-active" data-action="sheet#open">{{ icon('sliders-horizontal', 15) }}Altri filtri</button>
+        {% endif %}
+        {% if filter.countAdvanced or filter.q %}
+            <a class="chip chip--dashed" href="{{ path('movement_index') }}">{{ icon('x', 15) }}Azzera</a>
+        {% endif %}
+    </div>
+
+    <div class="summary-line">
+        <span>{{ totals.count }} moviment{{ totals.count == 1 ? 'o' : 'i' }}</span>
+        {% if totals.income %}<span><span class="dot" style="--c: var(--accent)"></span>+{{ totals.income|money }}</span>{% endif %}
+        {% if totals.expense %}<span><span class="dot" style="--c: #FF8A80"></span>−{{ totals.expense|money }}</span>{% endif %}
+    </div>
+
+    {% if groups is empty %}
+        {{ ui.empty('search', filter.q ? 'Nessun movimento trovato per “' ~ filter.q ~ '”.' : 'Nessun movimento in questo periodo.', path('movement_new'), 'Nuovo movimento') }}
+    {% else %}
+        <div class="list">
+            {% for group in groups %}
+                <div class="day-head">
+                    <span>{{ group.date|day_label }}</span>
+                    {% if group.total %}<span>{{ group.total|money(true) }}</span>{% endif %}
+                </div>
+                {% for m in group.movements %}{{ ui.movement_row(m, {account: accounts|length > 1}) }}{% endfor %}
+            {% endfor %}
+        </div>
+        {% if hasMore %}
+            <a class="btn btn--ghost btn--sm" href="{{ path('movement_index', q.all|merge({page: page + 1})) }}" data-turbo-action="replace">Mostra altri</a>
+        {% endif %}
+    {% endif %}
+
+    {# ---------- Filtri avanzati ---------- #}
+    <dialog class="sheet" data-sheet-target="dialog" data-action="click->sheet#backdrop" aria-label="Filtri">
+        <form method="get" action="{{ path('movement_index') }}" class="sheet__inner">
+            <div class="sheet__grabber"></div>
+            <div class="sheet__head">
+                <span class="sheet__title">Filtri</span>
+                <div class="row" style="gap: 4px">
+                    <a href="{{ path('movement_index') }}" class="link" style="padding: 8px">Azzera</a>
+                    <button type="button" class="icon-btn icon-btn--plain" data-action="sheet#close" aria-label="Chiudi">{{ icon('x') }}</button>
+                </div>
+            </div>
+            {% if filter.q %}<input type="hidden" name="q" value="{{ filter.q }}">{% endif %}
+
+            <div class="stack-sm">
+                <span class="label-caps">Periodo</span>
+                <div class="chips">
+                    {% for value, label in {month: 'Mese', 'last-month': 'Mese scorso', year: 'Quest’anno', all: 'Sempre', custom: 'Intervallo'} %}
+                        <label class="chip"><input type="radio" name="period" value="{{ value }}" {{ filter.period == value ? 'checked' }}>{{ label }}</label>
+                    {% endfor %}
+                </div>
+                {% if month %}<input type="hidden" name="month" value="{{ month|date('Y-m') }}">{% endif %}
+                <div class="grid-2">
+                    <label class="field"><span class="field__label">Dal (intervallo)</span><input type="date" name="from" value="{{ filter.period == 'custom' and filter.from ? filter.from|date('Y-m-d') }}"></label>
+                    <label class="field"><span class="field__label">Al (intervallo)</span><input type="date" name="to" value="{{ filter.period == 'custom' and filter.to ? filter.to|date('Y-m-d') }}"></label>
+                </div>
+            </div>
+
+            <div class="stack-sm">
+                <span class="label-caps">Tipo</span>
+                <div class="seg seg--inset">
+                    {% for value, label in {'': 'Tutti', expense: 'Uscite', income: 'Entrate', transfer: 'Giroconti'} %}
+                        <label><input type="radio" name="kind" value="{{ value }}" {{ (filter.kind ?? '') == value ? 'checked' }}>{{ label }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="stack-sm">
+                <span class="label-caps">Categorie</span>
+                <div class="chips">
+                    {% for parent in categoryTree %}
+                        <label class="chip"><input type="checkbox" name="cat[]" value="{{ parent.id }}" {{ parent.id in filter.categories ? 'checked' }}><span class="chip__dot" style="--c: {{ parent.color }}"></span>{{ parent.name }}</label>
+                        {% for child in parent.children|filter(c => not c.archived) %}
+                            <label class="chip"><input type="checkbox" name="cat[]" value="{{ child.id }}" {{ child.id in filter.categories ? 'checked' }}><span class="chip__dot" style="--c: {{ child.color }}"></span>{{ child.name }}</label>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if tags is not empty %}
+            <div class="stack-sm">
+                <span class="label-caps">Etichette</span>
+                <div class="chips">
+                    {% for tag in tags %}
+                        <label class="chip"><input type="checkbox" name="tag[]" value="{{ tag.id }}" {{ tag.id in filter.tags ? 'checked' }}>#{{ tag.name }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if accounts|length > 1 %}
+            <div class="stack-sm">
+                <span class="label-caps">Conti</span>
+                <div class="chips">
+                    {% for a in accounts %}
+                        <label class="chip"><input type="checkbox" name="account[]" value="{{ a.id }}" {{ a.id in filter.accounts ? 'checked' }}><span class="chip__dot" style="--c: {{ a.color }}"></span>{{ a.name }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if vehicles is not empty %}
+            <div class="stack-sm">
+                <span class="label-caps">Veicolo</span>
+                <div class="chips">
+                    <label class="chip"><input type="radio" name="vehicle" value="" {{ not filter.vehicle ? 'checked' }}>Tutti</label>
+                    {% for v in vehicles %}
+                        <label class="chip"><input type="radio" name="vehicle" value="{{ v.id }}" {{ filter.vehicle == v.id ? 'checked' }}>{{ v.name }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="stack-sm">
+                <span class="label-caps">Importo</span>
+                <div class="grid-2">
+                    <label class="field"><span class="field__label">Minimo €</span><input type="text" inputmode="decimal" name="min" value="{{ filter.min is not null ? filter.min|input_num }}" placeholder="0"></label>
+                    <label class="field"><span class="field__label">Massimo €</span><input type="text" inputmode="decimal" name="max" value="{{ filter.max is not null ? filter.max|input_num }}" placeholder="nessuno"></label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn--block">Mostra risultati</button>
+        </form>
+    </dialog>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% block title %}Categorie{% endblock %}
+{% block body %}
+<div class="page">
+    <div class="topbar">
+        <h1 class="topbar__title">Categorie</h1>
+        <div class="topbar__actions">
+            <a href="{{ path('category_sort', {kind: kind}) }}" class="icon-btn" aria-label="Ordina categorie">{{ icon('arrow-down-up', 19) }}</a>
+            <a href="{{ path('category_new', {kind: kind}) }}" class="icon-btn" aria-label="Nuova categoria">{{ icon('plus') }}</a>
+        </div>
+    </div>
+
+    <div class="seg">
+        <a href="{{ path('category_index') }}" class="{{ kind == 'expense' ? 'is-active' }}">Uscite · {{ expenseCount }}</a>
+        <a href="{{ path('category_index', {kind: 'income'}) }}" class="{{ kind == 'income' ? 'is-active' }}">Entrate · {{ incomeCount }}</a>
+    </div>
+
+    <div class="card card--list">
+        {% for parent in tree|filter(p => not p.archived) %}
+            {% set uses = (counts[parent.id] ?? 0) + parent.children|reduce((s, c) => s + (counts[c.id] ?? 0), 0) %}
+            <a class="list-row" href="{{ path('category_edit', {id: parent.id}) }}">
+                {{ ui.tile(parent.icon, parent.color) }}
+                <div class="list-row__body">
+                    <span class="list-row__title">{{ parent.name }}{% if parent.fuel %} <span class="badge badge--accent">carburante</span>{% endif %}</span>
+                    <span class="list-row__meta">
+                        {%- set kids = parent.children|filter(c => not c.archived) -%}
+                        {%- if kids|length -%}{{ kids|map(c => c.name)|join(', ') }}{%- else -%}{{ uses }} moviment{{ uses == 1 ? 'o' : 'i' }}{%- endif -%}
+                    </span>
+                </div>
+                {{ icon('chevron-right', 18, 'list-row__chev') }}
+            </a>
+        {% else %}
+            {{ ui.empty('layout-grid', 'Nessuna categoria.', path('category_new', {kind: kind}), 'Nuova categoria') }}
+        {% endfor %}
+    </div>
+
+    <a href="{{ path('category_new', {kind: kind}) }}" class="btn btn--outline btn--block btn--sm">{{ icon('plus', 18) }}Nuova categoria</a>
+
+    {% set archived = tree|filter(p => p.archived) %}
+    {% if archived|length %}
+        <div class="section-head"><h2>Archiviate</h2></div>
+        <div class="card card--list">
+            {% for parent in archived %}
+                <a class="list-row" href="{{ path('category_edit', {id: parent.id}) }}" style="opacity: .65">
+                    {{ ui.tile(parent.icon, parent.color, 'sm') }}
+                    <div class="list-row__body"><span class="list-row__title">{{ parent.name }}</span></div>
+                    {{ icon('chevron-right', 18, 'list-row__chev') }}
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

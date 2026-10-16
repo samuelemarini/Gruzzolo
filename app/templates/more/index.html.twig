@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% block title %}Altro{% endblock %}
+{% block body %}
+<div class="page">
+    <div class="topbar"><h1 class="topbar__title">Altro</h1></div>
+    <div class="menu-grid">
+        {% for item in [
+            ['account_index', 'landmark', '#8AB4FF', 'Conti', 'Saldi e giroconti'],
+            ['investment_index', 'trending-up', '#7FD6FF', 'Investimenti', 'Versamenti e rendimento'],
+            ['vehicle_index', 'car', '#6FDCCB', 'Veicoli', 'Rifornimenti e consumi'],
+            ['category_index', 'layout-grid', '#FFB86B', 'Categorie', 'Icone, colori, sottocategorie'],
+            ['tag_index', 'tag', '#C3A6FF', 'Etichette', 'Viaggi, eventi, progetti'],
+            ['import_index', 'file-up', '#9BE7A0', 'Importa', 'CSV da altre app'],
+            ['settings_index', 'settings', '#A3A59F', 'Impostazioni', 'Tema, profilo, password'],
+        ] %}
+            <a class="menu-card" href="{{ path(item[0]) }}">
+                {{ ui.tile(item[1], item[2]) }}
+                <span class="menu-card__title">{{ item[3] }}</span>
+                <span class="menu-card__sub">{{ item[4] }}</span>
+            </a>
+        {% endfor %}
+        {% if is_granted('ROLE_ADMIN') %}
+            <a class="menu-card" href="{{ path('admin_user_index') }}">
+                {{ ui.tile('users', '#FF9EC7') }}
+                <span class="menu-card__title">Utenti</span>
+                <span class="menu-card__sub">Crea e gestisci gli accessi</span>
+            </a>
+        {% endif %}
+    </div>
+    <form method="post" action="{{ path('app_logout') }}" data-turbo="false">
+        <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('logout') }}">
+        <button type="submit" class="btn btn--ghost btn--block btn--sm">{{ icon('log-out', 18) }}Esci</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% block title %}{{ vehicle.name }}{% endblock %}
+{% set unit = stats.unit %}
+{% block body %}
+<div class="page page--wide">
+    <div class="topbar">
+        <a href="{{ path('vehicle_index') }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
+        <div class="topbar__actions">
+            <a href="{{ path('vehicle_edit', {id: vehicle.id}) }}" class="icon-btn" aria-label="Modifica veicolo">{{ icon('pencil', 18) }}</a>
+            <a href="{{ path('movement_new', {fuel: 1}) }}" class="btn btn--sm" style="border-radius: 999px">{{ icon('plus', 18) }}Rifornimento</a>
+        </div>
+    </div>
+
+    <div class="row" style="gap: 14px">
+        {{ ui.tile(vehicle.icon, vehicle.color, 'lg') }}
+        <div class="stack-sm" style="gap: 3px">
+            <h1 class="display" style="font-size: 28px; font-weight: 700; line-height: 1.1">{{ vehicle.name }}</h1>
+            <span class="small muted">{{ vehicle.fuelLabel }}{{ vehicle.plate ? ' · ' ~ vehicle.plate }}{{ stats.odometer ? ' · ' ~ stats.odometer|num ~ ' km' }}</span>
+        </div>
+    </div>
+
+    <div class="seg" style="max-width: 420px">
+        {% for key, label in periods %}
+            <a href="{{ path('vehicle_show', {id: vehicle.id, period: key}) }}" class="{{ period == key ? 'is-active' }}">{{ label }}</a>
+        {% endfor %}
+    </div>
+
+    <div class="cols">
+    <div class="col-main">
+        <div class="grid-2">
+            <div class="stat">
+                <span class="stat__label">Consumo medio</span>
+                <span class="stat__value text-accent">{{ stats.efficiency ? stats.efficiency|num(1) ~ ' km/' ~ unit : '—' }}</span>
+                <span class="stat__sub">{{ stats.perHundred ? stats.perHundred|num(2) ~ ' ' ~ unit ~ '/100 km' : 'servono almeno due pieni' }}</span>
+            </div>
+            <div class="stat">
+                <span class="stat__label">Carburante al km</span>
+                <span class="stat__value">{{ stats.fuelPerKm ? stats.fuelPerKm|money(false, 3) : '—' }}</span>
+                <span class="stat__sub">solo rifornimenti</span>
+            </div>
+            <div class="stat">
+                <span class="stat__label">Speso in carburante</span>
+                <span class="stat__value">{{ stats.fuelCost|money }}</span>
+                <span class="stat__sub">{{ stats.liters|num(0) }} {{ unit }}{{ stats.avgPrice ? ' · media ' ~ stats.avgPrice|num(3) ~ ' €/' ~ unit }}</span>
+            </div>
+            <div class="stat">
+                <span class="stat__label">Km percorsi</span>
+                <span class="stat__value">{{ stats.km|num }}</span>
+                <span class="stat__sub">{{ stats.count }} rifornimenti</span>
+            </div>
+        </div>
+
+        <section class="card">
+            <div class="row row--between" style="align-items: baseline">
+                <h2 class="h2" style="font-size: 17px">Consumo per pieno</h2>
+                <span class="xsmall muted">km/{{ unit }} · ultimi {{ series|length }}</span>
+            </div>
+            {% if series|length >= 2 %}
+                {{ ui.line_chart(chart, {eff: 'var(--accent-text)', avg: 'muted'}, 'Consumo degli ultimi pieni') }}
+                <div class="chart-legend">
+                    <span><i class="line" style="--c: var(--accent-text)"></i>km/{{ unit }} per pieno</span>
+                    {% if stats.efficiency %}<span><i class="dashed" style="--c: var(--muted)"></i>media {{ stats.efficiency|num(1) }}</span>{% endif %}
+                </div>
+            {% else %}
+                <p class="small muted">Il grafico compare dal secondo pieno: il consumo si calcola fra un pieno e l'altro.</p>
+            {% endif %}
+        </section>
+    </div>
+
+    <div class="col-side">
+        <section class="card">
+            <div class="row row--between" style="align-items: baseline">
+                <h2 class="h2" style="font-size: 17px">Costi del veicolo</h2>
+                <span class="strong">{{ stats.totalCost|money }}</span>
+            </div>
+            {% set otherColors = ['#8AB4FF', '#FFB86B', '#C3A6FF', '#F3E06A', '#FF9EC7', '#9BE7A0', '#D9B48F'] %}
+            {% set costs = [{name: 'Carburante', color: vehicle.color, total: stats.fuelCost}] %}
+            {% for c in stats.otherCosts %}{% set costs = costs|merge([c|merge({color: otherColors[loop.index0 % 7]})]) %}{% endfor %}
+            {% set costs = costs|filter(c => c.total > 0) %}
+            {% if costs|length %}
+                <div class="split">{% for c in costs %}<span style="--c: {{ c.color }}; flex: {{ c.total }} 1 0"></span>{% endfor %}</div>
+                <div class="list">
+                    {% for c in costs %}
+                        <div class="row" style="min-height: 34px; font-size: 14px">
+                            <span class="dot" style="--c: {{ c.color }}"></span>
+                            <span class="grow">{{ c.name }}</span>
+                            <span class="xsmall muted">{{ (c.total / stats.totalCost * 100)|pct }}</span>
+                            <span class="strong" style="width: 92px; text-align: right">{{ c.total|money }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <span class="xsmall muted">Collega al veicolo anche assicurazione, bollo e tagliandi (campo "Veicolo" nel movimento){{ stats.costPerKm ? ': costo totale ' ~ stats.costPerKm|money(false, 2) ~ '/km' }}.</span>
+        </section>
+
+        <section>
+            <div class="section-head"><h2>Rifornimenti</h2><span class="small muted">{{ stats.refuels|length }} in totale</span></div>
+            <div class="list list--lines">
+                {% for row in stats.refuels|slice(0, 30) %}
+                    {% set r = row.refuel %}
+                    <a class="list-row" href="{{ path('movement_edit', {id: r.movement.id, back: app.request.requestUri}) }}">
+                        <div class="list-row__body">
+                            <span class="list-row__title">{{ r.movement.date|short_day }} · {{ r.odometer|num }} km</span>
+                            <span class="list-row__meta">{{ r.liters|num(2) }} {{ unit }} · {{ r.pricePerLiter|num(3) }} €/{{ unit }} · {{ r.fullTank ? 'pieno' : 'parziale' }}{{ row.distance ? ' · +' ~ row.distance|num ~ ' km' }}{{ r.missedPrevious ? ' · dopo un salto' }}</span>
+                        </div>
+                        <span class="list-row__amount">{{ r.movement.amount|money }}<small class="text-accent" style="color: var(--accent-text)">{{ row.efficiency ? row.efficiency|num(1) ~ ' km/' ~ unit : '' }}</small></span>
+                    </a>
+                {% else %}
+                    <p class="small muted">Nessun rifornimento. Usa la categoria Carburante quando registri una spesa.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+    </div>
+</div>
+{% endblock %}

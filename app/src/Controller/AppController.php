@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Controller;
+
+use App\Entity\OwnedInterface;
+use App\Entity\User;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+
+/** Base dei controller dell'app: utente corrente e controllo di proprieta' dei dati. */
+abstract class AppController extends AbstractController
+{
+    protected function me(): User
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            throw $this->createAccessDeniedException();
+        }
+
+        return $user;
+    }
+
+    /**
+     * I dati di un altro utente sono "inesistenti": 404, non 403, per non rivelarne l'esistenza.
+     *
+     * @template T of OwnedInterface
+     *
+     * @param T|null $entity
+     *
+     * @return T
+     */
+    protected function own(?OwnedInterface $entity): OwnedInterface
+    {
+        if ($entity === null || $entity->getUser() !== $this->me()) {
+            throw $this->createNotFoundException();
+        }
+
+        return $entity;
+    }
+
+    protected function checkCsrf(Request $request, string $id): void
+    {
+        if (!$this->isCsrfTokenValid($id, (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Sessione scaduta: ricarica la pagina e riprova.');
+        }
+    }
+
+    /** Torna dove si era (parametro "back" o Referer interno), altrimenti alla rotta indicata. */
+    protected function back(Request $request, string $fallbackRoute, array $params = []): \Symfony\Component\HttpFoundation\RedirectResponse
+    {
+        $back = (string) ($request->request->get('_back') ?: $request->query->get('back', ''));
+        if ($back !== '' && str_starts_with($back, '/') && !str_starts_with($back, '//')) {
+            return $this->redirect($back, 303);
+        }
+
+        return $this->redirectToRoute($fallbackRoute, $params, 303);
+    }
+}

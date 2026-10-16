@@ -1,0 +1,138 @@
+{# Mattoncini riusati in tutte le pagine. #}
+
+{% macro tile(icon, color, size = '', solid = false) -%}
+    <span class="tile {{ size ? 'tile--' ~ size }} {{ solid ? 'tile--solid' }}" style="--c: {{ color }}">{{ icon(icon, size == 'xs' ? 14 : (size == 'sm' ? 18 : (size == 'lg' ? 26 : 20))) }}</span>
+{%- endmacro %}
+
+{% macro movement_tile(m, size = '') -%}
+    {%- if m.transfer -%}
+        {{ _self.tile(m.toAccount ? 'arrow-left-right' : 'trending-up', '#A3A59F', size) }}
+    {%- elseif m.category -%}
+        {{ _self.tile(m.category.icon, m.category.color, size) }}
+    {%- else -%}
+        {{ _self.tile(m.income ? 'arrow-down-left' : 'arrow-up-right', '#A3A59F', size) }}
+    {%- endif -%}
+{%- endmacro %}
+
+{% macro movement_row(m, opts = {}) %}
+    {%- set back = opts.back ?? app.request.requestUri -%}
+    <a class="list-row" href="{{ path('movement_edit', {id: m.id, back: back}) }}">
+        {{ _self.movement_tile(m) }}
+        <div class="list-row__body">
+            <span class="list-row__title">{{ m.title }}</span>
+            <span class="list-row__meta">
+                {%- if m.transfer -%}
+                    <span>{{ m.account.name }} → {{ m.toAccount ? m.toAccount.name : (m.investmentEntry ? m.investmentEntry.holding.name : 'Investimenti') }}</span>
+                {%- else -%}
+                    <span>{{ m.category ? m.category.fullName : 'Senza categoria' }}{% if opts.date ?? false %} · {{ m.date|short_day }}{% endif %}{% if opts.account ?? false %} · {{ m.account.name }}{% endif %}</span>
+                {%- endif -%}
+                {%- if m.refuel -%}<span class="tag-pill">{{ icon('fuel', 12) }}{{ m.refuel.liters|num(2) }} {{ m.vehicle and m.vehicle.electric ? 'kWh' : 'l' }}</span>{%- elseif m.vehicle and not (opts.hideVehicle ?? false) -%}<span class="tag-pill">{{ icon(m.vehicle.icon, 12) }}{{ m.vehicle.name }}</span>{%- endif -%}
+                {%- for tag in m.tags -%}<span class="tag-pill">#{{ tag.name }}</span>{%- endfor -%}
+            </span>
+        </div>
+        {%- set incoming = m.transfer and opts.perspective is defined and m.toAccount == opts.perspective -%}
+        {%- if m.transfer and opts.perspective is defined -%}
+            <span class="list-row__amount {{ incoming ? 'is-income' }}">{{ incoming ? '+' : '−' }}{{ m.amount|money }}</span>
+        {%- else -%}
+            <span class="list-row__amount {{ m.income ? 'is-income' }}">{{ m|movement_amount }}</span>
+        {%- endif -%}
+    </a>
+{% endmacro %}
+
+{% macro empty(icon, text, action_url = null, action_label = null) %}
+    <div class="empty">
+        <span class="tile" style="--c: #A3A59F">{{ icon(icon, 26) }}</span>
+        <p>{{ text }}</p>
+        {% if action_url %}<a href="{{ action_url }}" class="btn btn--sm">{{ icon('plus', 18) }}{{ action_label }}</a>{% endif %}
+    </div>
+{% endmacro %}
+
+{% macro donut(chart, center_value, center_label, label) %}
+    <div class="donut" style="width: {{ chart.size }}px; height: {{ chart.size }}px">
+        <svg width="{{ chart.size }}" height="{{ chart.size }}" viewBox="0 0 {{ chart.size }} {{ chart.size }}" role="img" aria-label="{{ label }}">
+            {% if chart.circles is empty %}
+                <circle cx="{{ chart.size / 2 }}" cy="{{ chart.size / 2 }}" r="{{ chart.r }}" fill="none" stroke="var(--surface-3)" stroke-width="{{ chart.stroke }}"></circle>
+            {% endif %}
+            {% for c in chart.circles %}
+                <circle cx="{{ chart.size / 2 }}" cy="{{ chart.size / 2 }}" r="{{ chart.r }}" fill="none" stroke="{{ c.color }}" stroke-width="{{ chart.stroke }}" stroke-dasharray="{{ c.dash }}" stroke-dashoffset="{{ c.offset }}"><title>{{ c.label }}</title></circle>
+            {% endfor %}
+        </svg>
+        <div class="donut__center">
+            <span class="donut__value" {% if chart.size < 180 %}style="font-size: 17px"{% endif %}>{{ center_value }}</span>
+            {% if center_label %}<span class="small muted">{{ center_label }}</span>{% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro line_chart(chart, colors, label) %}
+    {% if chart.series is not empty %}
+    {% set gid = 'lc' ~ random(100000, 999999) %}
+    <div class="lc" style="height: {{ chart.height }}px" role="img" aria-label="{{ label }}">
+        <div class="lc__ticks" aria-hidden="true">
+            {% for t in chart.ticks %}
+                <span style="top: {{ t.pct }}%">{{ t.value >= 1000 ? (t.value / 1000)|num(t.value % 1000 ? 1 : 0) ~ 'k' : t.value|num(t.value != t.value|round ? 1 : 0) }}</span>
+            {% endfor %}
+        </div>
+        <div class="lc__plot">
+            <svg viewBox="0 0 {{ chart.w }} {{ chart.h }}" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                    {% for name, s in chart.series|filter((s, n) => (colors[n] ?? '') != 'muted') %}
+                        <linearGradient id="{{ gid }}-{{ name }}" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" style="stop-color: {{ colors[name] ?? 'var(--accent-text)' }}; stop-opacity: .26"></stop>
+                            <stop offset="1" style="stop-color: {{ colors[name] ?? 'var(--accent-text)' }}; stop-opacity: 0"></stop>
+                        </linearGradient>
+                    {% endfor %}
+                </defs>
+                {% for t in chart.ticks %}
+                    <line class="lc__grid" x1="0" x2="{{ chart.w }}" y1="{{ t.y }}" y2="{{ t.y }}"></line>
+                {% endfor %}
+                {% for name, s in chart.series %}
+                    {% if (colors[name] ?? '') == 'muted' %}
+                        <path class="lc__line lc__line--muted" d="{{ s.line }}"></path>
+                    {% else %}
+                        <path class="lc__area" d="{{ s.area }}" fill="url(#{{ gid }}-{{ name }})"></path>
+                        <path class="lc__line" d="{{ s.line }}" style="stroke: {{ colors[name] ?? 'var(--accent-text)' }}"></path>
+                    {% endif %}
+                {% endfor %}
+            </svg>
+            {% for name, s in chart.series|filter((s, n) => (colors[n] ?? '') != 'muted') %}
+                <span class="lc__dot" style="left: {{ s.last.x }}%; top: {{ s.last.y }}%; --c: {{ colors[name] ?? 'var(--accent-text)' }}"></span>
+                {% for p in s.points %}
+                    <span class="lc__hit" style="left: {{ p.x }}%; width: {{ 100 / max(s.points|length, 1) }}%" title="{{ p.v|num(p.v != p.v|round ? 2 : 0) }}"></span>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+{% endmacro %}
+
+{% macro month_nav(month, route, params = {}) %}
+    {%- set prev = month|date_modify('-1 month') -%}
+    {%- set next = month|date_modify('+1 month') -%}
+    <div class="month-nav">
+        <a href="{{ path(route, params|merge({month: prev|date('Y-m')})) }}" aria-label="Mese precedente">{{ icon('chevron-left', 18) }}</a>
+        <span>{{ month|month_label }}</span>
+        <a href="{{ path(route, params|merge({month: next|date('Y-m')})) }}" aria-label="Mese successivo">{{ icon('chevron-right', 18) }}</a>
+    </div>
+{% endmacro %}
+
+{% macro color_picker(name, current) %}
+    <div class="swatches" role="radiogroup" aria-label="Colore">
+        {% for hex, label in palette_colors() %}
+            <label class="swatch" style="--c: {{ hex }}" title="{{ label }}"><input type="radio" name="{{ name }}" value="{{ hex }}" {{ hex == current ? 'checked' }} aria-label="{{ label }}"></label>
+        {% endfor %}
+    </div>
+{% endmacro %}
+
+{% macro icon_picker(name, current, icons) %}
+    <div class="icon-grid" role="radiogroup" aria-label="Icona">
+        {% for i in icons %}
+            <label title="{{ i }}"><input type="radio" name="{{ name }}" value="{{ i }}" {{ i == current ? 'checked' }} aria-label="{{ i }}">{{ icon(i, 20) }}</label>
+        {% endfor %}
+    </div>
+{% endmacro %}
+
+{# Occhio: nasconde/mostra gli importi su questo dispositivo (assets/privacy.js). #}
+{% macro privacy_toggle() %}
+    <button type="button" class="icon-btn privacy-toggle" data-controller="privacy" data-action="privacy#toggle" aria-label="Nascondi gli importi" aria-pressed="false">{{ icon('eye', 20, 'privacy-toggle__show') }}{{ icon('eye-off', 20, 'privacy-toggle__hide') }}</button>
+{% endmacro %}

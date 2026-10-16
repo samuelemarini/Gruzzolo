@@ -1,0 +1,11 @@
+# Niente segreti, dati o dipendenze locali nell'immagine: vendor/ e asset si ricostruiscono nel build.
+.git
+.env
+mysql
+
+app/.env.local
+app/.env.*.local
+app/vendor
+app/var
+app/public/assets
+app/assets/vendor

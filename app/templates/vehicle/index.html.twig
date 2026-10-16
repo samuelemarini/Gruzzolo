@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% block title %}Veicoli{% endblock %}
+{% block body %}
+<div class="page">
+    <div class="topbar">
+        <h1 class="topbar__title">Veicoli</h1>
+        <a href="{{ path('vehicle_new') }}" class="icon-btn" aria-label="Nuovo veicolo">{{ icon('plus') }}</a>
+    </div>
+
+    {% for item in items|filter(i => not i.vehicle.archived) %}
+        {% set v = item.vehicle %}{% set s = item.all %}
+        {% set unit = v.electric ? 'kWh' : 'l' %}
+        <a class="card card--tight" href="{{ path('vehicle_show', {id: v.id}) }}">
+            <div class="row">
+                {{ ui.tile(v.icon, v.color) }}
+                <div class="grow stack-sm" style="gap: 2px">
+                    <span class="display" style="font-size: 19px; font-weight: 700">{{ v.name }}</span>
+                    <span class="small muted">{{ v.kindLabel }} · {{ v.fuelLabel }}{{ v.plate ? ' · ' ~ v.plate }}</span>
+                </div>
+                {{ icon('chevron-right', 18, 'faint') }}
+            </div>
+            <div class="grid-3">
+                <div class="stat stat--inner"><span class="stat__value text-accent" style="font-size: 16px">{{ s.efficiency ? s.efficiency|num(1) ~ ' km/' ~ unit : '—' }}</span><span class="stat__sub">consumo medio</span></div>
+                <div class="stat stat--inner"><span class="stat__value" style="font-size: 16px">{{ s.odometer ? s.odometer|num : '—' }}</span><span class="stat__sub">km</span></div>
+                <div class="stat stat--inner"><span class="stat__value" style="font-size: 16px">{{ item.month.totalCost|money(false, 0) }}</span><span class="stat__sub">speso questo mese</span></div>
+            </div>
+            {% set last = s.refuels|first %}
+            {% if last %}
+                <span class="xsmall muted">Ultimo rifornimento {{ last.refuel.movement.date|short_day|lower }} · {{ last.refuel.liters|num(2) }} {{ unit }}{% if last.efficiency %} · {{ last.efficiency|num(1) }} km/{{ unit }}{% if s.efficiency %}, {{ last.efficiency >= s.efficiency ? 'sopra' : 'sotto' }} la media{% endif %}{% endif %}</span>
+            {% else %}
+                <span class="xsmall muted">Nessun rifornimento registrato.</span>
+            {% endif %}
+        </a>
+    {% else %}
+        {{ ui.empty('car', 'Aggiungi i tuoi mezzi per tracciare rifornimenti e consumi.', path('vehicle_new'), 'Aggiungi veicolo') }}
+    {% endfor %}
+
+    {% for item in items|filter(i => i.vehicle.archived) %}
+        <a class="card card--outline card--tight" href="{{ path('vehicle_show', {id: item.vehicle.id}) }}" style="flex-direction: row; align-items: center; opacity: .7">
+            {{ icon(item.vehicle.icon, 22, 'muted') }}
+            <div class="grow stack-sm" style="gap: 1px"><span class="strong">{{ item.vehicle.name }}</span><span class="xsmall muted">Archiviato · storico conservato</span></div>
+        </a>
+    {% endfor %}
+
+    {% if items is not empty %}
+        <a href="{{ path('vehicle_new') }}" class="btn btn--outline btn--block btn--sm">{{ icon('plus', 18) }}Aggiungi veicolo</a>
+        <a href="{{ path('movement_new', {fuel: 1}) }}" class="btn btn--block">{{ icon('fuel', 20) }}Nuovo rifornimento</a>
+    {% endif %}
+</div>
+{% endblock %}

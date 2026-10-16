@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% set hide_tabbar = true %}
+{% set isNew = account.id is null %}
+{% block title %}{{ isNew ? 'Nuovo conto' : account.name }}{% endblock %}
+{% block body %}
+<form method="post" class="page page--plain form">
+    <input type="hidden" name="_token" value="{{ csrf_token('account') }}">
+    <div class="topbar">
+        <a href="{{ isNew ? path('account_index') : path('account_show', {id: account.id}) }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">{{ isNew ? 'Nuovo conto' : 'Modifica conto' }}</span>
+        <span style="width: 44px"></span>
+    </div>
+    <label class="field {{ errors.name is defined ? 'has-error' }}">
+        <span class="field__label">Nome</span>
+        <input type="text" name="name" value="{{ account.name }}" maxlength="80" required placeholder="es. Accantonamento" {{ isNew ? 'autofocus' }}>
+        {% if errors.name is defined %}<span class="field__error">{{ errors.name }}</span>{% endif %}
+    </label>
+    <label class="field">
+        <span class="field__label">Tipo</span>
+        <select name="kind">{% for k, label in kinds %}<option value="{{ k }}" {{ account.kind == k ? 'selected' }}>{{ label }}</option>{% endfor %}</select>
+    </label>
+    <label class="field {{ errors.initial_balance is defined ? 'has-error' }}">
+        <span class="field__label">Saldo iniziale €</span>
+        <input type="text" name="initial_balance" inputmode="decimal" value="{{ account.initialBalance|input_num }}" placeholder="0,00">
+        {% if errors.initial_balance is defined %}<span class="field__error">{{ errors.initial_balance }}</span>{% endif %}
+    </label>
+    <p class="hint">Il saldo del conto prima del primo movimento registrato qui.</p>
+    <section class="card card--tight">
+        <span class="label-caps">Colore</span>
+        {{ ui.color_picker('color', account.color) }}
+    </section>
+    <div class="card card--tight" style="gap: 0">
+        <label class="switch">
+            <span class="switch__text"><span>Conto predefinito</span><small>proposto quando inserisci un movimento</small></span>
+            <input type="checkbox" name="default" value="1" {{ account.default ? 'checked' }}>
+        </label>
+        {% if not isNew %}
+            <label class="switch">
+                <span class="switch__text"><span>Archiviato</span><small>non compare più nei selettori</small></span>
+                <input type="checkbox" name="archived" value="1" {{ account.archived ? 'checked' }}>
+            </label>
+        {% endif %}
+    </div>
+    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}Salva</button>
+</form>
+{% if not isNew %}
+    <form method="post" action="{{ path('account_delete', {id: account.id}) }}" class="page page--plain" style="padding-top: 0" data-turbo-confirm="Eliminare il conto?">
+        <input type="hidden" name="_token" value="{{ csrf_token('delete-account-' ~ account.id) }}">
+        <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}Elimina conto</button>
+    </form>
+{% endif %}
+{% endblock %}

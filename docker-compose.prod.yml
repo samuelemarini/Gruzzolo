@@ -1,0 +1,55 @@
+# Produzione, per esempio uno stack Portainer da repository Git con questo file come compose.
+#
+# Variabili da impostare nello stack (Portainer: "Environment variables"), vedi .env.example:
+#   DB_PASSWORD, APP_SECRET        obbligatorie
+#   ADMIN_PASSWORD                 crea l'utente "admin" al primo avvio
+#   WEB_PORT, DB_PORT, DB_BIND     facoltative (porte sull'host)
+#
+# Il codice e' dentro l'immagine (niente bind mount di ./app): dopo un git pull va rifatto il build.
+
+services:
+  database:
+    image: mariadb:11
+    environment:
+      TZ: Europe/Rome
+      MARIADB_DATABASE: gruzzolo
+      MARIADB_USER: gruzzolo
+      MARIADB_PASSWORD: ${DB_PASSWORD:?imposta DB_PASSWORD (solo lettere e numeri)}
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+    volumes:
+      - db_data:/var/lib/mysql
+    # Di default solo da localhost (tunnel SSH, client sul server): DB_BIND=0.0.0.0 lo espone in rete.
+    ports:
+      - ${DB_BIND:-127.0.0.1}:${DB_PORT:-3308}:3306
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  web:
+    # Solo 'build', nessun 'image:': con un nome immagine esplicito "Pull and redeploy" di
+    # Portainer la cerca su Docker Hub e fallisce con "pull access denied".
+    build: .
+    pull_policy: build
+    environment:
+      TZ: Europe/Rome
+      APP_ENV: prod
+      APP_SECRET: ${APP_SECRET:?imposta APP_SECRET (openssl rand -hex 16)}
+      DATABASE_URL: mysql://gruzzolo:${DB_PASSWORD:?imposta DB_PASSWORD (solo lettere e numeri)}@database:3306/gruzzolo?serverVersion=11.4.0-MariaDB&charset=utf8mb4
+      # Dietro un reverse proxy HTTPS su rete Docker: senza, il login fallisce per il controllo CSRF.
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-private_ranges}
+      RUN_MIGRATIONS: "1"
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    ports:
+      - ${WEB_PORT:-8080}:80
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db_data:

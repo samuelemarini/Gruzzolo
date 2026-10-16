@@ -1,0 +1,9 @@
+doctrine_migrations:
+    migrations_paths:
+        # namespace is arbitrary but should be different from App\Migrations
+        # as migrations classes should NOT be autoloaded
+        'DoctrineMigrations': '%kernel.project_dir%/migrations'
+    enable_profiler: false
+    # Su MariaDB le DDL fanno commit impliciti: una transazione attorno alla migration non protegge
+    # nulla e produce solo un avviso di deprecazione a ogni avvio.
+    transactional: false

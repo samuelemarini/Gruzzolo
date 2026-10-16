@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% block title %}Conti{% endblock %}
+{% block body %}
+<div class="page">
+    <div class="topbar">
+        <h1 class="topbar__title">Conti</h1>
+        <div class="topbar__actions">
+            {{ ui.privacy_toggle() }}
+            <a href="{{ path('account_new') }}" class="icon-btn" aria-label="Nuovo conto">{{ icon('plus') }}</a>
+        </div>
+    </div>
+
+    <section class="card">
+        <span class="small muted">Totale sui conti</span>
+        <div class="hero-amount"><span class="hero-amount__value">{{ total < 0 ? '−' }}{{ total|abs|num(2) }}</span><span class="hero-amount__cur">€</span></div>
+        <a href="{{ path('movement_new', {kind: 'transfer'}) }}" class="btn btn--ghost btn--sm">{{ icon('arrow-left-right', 18) }}Nuovo giroconto</a>
+    </section>
+
+    <div class="card card--list">
+        {% for a in accounts|filter(a => not a.archived) %}
+            <a class="list-row" href="{{ path('account_show', {id: a.id}) }}">
+                {{ ui.tile(a.icon, a.color) }}
+                <div class="list-row__body">
+                    <span class="list-row__title">{{ a.name }}{% if a.default %} <span class="badge badge--accent">predefinito</span>{% endif %}</span>
+                    <span class="list-row__meta">{{ a.kindLabel }}</span>
+                </div>
+                <span class="list-row__amount">{{ (balances[a.id] ?? 0)|money }}</span>
+                {{ icon('chevron-right', 18, 'list-row__chev') }}
+            </a>
+        {% endfor %}
+    </div>
+    <p class="small muted">Per il conto accantonamento: versa con un <strong>giroconto</strong> dal conto principale e paga le spese annuali (assicurazione, bollo…) direttamente da lì. Le spese contano nei report, i giroconti no.</p>
+
+    {% set archived = accounts|filter(a => a.archived) %}
+    {% if archived|length %}
+        <div class="section-head"><h2>Archiviati</h2></div>
+        <div class="card card--list">
+            {% for a in archived %}
+                <a class="list-row" href="{{ path('account_show', {id: a.id}) }}" style="opacity: .65">
+                    {{ ui.tile(a.icon, a.color, 'sm') }}
+                    <div class="list-row__body"><span class="list-row__title">{{ a.name }}</span></div>
+                    <span class="list-row__amount">{{ (balances[a.id] ?? 0)|money }}</span>
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

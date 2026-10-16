@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% set hide_tabbar = true %}
+{% block title %}Modifica #{{ tag.name }}{% endblock %}
+{% block body %}
+<form method="post" class="page page--plain form">
+    <input type="hidden" name="_token" value="{{ csrf_token('tag') }}">
+    <div class="topbar">
+        <a href="{{ path('tag_show', {id: tag.id}) }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">Modifica etichetta</span>
+        <span style="width: 44px"></span>
+    </div>
+    <label class="field {{ errors.name is defined ? 'has-error' }}">
+        <span class="field__label">Etichetta</span>
+        <input type="text" name="name" value="{{ tag.name }}" maxlength="60" required autocapitalize="none">
+        {% if errors.name is defined %}<span class="field__error">{{ errors.name }}</span>{% endif %}
+    </label>
+    <label class="field">
+        <span class="field__label">Titolo (facoltativo)</span>
+        <input type="text" name="title" value="{{ tag.title }}" maxlength="120" placeholder="es. Viaggio a Lisbona">
+    </label>
+    <section class="card card--tight">
+        <span class="label-caps">Colore</span>
+        {{ ui.color_picker('color', tag.color) }}
+    </section>
+    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}Salva</button>
+</form>
+<form method="post" action="{{ path('tag_delete', {id: tag.id}) }}" class="page page--plain" style="padding-top: 0" data-turbo-confirm="Eliminare l'etichetta? I movimenti restano, perdono solo l'etichetta.">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete-tag-' ~ tag.id) }}">
+    <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}Elimina etichetta</button>
+</form>
+{% endblock %}

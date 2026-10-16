@@ -1,0 +1,23 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+
+    # Dietro un reverse proxy HTTPS (Traefik, Nginx Proxy Manager...): senza questi header
+    # Symfony crede di essere in http, l'Origin https non combacia e il login fallisce (CSRF).
+    trusted_proxies: '%env(TRUSTED_PROXIES)%'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
+
+    # Note that the session will be started ONLY if you read or write from it.
+    # Nome proprio: i cookie ignorano la porta, e un'altra app sullo stesso host (home.mariuzzi.com:XXXX)
+    # con PHPSESSID Secure impedisce a Chrome di salvare il nostro -> login che torna al login.
+    session:
+        name: GRUZZOLO_SESSID
+
+    #esi: true
+    #fragments: true
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

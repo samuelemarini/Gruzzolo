@@ -1,0 +1,101 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% block title %}Home{% endblock %}
+{% block body %}
+<div class="page page--wide">
+    <div class="topbar">
+        {{ ui.month_nav(month, 'app_home') }}
+        <div class="topbar__actions">
+            {{ ui.privacy_toggle() }}
+            <a href="{{ path('movement_index') }}" class="icon-btn" aria-label="Cerca">{{ icon('search') }}</a>
+        </div>
+    </div>
+
+    <div class="cols">
+        <div class="col-main">
+            <section class="card" aria-label="Saldo del mese">
+                <div class="stack-sm" style="gap: 4px">
+                    <span class="small muted">Saldo di {{ month|it_date('LLLL') }}</span>
+                    {% set net = summary.net %}
+                    <div class="hero-amount">
+                        <span class="hero-amount__value">{{ net > 0 ? '+' }}{{ net < 0 ? '−' }}{{ net|abs|num(2) }}</span>
+                        <span class="hero-amount__cur">€</span>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <a class="stat stat--inner" href="{{ path('movement_index', {kind: 'income', month: month|date('Y-m')}) }}">
+                        <span class="stat__label"><span class="tile tile--xs" style="--c: var(--accent)">{{ icon('arrow-down-left', 15) }}</span>Entrate</span>
+                        <span class="stat__value">{{ summary.income|money }}</span>
+                    </a>
+                    <a class="stat stat--inner" href="{{ path('movement_index', {kind: 'expense', month: month|date('Y-m')}) }}">
+                        <span class="stat__label"><span class="tile tile--xs" style="--c: #FF8A80">{{ icon('arrow-up-right', 15) }}</span>Uscite</span>
+                        <span class="stat__value">{{ summary.expense|money }}</span>
+                    </a>
+                </div>
+            </section>
+
+            {% if split is not empty %}
+            <section class="stack-sm" style="gap: 12px; padding: 0 2px">
+                <div class="section-head">
+                    <h2>Dove vanno i soldi</h2>
+                    <a href="{{ path('report_index', {month: month|date('Y-m')}) }}">Report</a>
+                </div>
+                <div class="split" role="img" aria-label="Uscite per categoria">
+                    {% for s in split %}<span style="--c: {{ s.color }}; flex: {{ s.total }} 1 0" title="{{ s.name }} {{ s.total|money }}"></span>{% endfor %}
+                </div>
+                <div class="legend">
+                    {% for s in split %}
+                        <div class="legend__item"><span class="dot" style="--c: {{ s.color }}"></span><span class="grow ellipsis">{{ s.name }}</span><span class="strong">{{ s.total|money(false, 0) }}</span></div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <section>
+                <div class="section-head">
+                    <h2>Ultimi movimenti</h2>
+                    <a href="{{ path('movement_index') }}">Vedi tutti</a>
+                </div>
+                {% if latest is empty %}
+                    {{ ui.empty('receipt', 'Ancora nessun movimento. Inizia dalla prima spesa!', path('movement_new'), 'Aggiungi') }}
+                {% else %}
+                    <div class="list">
+                        {% for m in latest %}{{ ui.movement_row(m, {date: true}) }}{% endfor %}
+                    </div>
+                {% endif %}
+            </section>
+        </div>
+
+        <div class="col-side">
+            <section class="stack-sm">
+                <div class="section-head">
+                    <h2>Conti</h2>
+                    <a href="{{ path('account_index') }}">Gestisci</a>
+                </div>
+                <div class="card card--list">
+                    {% for a in accounts %}
+                        <a class="list-row" href="{{ path('account_show', {id: a.id}) }}">
+                            {{ ui.tile(a.icon, a.color, 'sm') }}
+                            <div class="list-row__body"><span class="list-row__title">{{ a.name }}</span></div>
+                            <span class="list-row__amount">{{ (balances[a.id] ?? 0)|money }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </section>
+
+            {% if portfolio %}
+            <a class="card card--tight" href="{{ path('investment_index') }}">
+                <div class="row row--between">
+                    <span class="row" style="gap: 10px">{{ ui.tile('trending-up', '#7FD6FF', 'sm') }}<span class="strong">Investimenti</span></span>
+                    {{ icon('chevron-right', 18, 'faint') }}
+                </div>
+                <div class="row row--between" style="align-items: baseline">
+                    <span class="display" style="font-size: 26px; font-weight: 700">{{ portfolio.value|money }}</span>
+                    <span class="strong {{ portfolio.gain >= 0 ? 'text-income' : 'text-expense' }}">{{ portfolio.gain|money(true) }} · {{ portfolio.pct|pct(1, true) }}</span>
+                </div>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

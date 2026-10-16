@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+{% block title %}Accesso{% endblock %}
+{% block body %}
+<div class="login">
+    <div class="login__tiles" aria-hidden="true">
+        <span class="tile" style="--c: #C8F169">{{ icon('wallet', 24) }}</span>
+        <span class="tile" style="--c: #FFB86B">{{ icon('shopping-cart', 24) }}</span>
+        <span class="tile" style="--c: #8AB4FF">{{ icon('house', 24) }}</span>
+        <span class="tile" style="--c: #6FDCCB">{{ icon('fuel', 24) }}</span>
+        <span class="tile" style="--c: #C3A6FF">{{ icon('trending-up', 24) }}</span>
+    </div>
+    <h1>Gruzzolo</h1>
+    <p class="lead">Entrate, uscite, rifornimenti e investimenti.<br>Tutto in un posto, solo tuo.</p>
+
+    <form method="post" action="{{ path('app_login') }}" class="form" data-turbo="false">
+        {% if error %}
+            <div class="form-error">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+        {% endif %}
+        <label class="field">
+            <span class="field__label">Nome utente</span>
+            <input type="text" name="_username" value="{{ last_username }}" autocomplete="username" autocapitalize="none" required autofocus>
+        </label>
+        <label class="field">
+            <span class="field__label">Password</span>
+            <input type="password" name="_password" autocomplete="current-password" required>
+        </label>
+        <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
+        <button type="submit" class="btn btn--block" style="margin-top: 8px">Accedi</button>
+    </form>
+
+    <p class="login__foot">Gli account li crea l'amministratore.</p>
+</div>
+{% endblock %}
