@@ -16,7 +16,7 @@
 
 {% macro movement_row(m, opts = {}) %}
     {%- set back = opts.back ?? app.request.requestUri -%}
-    <a class="list-row" href="{{ path('movement_edit', {id: m.id, back: back}) }}">
+    <a class="list-row list-row--movement" href="{{ path('movement_edit', {id: m.id, back: back}) }}">
         {{ _self.movement_tile(m) }}
         <div class="list-row__body">
             <span class="list-row__title">{{ m.title }}</span>

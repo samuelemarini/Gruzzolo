@@ -19,7 +19,15 @@ function randomText(length) {
     return out;
 }
 
-/* Sostituisce le cifre (con i loro punti e virgole) con caratteri a caso, capovolti dal CSS. */
+/*
+ * Sostituisce le cifre (con i loro punti e virgole) con caratteri a caso, capovolti dal CSS. Lunghezza
+ * fissa, cosi' non si intuisce l'ordine di grandezza: 3 sui movimenti, 4 sui totali, 2 sulle scale dei grafici.
+ */
+function scrambledLength(el) {
+    if (el.closest('.lc__ticks')) return 2;
+    return el.closest('.list-row--movement') ? 3 : 4;
+}
+
 function scramble(el) {
     if (el.dataset.privacyText !== undefined || el.closest('[data-privacy-skip]')) return;
     const text = el.textContent;
@@ -32,7 +40,7 @@ function scramble(el) {
         if (offset > last) fragment.append(text.slice(last, offset));
         const span = document.createElement('span');
         span.className = 'scrambled';
-        span.textContent = randomText(match.length);
+        span.textContent = randomText(scrambledLength(el));
         fragment.append(span);
         last = offset + match.length;
         return match;
