@@ -112,6 +112,8 @@
 /* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; overscroll-behavior-y: contain; }
+/* Niente zoom col doppio tocco (digitando in fretta sul tastierino); il pizzico resta */
+html, body, a, button, label, input, select, textarea, [role="button"] { touch-action: manipulation; }
 body {
   margin: 0;
   min-height: 100dvh;
@@ -406,6 +408,21 @@ a.list-row:hover { background: color-mix(in srgb, var(--surface-2) 50%, transpar
 .amount-input input::placeholder { color: var(--line-strong); }
 .amount-input__cur { font: 600 30px/1 var(--font-display); color: var(--muted); }
 .keypad { display: none; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.keypad button { user-select: none; -webkit-user-select: none; }
+/* Nuovo movimento: tastierino e Salva sempre a schermo, attaccati in fondo mentre il modulo scorre */
+.form-dock {
+  position: sticky; bottom: 0; z-index: 20; display: flex; flex-direction: column; gap: 8px;
+  margin: 0 calc(var(--gutter) * -1) calc((env(safe-area-inset-bottom) + 32px) * -1);
+  padding: 10px var(--gutter) calc(env(safe-area-inset-bottom) + 12px);
+  background: var(--bg); border-top: 1px solid var(--line);
+}
+.form-dock .keypad button { height: 46px; }
+.form-dock__actions { display: grid; gap: 8px; }
+.form-dock__actions.has-another { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+.form-dock__actions .btn { height: 52px; padding: 0 12px; }
+.form-dock__another { order: -1; gap: 6px; font-size: 15px; white-space: nowrap; }
+/* Mentre si scrive in un altro campo (si apre la tastiera di sistema) il tastierino lascia spazio */
+.form:has(:is(input[type="text"], input[type="date"], input[type="search"]):not([name="amount"]):focus, textarea:focus) .form-dock .keypad { display: none; }
 .keypad button { height: 50px; border: 0; border-radius: 16px; background: var(--surface); color: var(--text); font: 600 22px/1 var(--font-display); display: grid; place-items: center; }
 .keypad button:active { background: var(--surface-3); }
 @media (pointer: coarse) and (max-width: 700px) { .keypad { display: grid; } }

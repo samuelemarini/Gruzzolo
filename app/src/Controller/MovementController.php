@@ -197,7 +197,15 @@ final class MovementController extends AppController
                 $this->addFlash('success', $isNew ? 'Movimento salvato' : 'Modifiche salvate');
 
                 if ($isNew && $data->getBoolean('_another')) {
-                    return $this->redirectToRoute('movement_new', ['kind' => $movement->getKind()], 303);
+                    return $this->redirectToRoute('movement_new', ['kind' => $movement->getKind(), 'account' => $movement->getAccount()->getId()], 303);
+                }
+                // Su un conto diverso dal principale si torna alla lista filtrata su quel conto,
+                // nel mese del movimento, cosi' lo si vede subito.
+                $account = $movement->getAccount();
+                if (($isNew || !$data->get('_back')) && $account !== $this->accounts->findDefault($user)) {
+                    return $this->redirectToRoute('movement_index', [
+                        'account' => [$account->getId()], 'month' => $movement->getDate()->format('Y-m'),
+                    ], 303);
                 }
 
                 return $this->back($request, 'movement_index');

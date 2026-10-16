@@ -218,19 +218,22 @@
         {% endif %}
     </section>
 
-    <div class="keypad" data-keypad-target="pad" aria-label="Tastierino">
-        {% for k in ['1','2','3','4','5','6','7','8','9',','] %}
-            <button type="button" data-action="keypad#press" data-key="{{ k }}">{{ k }}</button>
-        {% endfor %}
-        <button type="button" data-action="keypad#press" data-key="0">0</button>
-        <button type="button" data-action="keypad#back" aria-label="Cancella">{{ icon('delete', 22) }}</button>
-    </div>
-
-    <div class="stack-sm">
-        <button type="submit" class="btn btn--block">{{ icon('check', 20) }}<span data-movement-form-target="submitLabel">{{ isNew ? 'Salva' : 'Salva modifiche' }}</span></button>
-        {% if isNew %}
-            <button type="submit" name="_another" value="1" class="btn btn--block btn--ghost btn--sm">Salva e aggiungi un altro</button>
-        {% endif %}
+    {# Tastierino e Salva restano fissi in basso: sopra scorre il resto del modulo #}
+    <div class="form-dock">
+        <div class="keypad" data-keypad-target="pad" aria-label="Tastierino">
+            {% for k in ['1','2','3','4','5','6','7','8','9',','] %}
+                <button type="button" data-action="keypad#press" data-key="{{ k }}">{{ k }}</button>
+            {% endfor %}
+            <button type="button" data-action="keypad#press" data-key="0">0</button>
+            <button type="button" data-action="keypad#back" aria-label="Cancella">{{ icon('delete', 22) }}</button>
+        </div>
+        <div class="form-dock__actions {{ isNew ? 'has-another' }}">
+            {# Salva per primo: e' quello che parte premendo Invio in un campo #}
+            <button type="submit" class="btn">{{ icon('check', 20) }}<span data-movement-form-target="submitLabel">{{ isNew ? 'Salva' : 'Salva modifiche' }}</span></button>
+            {% if isNew %}
+                <button type="submit" name="_another" value="1" class="btn btn--ghost form-dock__another">{{ icon('plus', 18) }}Salva e nuovo</button>
+            {% endif %}
+        </div>
     </div>
 
     <datalist id="descriptions">{% for d in descriptions %}<option value="{{ d }}">{% endfor %}</datalist>
