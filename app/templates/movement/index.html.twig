@@ -75,7 +75,7 @@
                     <span>{{ group.date|day_label }}</span>
                     {% if group.total %}<span>{{ group.total|money(true) }}</span>{% endif %}
                 </div>
-                {% for m in group.movements %}{{ ui.movement_row(m, {account: accounts|length > 1, scope: scope}) }}{% endfor %}
+                {% for m in group.movements %}{{ ui.movement_row(m, {account: accounts|length > 1 and filter.accounts|length != 1, scope: scope}) }}{% endfor %}
             {% endfor %}
         </div>
         {% if hasMore %}
