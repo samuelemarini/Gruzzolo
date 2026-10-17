@@ -11,7 +11,7 @@ import { Controller } from '@hotwired/stimulus';
  */
 export default class extends Controller {
     static targets = ['categories', 'sign', 'transferOnly', 'accountLabel', 'vehicleRow', 'vehicleSelect', 'fuel', 'account',
-        'current', 'currentTile', 'currentName'];
+        'current', 'currentTile', 'currentName', 'accountChip'];
 
     connect() {
         this.sync();
@@ -27,6 +27,13 @@ export default class extends Controller {
     accountChanged() {
         this.sync();
         if (this.needsCategory()) this.setMode('grid');
+    }
+
+    // Chip dei conti sopra la griglia: stesso effetto del menu Conto fra i campi.
+    pickAccount(event) {
+        if (!this.hasAccountTarget) return;
+        this.accountTarget.value = event.currentTarget.dataset.account;
+        this.accountChanged();
     }
 
     categoryChanged(event) {
@@ -84,6 +91,11 @@ export default class extends Controller {
         const kind = this.kind;
 
         const account = this.hasAccountTarget ? this.accountTarget.value : null;
+        this.accountChipTargets.forEach((chip) => {
+            const active = chip.dataset.account === account;
+            chip.classList.toggle('is-active', active);
+            chip.setAttribute('aria-checked', active ? 'true' : 'false');
+        });
         this.categoriesTargets.forEach((group) => {
             const active = group.dataset.kind === kind && (!account || group.dataset.account === account);
             group.hidden = !active;

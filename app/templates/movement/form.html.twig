@@ -88,6 +88,18 @@
     </button>
 
     <section class="cat-sheet grid-only" aria-label="Scegli la categoria">
+        {# Conto prima della categoria: ogni conto ha le sue categorie #}
+        {% if accounts|length > 1 %}
+            <span class="label-caps">Conto</span>
+            <div class="chips chips--scroll" role="radiogroup" aria-label="Conto">
+                {% for a in accounts %}
+                    <button type="button" class="chip {{ movement.account == a ? 'is-active' }}" role="radio" aria-checked="{{ movement.account == a ? 'true' : 'false' }}"
+                            data-movement-form-target="accountChip" data-account="{{ a.id }}" data-action="movement-form#pickAccount">
+                        <span class="chip__dot" style="--c: {{ a.color }}"></span>{{ a.name }}
+                    </button>
+                {% endfor %}
+            </div>
+        {% endif %}
         <span class="label-caps">Categoria</span>
         {% for t in categoryTrees %}
             {{ _self.category_picker(t.expense, movement, 'expense', t.account) }}
