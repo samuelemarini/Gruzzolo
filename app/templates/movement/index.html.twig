@@ -59,12 +59,23 @@
         {% endif %}
     </div>
 
-    <div class="summary-line">
-        <span>{{ totals.count }} moviment{{ totals.count == 1 ? 'o' : 'i' }}</span>
-        {% if totals.income %}<span><span class="dot" style="--c: var(--accent)"></span>+{{ totals.income|money }}</span>{% endif %}
-        {% if totals.expense %}<span><span class="dot" style="--c: #FF8A80"></span>−{{ totals.expense|money }}</span>{% endif %}
-        {% if totals.income or totals.expense %}{% set net = totals.income - totals.expense %}<span class="summary-line__net">Saldo <strong class="{{ net < 0 ? 'text-expense' : (net > 0 ? 'text-income') }}">{{ net|money(true) }}</strong></span>{% endif %}
-    </div>
+    {# Riepilogo a colonne fisse: niente a capo anche con importi lunghi #}
+    {% set net = totals.income - totals.expense %}
+    <section class="summary-grid" aria-label="Riepilogo">
+        <span class="summary-grid__count">{{ totals.count }} moviment{{ totals.count == 1 ? 'o' : 'i' }}</span>
+        <div class="summary-grid__cell">
+            <span class="summary-grid__label"><span class="dot" style="--c: var(--accent)"></span>Entrate</span>
+            <span class="summary-grid__value">+{{ totals.income|money }}</span>
+        </div>
+        <div class="summary-grid__cell">
+            <span class="summary-grid__label"><span class="dot" style="--c: #FF8A80"></span>Uscite</span>
+            <span class="summary-grid__value">−{{ totals.expense|money }}</span>
+        </div>
+        <div class="summary-grid__cell summary-grid__cell--net">
+            <span class="summary-grid__label">Saldo</span>
+            <span class="summary-grid__value {{ net < 0 ? 'text-expense' : (net > 0 ? 'text-income') }}">{{ net|money(true) }}</span>
+        </div>
+    </section>
 
     {% if groups is empty %}
         {{ ui.empty('search', filter.q ? 'Nessun movimento trovato per “' ~ filter.q ~ '”.' : 'Nessun movimento in questo periodo.', path('movement_new'), 'Nuovo movimento') }}

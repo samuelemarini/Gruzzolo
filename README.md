@@ -86,13 +86,16 @@ Backup: il volume `db_data`, oppure `mariadb-dump` dal container `database`.
   conto usa e gestisce le stesse. Nel nuovo movimento le categorie proposte cambiano col conto scelto.
   Un conto nuovo può partire dalle categorie di un altro conto, da quelle predefinite o vuoto; dalla
   pagina Categorie si possono copiare in qualsiasi momento quelle di un altro conto (senza doppioni).
-- **Importazione CSV** (Altro › Importa): riconosce gli export di **Spendee** e di **Wallet (BudgetBakers)**.
+- **Importazione CSV** (Altro › Importa): riconosce gli export di **Spendee**, **Wallet (BudgetBakers)** e **Money Manager**
+  (le celle non UTF-8 si leggono come Windows-1252 o Mac Roman).
   Il file si parcheggia in `app/var/imports`, l'anteprima propone gli abbinamenti (wallet → conti,
   categorie → categorie con lo stesso nome nel conto di destinazione, altrimenti nuove create in quel
   conto; le etichette mancanti si creano), poi si importa. Ogni riga ha
   un'impronta (`movement.import_hash`): reimportando lo stesso file i doppioni vengono saltati. Ogni
   importazione è annullabile e toglie anche categorie, conti ed etichette creati apposta se inutilizzati.
   Per un nuovo formato basta una classe che implementa `App\Import\ImportFormat` (si registra da sola).
+  Da terminale, per conto di un utente (i movimenti risultano suoi):
+  `php bin/console app:import <utente> <file.csv> --account=<id> [--dry-run]`, e `--undo=<id>` per annullare.
 - **Importi nascosti**: l'occhio (Home, Movimenti, Report, Conti, Investimenti, barra laterale) sfoca
   gli importi su quel dispositivo (`localStorage`). `assets/privacy.js` riconosce gli importi dal formato
   ("1.247,80 €") e li avvolge in `.money`; i saldi grandi sono `.hero-amount__value`.
