@@ -16,30 +16,39 @@
             {% for parent in tree %}
                 <label class="cat-pick" data-fuel="{{ parent.fuel ? 1 : 0 }}">
                     <input type="radio" name="category" value="{{ parent.id }}" {{ movement.category == parent ? 'checked' }} {{ not active ? 'disabled' }}
-                           data-action="movement-form#categoryChanged" data-parent="{{ parent.id }}" data-fuel="{{ parent.fuel ? 1 : 0 }}">
+                           data-action="click->movement-form#categoryChanged" data-parent="{{ parent.id }}" data-fuel="{{ parent.fuel ? 1 : 0 }}"
+                           data-name="{{ parent.name }}" data-has-children="{{ parent.children|filter(c => not c.archived)|length ? 1 : 0 }}">
                     {{ ui.tile(parent.icon, parent.color) }}
                     <span>{{ parent.name }}</span>
-                    {% if movement.category and movement.category.parent == parent %}<span class="cat-pick__sub">› {{ movement.category.name }}</span>{% endif %}
                 </label>
             {% endfor %}
         </div>
         {% for parent in tree|filter(p => p.children|filter(c => not c.archived)|length > 0) %}
-            {% set open = movement.category and (movement.category == parent or movement.category.parent == parent) %}
-            <div class="cat-children chips" data-children-of="{{ parent.id }}" {{ not open ? 'hidden' }}>
+            <div class="cat-children" data-children-of="{{ parent.id }}" hidden>
+                <div class="row" style="gap: 10px">
+                    <button type="button" class="icon-btn icon-btn--plain" data-action="movement-form#backToGrid" aria-label="Tutte le categorie">{{ icon('chevron-left') }}</button>
+                    {{ ui.tile(parent.icon, parent.color, 'sm') }}
+                    <span class="strong grow">{{ parent.name }}</span>
+                </div>
+                <div class="chips">
+                <button type="button" class="chip chip--dashed" data-action="movement-form#confirmParent">Solo «{{ parent.name }}»</button>
                 {% for child in parent.children|filter(c => not c.archived) %}
                     <label class="chip">
                         <input type="radio" name="category" value="{{ child.id }}" {{ movement.category == child ? 'checked' }} {{ not active ? 'disabled' }}
-                               data-action="movement-form#categoryChanged" data-parent="{{ parent.id }}" data-fuel="{{ child.fuel ? 1 : 0 }}">
+                               data-action="click->movement-form#categoryChanged" data-parent="{{ parent.id }}" data-fuel="{{ child.fuel ? 1 : 0 }}"
+                               data-name="{{ parent.name }} › {{ child.name }}">
                         <span class="chip__dot" style="--c: {{ child.color }}"></span>{{ child.name }}
                     </label>
                 {% endfor %}
+                </div>
             </div>
         {% endfor %}
     </div>
 {% endmacro %}
 
 {% block body %}
-<form method="post" class="page page--plain form" data-controller="movement-form keypad" data-turbo="true"
+{# Senza categoria si sceglie prima quella (griglia); poi si vedono gli altri campi. #}
+<form method="post" class="page page--plain form" data-controller="movement-form keypad" data-turbo="true" data-mode="{{ movement.category is null and not movement.transfer ? 'grid' : 'fields' }}"
       action="{{ app.request.requestUri }}">
     <input type="hidden" name="_token" value="{{ csrf_token('movement') }}">
     <input type="hidden" name="_back" value="{{ back }}">
@@ -71,13 +80,23 @@
         {% if errors.amount is defined %}<p class="field__error" style="text-align: center">{{ errors.amount }}</p>{% endif %}
     </div>
 
-    {% for t in categoryTrees %}
-        {{ _self.category_picker(t.expense, movement, 'expense', t.account) }}
-        {{ _self.category_picker(t.income, movement, 'income', t.account) }}
-    {% endfor %}
+    {# Categoria scelta: resta in alto, toccandola si torna alla griglia #}
+    <button type="button" class="cat-current fields-only" data-movement-form-target="current" data-action="movement-form#openGrid" hidden>
+        <span class="cat-current__tile" data-movement-form-target="currentTile"></span>
+        <span class="cat-current__name grow ellipsis" data-movement-form-target="currentName"></span>
+        <span class="cat-current__change">Cambia {{ icon('chevron-down', 16) }}</span>
+    </button>
+
+    <section class="cat-sheet grid-only" aria-label="Scegli la categoria">
+        <span class="label-caps">Categoria</span>
+        {% for t in categoryTrees %}
+            {{ _self.category_picker(t.expense, movement, 'expense', t.account) }}
+            {{ _self.category_picker(t.income, movement, 'income', t.account) }}
+        {% endfor %}
+    </section>
     {% if errors.category is defined %}<p class="field__error">{{ errors.category }}</p>{% endif %}
 
-    <div class="rows">
+    <div class="rows fields-only">
         <label class="rowf" data-movement-form-target="transferOnly" {{ not movement.transfer ? 'hidden' }}>
             <span class="rowf__icon">{{ icon('arrow-left-right') }}</span>
             <span class="rowf__label">Verso</span>
@@ -148,7 +167,7 @@
     {% endfor %}
 
     {# --- Rifornimento: compare con una categoria carburante --- #}
-    <section class="card card--tight" data-movement-form-target="fuel" data-controller="fuel"
+    <section class="card card--tight fields-only" data-movement-form-target="fuel" data-controller="fuel"
              data-fuel-odometers-value="{{ lastOdometers|json_encode }}"
              data-fuel-averages-value="{{ averages|json_encode }}"
              {{ not (movement.category and movement.category.fuel and movement.expense) ? 'hidden' }}>

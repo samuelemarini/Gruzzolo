@@ -130,19 +130,34 @@
                 </div>
             </div>
 
-            {% for t in categoryTrees|filter(t => t.tree is not empty) %}
+            {# Categorie: una sezione richiudibile per conto, aperta solo se ha gia' categorie scelte #}
+            {% set trees = categoryTrees|filter(t => t.tree is not empty) %}
+            {% if trees is not empty %}
             <div class="stack-sm">
-                <span class="label-caps">Categorie{{ categoryTrees|length > 1 ? ' · ' ~ t.account.name }}</span>
-                <div class="chips">
-                    {% for parent in t.tree %}
-                        <label class="chip"><input type="checkbox" name="cat[]" value="{{ parent.id }}" {{ parent.id in filter.categories ? 'checked' }}><span class="chip__dot" style="--c: {{ parent.color }}"></span>{{ parent.name }}</label>
-                        {% for child in parent.children|filter(c => not c.archived) %}
-                            <label class="chip"><input type="checkbox" name="cat[]" value="{{ child.id }}" {{ child.id in filter.categories ? 'checked' }}><span class="chip__dot" style="--c: {{ child.color }}"></span>{{ child.name }}</label>
-                        {% endfor %}
-                    {% endfor %}
-                </div>
+                <span class="label-caps">Categorie</span>
+                {% for t in trees %}
+                    {% set ids = [] %}
+                    {% for parent in t.tree %}{% set ids = ids|merge([parent.id]|merge(parent.children|map(c => c.id))) %}{% endfor %}
+                    {% set chosen = ids|filter(id => id in filter.categories)|length %}
+                    <details class="filter-group" {{ chosen ? 'open' }}>
+                        <summary class="filter-group__head">
+                            <span class="chip__dot" style="--c: {{ t.account.color }}"></span>
+                            <span class="grow ellipsis">{{ trees|length > 1 ? t.account.name : 'Tutte le categorie' }}</span>
+                            <span class="filter-group__badge">attive</span>
+                            {{ icon('chevron-down', 18, 'filter-group__chev') }}
+                        </summary>
+                        <div class="chips filter-group__body">
+                            {% for parent in t.tree %}
+                                <label class="chip"><input type="checkbox" name="cat[]" value="{{ parent.id }}" {{ parent.id in filter.categories ? 'checked' }}><span class="chip__dot" style="--c: {{ parent.color }}"></span>{{ parent.name }}</label>
+                                {% for child in parent.children|filter(c => not c.archived) %}
+                                    <label class="chip"><input type="checkbox" name="cat[]" value="{{ child.id }}" {{ child.id in filter.categories ? 'checked' }}><span class="chip__dot" style="--c: {{ child.color }}"></span>{{ child.name }}</label>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </details>
+                {% endfor %}
             </div>
-            {% endfor %}
+            {% endif %}
 
             {% if tags is not empty %}
             <div class="stack-sm">
