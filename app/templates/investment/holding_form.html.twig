@@ -23,6 +23,11 @@
         <label class="field"><span class="field__label">Ticker / ISIN</span><input type="text" name="symbol" value="{{ holding.symbol }}" maxlength="40" placeholder="facoltativo" autocapitalize="characters"></label>
     </div>
     <label class="field">
+        <span class="field__label">Simbolo per il prezzo di oggi</span>
+        <input type="text" name="quote_symbol" value="{{ holding.quoteSymbol }}" maxlength="30" placeholder="automatico dall'ISIN (es. SWDA.MI)" autocapitalize="characters" autocomplete="off">
+    </label>
+    <p class="hint">Serve a stimare il valore di oggi fra un aggiornamento e l'altro. Se lo lasci vuoto si cerca dall'ISIN; per la borsa di Milano usa ad esempio SWDA.MI, per le crypto BTC-EUR.</p>
+    <label class="field">
         <span class="field__label">Note</span>
         <textarea name="note" rows="2" placeholder="es. piano di accumulo mensile su Scalable">{{ holding.note }}</textarea>
     </label>

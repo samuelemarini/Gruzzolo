@@ -22,11 +22,18 @@
     <div class="cols">
         <div class="col-main">
             <section class="card">
-                <span class="small muted">Valore{{ stats.lastDate ? ' al ' ~ stats.lastDate|it_date('d MMMM yyyy') }}</span>
-                <div class="hero-amount"><span class="hero-amount__value" style="font-size: 42px">{{ stats.value|money }}</span></div>
+                {% if live %}
+                    <span class="small muted">Valore stimato oggi</span>
+                    <div class="hero-amount"><span class="hero-amount__value" style="font-size: 42px">{{ live.value|money }}</span></div>
+                    <span class="small"><span class="strong {{ live.change >= 0 ? 'text-income' : 'text-expense' }}">{{ live.change|money(true) }} ({{ live.changePct|pct(2, true) }})</span> <span class="muted">dal {{ stats.lastDate|it_date('d MMMM') }}, quando valeva {{ stats.value|money }}</span></span>
+                    <span class="xsmall muted">Prezzo di mercato ({{ live.symbol }}) delle {{ live.time|date('H:i') }} del {{ live.time|it_date('d MMM') }}: è una stima, il valore ufficiale resta quello che registri.</span>
+                {% else %}
+                    <span class="small muted">Valore{{ stats.lastDate ? ' al ' ~ stats.lastDate|it_date('d MMMM yyyy') }}</span>
+                    <div class="hero-amount"><span class="hero-amount__value" style="font-size: 42px">{{ stats.value|money }}</span></div>
+                {% endif %}
                 <div class="grid-2">
                     <div class="stat stat--inner"><span class="stat__label">Versati in totale</span><span class="stat__value">{{ stats.invested|money }}</span></div>
-                    <div class="stat stat--inner"><span class="stat__label">Rendimento</span><span class="stat__value {{ stats.gain >= 0 ? 'text-income' : 'text-expense' }}">{{ stats.gain|money(true) }}</span><span class="stat__sub">{{ stats.pct|pct(2, true) }}</span></div>
+                    <div class="stat stat--inner"><span class="stat__label">Rendimento{{ live ? ' oggi' }}</span><span class="stat__value {{ (live ? live.gain : stats.gain) >= 0 ? 'text-income' : 'text-expense' }}">{{ (live ? live.gain : stats.gain)|money(true) }}</span><span class="stat__sub">{{ (live ? live.pct : stats.pct)|pct(2, true) }}</span></div>
                 </div>
                 {% if chrono|length >= 2 %}
                     {{ ui.line_chart(chart, {value: holding.color, invested: 'muted'}, 'Valore e versato nel tempo') }}

@@ -69,6 +69,10 @@ Backup: il volume `db_data`, oppure `mariadb-dump` dal container `database`.
 - **Investimenti**: per ogni titolo si registrano versamenti/prelievi e il valore del momento.
   Rendimento = ultimo valore − somma dei versamenti. Un versamento può uscire da un conto
   (giroconto, non spesa).
+  **Valore stimato oggi**: fra un aggiornamento e l'altro l'ultimo valore registrato si moltiplica per
+  la variazione del prezzo di mercato da quel giorno (`MarketPrices` su Yahoo Finance, gratuito e non
+  ufficiale; prezzi in valuta convertiti in euro; cache 20 minuti). Il simbolo si indica sul titolo
+  (es. SWDA.MI, BTC-EUR) o si cerca dall'ISIN. Se il servizio non risponde resta l'ultimo valore registrato.
 - **Trascina giù per aggiornare** (touch, `assets/pull_refresh.js`): dalla cima della pagina ricarica
   con Turbo. Spento nei form (`form.form`), nei pannelli `<dialog>` e su `[data-no-pull]`; il
   pull-to-refresh nativo del browser è disattivato da `overscroll-behavior-y` per non ricaricare due volte.

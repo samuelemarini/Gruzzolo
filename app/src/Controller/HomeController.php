@@ -6,6 +6,7 @@ use App\Repository\AccountRepository;
 use App\Repository\HoldingRepository;
 use App\Repository\MovementRepository;
 use App\Service\BalanceService;
+use App\Service\InvestmentLive;
 use App\Service\InvestmentStats;
 use App\Service\ReportService;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,6 +24,7 @@ final class HomeController extends AppController
         HoldingRepository $holdings,
         BalanceService $balances,
         InvestmentStats $investments,
+        InvestmentLive $live,
     ): Response {
         $user = $this->me();
         $month = self::month($request);
@@ -57,7 +59,8 @@ final class HomeController extends AppController
             'scopeIds' => $accountIds ?? array_map(fn ($a) => $a->getId(), $all),
             'accounts' => $accountList,
             'balances' => $balances->balances($user),
-            'portfolio' => $holdingList ? $investments->portfolio($holdingList) : null,
+            'portfolio' => $portfolio = $holdingList ? $investments->portfolio($holdingList) : null,
+            'portfolioLive' => $portfolio ? $live->portfolio($portfolio) : null,
         ]);
     }
 

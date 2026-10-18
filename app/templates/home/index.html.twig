@@ -90,9 +90,11 @@
                     {{ icon('chevron-right', 18, 'faint') }}
                 </div>
                 <div class="row row--between" style="align-items: baseline">
-                    <span class="display" style="font-size: 26px; font-weight: 700">{{ portfolio.value|money }}</span>
-                    <span class="strong {{ portfolio.gain >= 0 ? 'text-income' : 'text-expense' }}">{{ portfolio.gain|money(true) }} · {{ portfolio.pct|pct(1, true) }}</span>
+                    {% set p = portfolioLive ?? portfolio %}
+                    <span class="display" style="font-size: 26px; font-weight: 700">{{ p.value|money }}</span>
+                    <span class="strong {{ p.gain >= 0 ? 'text-income' : 'text-expense' }}">{{ p.gain|money(true) }} · {{ p.pct|pct(1, true) }}</span>
                 </div>
+                {% if portfolioLive %}<span class="xsmall muted">stima di oggi · <span class="{{ portfolioLive.change >= 0 ? 'text-income' : 'text-expense' }}">{{ portfolioLive.changePct|pct(1, true) }}</span> dall'ultimo aggiornamento</span>{% endif %}
             </a>
             {% endif %}
         </div>

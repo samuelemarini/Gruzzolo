@@ -8,6 +8,7 @@ use App\Model\MovementFilter;
 use App\Repository\AccountRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\HoldingRepository;
+use App\Service\InvestmentLive;
 use App\Service\InvestmentStats;
 use App\Service\UserSeeder;
 use App\Repository\MovementRepository;
@@ -32,13 +33,15 @@ final class AccountController extends AppController
     }
 
     #[Route('', name: 'account_index', methods: ['GET'])]
-    public function index(HoldingRepository $holdings, InvestmentStats $stats): Response
+    public function index(HoldingRepository $holdings, InvestmentStats $stats, InvestmentLive $live): Response
     {
         $user = $this->me();
         $list = $this->accounts->findForUser($user, true);
         $balances = $this->balances->balances($user);
         $holdingList = $holdings->findForUser($user);
-        $investments = $holdingList ? $stats->portfolio($holdingList)['value'] : null;
+        // Investimenti: valore stimato oggi dai prezzi di mercato, altrimenti l'ultimo registrato.
+        $portfolio = $holdingList ? $stats->portfolio($holdingList) : null;
+        $investments = $portfolio ? ($live->portfolio($portfolio)['value'] ?? $portfolio['value']) : null;
 
         // Patrimonio: i conti (non archiviati) e gli investimenti che l'utente ha scelto di contare.
         $items = [];

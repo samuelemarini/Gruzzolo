@@ -10,6 +10,7 @@ use App\Repository\AccountRepository;
 use App\Repository\HoldingRepository;
 use App\Repository\InvestmentEntryRepository;
 use App\Service\ChartBuilder;
+use App\Service\InvestmentLive;
 use App\Service\InvestmentStats;
 use App\Service\Palette;
 use App\Util\Money;
@@ -26,6 +27,7 @@ final class InvestmentController extends AppController
         private readonly InvestmentEntryRepository $entries,
         private readonly AccountRepository $accounts,
         private readonly InvestmentStats $stats,
+        private readonly InvestmentLive $live,
         private readonly ChartBuilder $charts,
         private readonly EntityManagerInterface $em,
     ) {
@@ -41,6 +43,8 @@ final class InvestmentController extends AppController
 
         return $this->render('investment/index.html.twig', [
             'portfolio' => $portfolio,
+            // Stima di oggi dai prezzi di mercato (null se non disponibili).
+            'live' => $this->live->portfolio($portfolio),
             'archived' => array_filter($all, fn (Holding $h) => $h->isArchived()),
             'timeline' => $timeline,
             'chart' => $this->charts->lines([
@@ -60,6 +64,7 @@ final class InvestmentController extends AppController
         return $this->render('investment/show.html.twig', [
             'holding' => $holding,
             'stats' => $stats,
+            'live' => $holding->isArchived() ? null : $this->live->estimate($holding, $stats),
             'chrono' => $chrono,
             'chart' => $this->charts->lines([
                 'value' => array_map(fn ($r) => (float) $r['entry']->getValue(), $chrono),
@@ -137,6 +142,7 @@ final class InvestmentController extends AppController
             $this->checkCsrf($request, 'holding');
             $data = $request->request;
             $holding->setName((string) $data->get('name'))->setSymbol((string) $data->get('symbol'))
+                ->setQuoteSymbol((string) $data->get('quote_symbol'))
                 ->setKind((string) $data->get('kind'))->setNote((string) $data->get('note'))
                 ->setArchived($data->getBoolean('archived'));
             $color = (string) $data->get('color');

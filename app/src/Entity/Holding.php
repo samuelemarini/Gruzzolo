@@ -29,6 +29,10 @@ class Holding implements OwnedInterface
     #[ORM\Column(length: 40, nullable: true)]
     private ?string $symbol = null;
 
+    /** Simbolo per il prezzo di mercato (es. SWDA.MI, BTC-EUR); vuoto = trovato dall'ISIN o dal simbolo. */
+    #[ORM\Column(length: 30, nullable: true)]
+    private ?string $quoteSymbol = null;
+
     #[ORM\Column(length: 20)]
     private string $kind = 'etf';
 
@@ -64,6 +68,9 @@ class Holding implements OwnedInterface
 
     public function getSymbol(): ?string { return $this->symbol; }
     public function setSymbol(?string $symbol): static { $symbol = $symbol !== null ? trim($symbol) : ''; $this->symbol = $symbol !== '' ? $symbol : null; return $this; }
+
+    public function getQuoteSymbol(): ?string { return $this->quoteSymbol; }
+    public function setQuoteSymbol(?string $symbol): static { $symbol = strtoupper(trim((string) $symbol)); $this->quoteSymbol = $symbol !== '' ? $symbol : null; return $this; }
 
     public function getKind(): string { return $this->kind; }
     public function setKind(string $kind): static { $this->kind = array_key_exists($kind, self::KINDS) ? $kind : 'other'; return $this; }

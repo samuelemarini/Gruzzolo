@@ -17,11 +17,19 @@
     <div class="cols">
         <div class="col-main">
             <section class="card">
-                <span class="small muted">Valore del portafoglio</span>
-                <div class="hero-amount"><span class="hero-amount__value">{{ portfolio.value|num(2) }}</span><span class="hero-amount__cur">€</span></div>
+                {# Con i prezzi di mercato: valore stimato oggi; altrimenti l'ultimo registrato #}
+                {% set value = live ? live.value : portfolio.value %}
+                {% set gain = live ? live.gain : portfolio.gain %}
+                {% set gainPct = live ? live.pct : portfolio.pct %}
+                <span class="small muted">{{ live ? 'Valore stimato oggi' : 'Valore del portafoglio' }}</span>
+                <div class="hero-amount"><span class="hero-amount__value">{{ value|num(2) }}</span><span class="hero-amount__cur">€</span></div>
+                {% if live %}
+                    <span class="small"><span class="strong {{ live.change >= 0 ? 'text-income' : 'text-expense' }}">{{ live.change|money(true) }} ({{ live.changePct|pct(2, true) }})</span> <span class="muted">dall'ultimo aggiornamento ({{ portfolio.value|money }})</span></span>
+                    <span class="xsmall muted">Prezzi di mercato delle {{ live.time|date('H:i') }} del {{ live.time|it_date('d MMM') }}{{ live.count < portfolio.holdings|length ? ' · ' ~ live.count ~ ' titoli su ' ~ portfolio.holdings|length }}</span>
+                {% endif %}
                 <div class="grid-2">
                     <div class="stat stat--inner"><span class="stat__label">Versati</span><span class="stat__value">{{ portfolio.invested|money }}</span></div>
-                    <div class="stat stat--inner"><span class="stat__label">Rendimento</span><span class="stat__value {{ portfolio.gain >= 0 ? 'text-income' : 'text-expense' }}">{{ portfolio.gain|money(true) }}</span><span class="stat__sub">{{ portfolio.pct|pct(1, true) }}</span></div>
+                    <div class="stat stat--inner"><span class="stat__label">Rendimento</span><span class="stat__value {{ gain >= 0 ? 'text-income' : 'text-expense' }}">{{ gain|money(true) }}</span><span class="stat__sub">{{ gainPct|pct(1, true) }}</span></div>
                 </div>
                 {% if timeline|length >= 2 %}
                     {{ ui.line_chart(chart, {value: 'var(--accent-text)', invested: 'muted'}, 'Valore del portafoglio e somma versata nel tempo') }}
@@ -37,21 +45,21 @@
             <section class="stack-sm">
                 <div class="section-head"><h2>Titoli</h2></div>
                 {% for item in portfolio.holdings %}
-                    {% set h = item.holding %}{% set s = item.stats %}
+                    {% set h = item.holding %}{% set s = item.stats %}{% set e = live ? live.items[h.id] ?? null : null %}
                     <a class="card card--tight" href="{{ path('investment_show', {id: h.id}) }}">
                         <div class="row">
                             {{ ui.tile(h.icon, h.color, 'sm') }}
                             <div class="grow stack-sm" style="gap: 1px">
                                 <span class="strong ellipsis">{{ h.name }}</span>
-                                <span class="xsmall muted">{{ h.kindLabel }}{{ h.symbol ? ' · ' ~ h.symbol }}{{ s.lastDate ? ' · agg. ' ~ s.lastDate|short_day|lower }}</span>
+                                <span class="xsmall muted">{{ h.kindLabel }}{{ s.lastDate ? ' · agg. ' ~ s.lastDate|short_day|lower }}{% if e %} · <span class="{{ e.changePct >= 0 ? 'text-income' : 'text-expense' }}">{{ e.changePct|pct(1, true) }} da allora</span>{% endif %}</span>
                             </div>
                             <div class="stack-sm" style="gap: 1px; align-items: flex-end">
-                                <span class="strong">{{ s.value|money }}</span>
-                                <span class="xsmall strong {{ s.gain >= 0 ? 'text-income' : 'text-expense' }}">{{ s.gain|money(true) }} · {{ s.pct|pct(1, true) }}</span>
+                                <span class="strong">{{ (e ? e.value : s.value)|money }}</span>
+                                <span class="xsmall strong {{ (e ? e.gain : s.gain) >= 0 ? 'text-income' : 'text-expense' }}">{{ (e ? e.gain : s.gain)|money(true) }} · {{ (e ? e.pct : s.pct)|pct(1, true) }}</span>
                             </div>
                         </div>
                         {% if portfolio.value > 0 %}
-                            <div class="progress" style="--c: {{ h.color }}"><span style="width: {{ (s.value / portfolio.value * 100)|round(1) }}%"></span></div>
+                            <div class="progress" style="--c: {{ h.color }}"><span style="width: {{ ((e ? e.value : s.value) / value * 100)|round(1) }}%"></span></div>
                         {% endif %}
                     </a>
                 {% endfor %}
