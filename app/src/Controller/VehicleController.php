@@ -17,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/veicoli')]
 final class VehicleController extends AppController
 {
-    private const PERIODS = ['3m' => '3 mesi', '12m' => '12 mesi', 'all' => 'Sempre'];
+    private const PERIODS = ['1m' => '1 mese', '12m' => '12 mesi', 'all' => 'Sempre', 'custom' => 'Periodo'];
     private const TABS = ['general' => 'Generale', 'fuel' => 'Rifornimenti', 'costs' => 'Spese'];
 
     public function __construct(
@@ -52,12 +52,24 @@ final class VehicleController extends AppController
         $period = array_key_exists($period, self::PERIODS) ? $period : '12m';
         $tab = (string) $request->query->get('tab', 'general');
         $tab = array_key_exists($tab, self::TABS) ? $tab : 'general';
-        $from = match ($period) {
-            '3m' => new \DateTimeImmutable('today -3 months'),
-            '12m' => new \DateTimeImmutable('today -12 months'),
-            default => null,
-        };
-        $stats = $this->stats->compute($vehicle, $from);
+        $from = $to = null;
+        switch ($period) {
+            case '1m':
+                $from = new \DateTimeImmutable('today -1 month');
+                break;
+            case '12m':
+                $from = new \DateTimeImmutable('today -12 months');
+                break;
+            case 'custom':
+                // Periodo personalizzato: di default dall'inizio dell'anno a oggi.
+                $from = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) $request->query->get('from')) ?: new \DateTimeImmutable('first day of january this year');
+                $to = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) $request->query->get('to')) ?: new \DateTimeImmutable('today');
+                if ($to < $from) {
+                    [$from, $to] = [$to, $from];
+                }
+                break;
+        }
+        $stats = $this->stats->compute($vehicle, $from, $to);
         $avg = $stats['efficiency'];
         // Con tanti pieni i grafici diventano illeggibili: oltre 36 punti si mostra la media di ogni mese (come Drivvo).
         $series = self::byMonth($stats['series']);
@@ -80,6 +92,10 @@ final class VehicleController extends AppController
             'stats' => $stats,
             'period' => $period,
             'periods' => self::PERIODS,
+            'from' => $from,
+            'to' => $to,
+            // Parametri del periodo da tenere nei link (schede comprese).
+            'range' => $period === 'custom' ? ['period' => 'custom', 'from' => $from->format('Y-m-d'), 'to' => $to->format('Y-m-d')] : ['period' => $period],
             'tab' => $tab,
             'tabs' => self::TABS,
             'series' => $series,

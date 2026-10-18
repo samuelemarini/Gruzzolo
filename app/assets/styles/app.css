@@ -356,6 +356,8 @@ a.list-row:hover { background: color-mix(in srgb, var(--surface-2) 50%, transpar
 .vstat__foot span { display: flex; flex-direction: column; min-width: 0; }
 .vstat__foot small { font-size: 11px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vstat__right { text-align: right; }
+.vrange { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; max-width: 480px; }
+.vrange .btn { grid-column: 1 / -1; }
 .vgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
 @media (max-width: 700px) { .vgrid { grid-template-columns: minmax(0, 1fr); } }
 .vroutine > div { display: flex; flex-direction: column; gap: 2px; }

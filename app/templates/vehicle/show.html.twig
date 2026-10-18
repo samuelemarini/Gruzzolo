@@ -60,14 +60,24 @@
 
     <div class="chips chips--scroll" role="tablist" aria-label="Sezioni">
         {% for key, label in tabs %}
-            <a class="chip {{ tab == key ? 'is-active' }}" role="tab" aria-selected="{{ tab == key ? 'true' : 'false' }}" href="{{ path('vehicle_show', {id: vehicle.id, period: period, tab: key}) }}">{{ label }}</a>
+            <a class="chip {{ tab == key ? 'is-active' }}" role="tab" aria-selected="{{ tab == key ? 'true' : 'false' }}" href="{{ path('vehicle_show', {id: vehicle.id, tab: key}|merge(range)) }}">{{ label }}</a>
         {% endfor %}
     </div>
-    <div class="seg" style="max-width: 420px">
+    <div class="seg" style="max-width: 480px">
         {% for key, label in periods %}
             <a href="{{ path('vehicle_show', {id: vehicle.id, period: key, tab: tab}) }}" class="{{ period == key ? 'is-active' }}">{{ label }}</a>
         {% endfor %}
     </div>
+    {% if period == 'custom' %}
+        {# Periodo personalizzato: si sceglie dal / al #}
+        <form method="get" action="{{ path('vehicle_show', {id: vehicle.id}) }}" class="vrange">
+            <input type="hidden" name="period" value="custom">
+            <input type="hidden" name="tab" value="{{ tab }}">
+            <label class="field"><span class="field__label">Dal</span><input type="date" name="from" value="{{ from|date('Y-m-d') }}" required></label>
+            <label class="field"><span class="field__label">Al</span><input type="date" name="to" value="{{ to|date('Y-m-d') }}" required></label>
+            <button type="submit" class="btn btn--sm">Mostra</button>
+        </form>
+    {% endif %}
     <p class="xsmall muted" style="margin: -6px 0 0">
         {{ stats.count }} rifornimenti{{ stats.days ? ' · ' ~ stats.days|num ~ ' giorni' }}{% if stats.odometerSeries is not empty %} · dal {{ (stats.odometerSeries|first).date|it_date('d MMM yyyy') }}{% endif %}
     </p>
