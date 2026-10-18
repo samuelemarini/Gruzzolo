@@ -60,7 +60,7 @@ final class HomeController extends AppController
             'accounts' => $accountList,
             'balances' => $balances->balances($user),
             'portfolio' => $portfolio = $holdingList ? $investments->portfolio($holdingList) : null,
-            'portfolioLive' => $portfolio ? $live->portfolio($portfolio) : null,
+            'portfolioLive' => $portfolio && $user->isLiveInvestments() ? $live->portfolio($portfolio) : null,
         ]);
     }
 

@@ -44,7 +44,8 @@ final class InvestmentController extends AppController
         return $this->render('investment/index.html.twig', [
             'portfolio' => $portfolio,
             // Stima di oggi dai prezzi di mercato (null se non disponibili).
-            'live' => $this->live->portfolio($portfolio),
+            'live' => $this->me()->isLiveInvestments() ? $this->live->portfolio($portfolio) : null,
+            'liveEnabled' => $this->me()->isLiveInvestments(),
             'archived' => array_filter($all, fn (Holding $h) => $h->isArchived()),
             'timeline' => $timeline,
             'chart' => $this->charts->lines([
@@ -52,6 +53,19 @@ final class InvestmentController extends AppController
                 'invested' => array_column($timeline, 'invested'),
             ], 320, 160),
         ]);
+    }
+
+    /** Attiva o disattiva la stima di oggi dai prezzi di mercato (impostazione dell'utente). */
+    #[Route('/stima', name: 'investment_live_toggle', methods: ['POST'])]
+    public function toggleLive(Request $request): Response
+    {
+        $this->checkCsrf($request, 'investment-live');
+        $user = $this->me();
+        $user->setLiveInvestments(!$user->isLiveInvestments());
+        $this->em->flush();
+        $this->addFlash('success', $user->isLiveInvestments() ? 'Stima di oggi attivata' : 'Stima di oggi disattivata: si vedono i valori registrati');
+
+        return $this->redirectToRoute('investment_index', [], 303);
     }
 
     #[Route('/{id}', name: 'investment_show', requirements: ['id' => '\d+'], methods: ['GET'])]
@@ -64,7 +78,7 @@ final class InvestmentController extends AppController
         return $this->render('investment/show.html.twig', [
             'holding' => $holding,
             'stats' => $stats,
-            'live' => $holding->isArchived() ? null : $this->live->estimate($holding, $stats),
+            'live' => $holding->isArchived() || !$this->me()->isLiveInvestments() ? null : $this->live->estimate($holding, $stats),
             'chrono' => $chrono,
             'chart' => $this->charts->lines([
                 'value' => array_map(fn ($r) => (float) $r['entry']->getValue(), $chrono),

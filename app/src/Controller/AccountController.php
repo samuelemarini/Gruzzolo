@@ -41,7 +41,7 @@ final class AccountController extends AppController
         $holdingList = $holdings->findForUser($user);
         // Investimenti: valore stimato oggi dai prezzi di mercato, altrimenti l'ultimo registrato.
         $portfolio = $holdingList ? $stats->portfolio($holdingList) : null;
-        $investments = $portfolio ? ($live->portfolio($portfolio)['value'] ?? $portfolio['value']) : null;
+        $investments = $portfolio ? (($user->isLiveInvestments() ? $live->portfolio($portfolio)['value'] ?? null : null) ?? $portfolio['value']) : null;
 
         // Patrimonio: i conti (non archiviati) e gli investimenti che l'utente ha scelto di contare.
         $items = [];

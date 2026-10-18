@@ -45,6 +45,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?array $netWorthExcluded = null;
 
+    /** Stima di oggi degli investimenti dai prezzi di mercato (disattivabile dalla pagina Investimenti). */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $liveInvestments = true;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -84,6 +88,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static { $this->password = $password; return $this; }
 
     /** @param string $key id del conto oppure "inv" */
+    public function isLiveInvestments(): bool { return $this->liveInvestments; }
+    public function setLiveInvestments(bool $on): static { $this->liveInvestments = $on; return $this; }
+
     public function isInNetWorth(string $key): bool { return !in_array($key, $this->netWorthExcluded ?? [], true); }
 
     public function toggleNetWorth(string $key): static

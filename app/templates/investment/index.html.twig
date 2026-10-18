@@ -27,6 +27,12 @@
                     <span class="small"><span class="strong {{ live.change >= 0 ? 'text-income' : 'text-expense' }}">{{ live.change|money(true) }} ({{ live.changePct|pct(2, true) }})</span> <span class="muted">dall'ultimo aggiornamento ({{ portfolio.value|money }})</span></span>
                     <span class="xsmall muted">Prezzi di mercato delle {{ live.time|date('H:i') }} del {{ live.time|it_date('d MMM') }}{{ live.count < portfolio.holdings|length ? ' · ' ~ live.count ~ ' titoli su ' ~ portfolio.holdings|length }}</span>
                 {% endif %}
+                <form method="post" action="{{ path('investment_live_toggle') }}" class="row live-toggle">
+                    <input type="hidden" name="_token" value="{{ csrf_token('investment-live') }}">
+                    {{ icon(liveEnabled ? 'trending-up' : 'eye-off', 16, 'muted') }}
+                    <span class="xsmall muted grow">{{ liveEnabled ? 'Stima di oggi dai prezzi di mercato attiva' : 'Stima di oggi disattivata: valori registrati' }}</span>
+                    <button type="submit" class="chip" style="height: 30px; font-size: 13px">{{ liveEnabled ? 'Disattiva' : 'Attiva' }}</button>
+                </form>
                 <div class="grid-2">
                     <div class="stat stat--inner"><span class="stat__label">Versati</span><span class="stat__value">{{ portfolio.invested|money }}</span></div>
                     <div class="stat stat--inner"><span class="stat__label">Rendimento</span><span class="stat__value {{ gain >= 0 ? 'text-income' : 'text-expense' }}">{{ gain|money(true) }}</span><span class="stat__sub">{{ gainPct|pct(1, true) }}</span></div>
