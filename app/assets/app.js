@@ -2,6 +2,7 @@ import './stimulus_bootstrap.js';
 import './styles/app.css';
 import './privacy.js';
 import './pull_refresh.js';
+import './no_zoom.js';
 
 // Nelle strisce orizzontali porta in vista la voce selezionata.
 document.addEventListener('turbo:load', () => {

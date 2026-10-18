@@ -36,6 +36,10 @@ class Vehicle implements OwnedInterface
     #[ORM\Column(nullable: true)]
     private ?int $initialOdometer = null;
 
+    /** Capacita' del serbatoio (litri, o kWh della batteria): serve per l'autonomia stimata. */
+    #[ORM\Column(nullable: true)]
+    private ?float $tankCapacity = null;
+
     #[ORM\Column(length: 7)]
     private string $color = '#6FDCCB';
 
@@ -68,6 +72,9 @@ class Vehicle implements OwnedInterface
 
     public function getInitialOdometer(): ?int { return $this->initialOdometer; }
     public function setInitialOdometer(?int $initialOdometer): static { $this->initialOdometer = $initialOdometer; return $this; }
+
+    public function getTankCapacity(): ?float { return $this->tankCapacity; }
+    public function setTankCapacity(?float $tankCapacity): static { $this->tankCapacity = $tankCapacity > 0 ? $tankCapacity : null; return $this; }
 
     public function getColor(): string { return $this->color; }
     public function setColor(string $color): static { $this->color = $color; return $this; }

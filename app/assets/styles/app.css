@@ -112,8 +112,10 @@
 /* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; overscroll-behavior-y: contain; }
-/* Niente zoom col doppio tocco (digitando in fretta sul tastierino); il pizzico resta */
-html, body, a, button, label, input, select, textarea, [role="button"] { touch-action: manipulation; }
+/* Niente zoom: sulla pagina solo lo scorrimento (pan-x pan-y esclude il pizzico e il doppio tocco),
+   gli elementi interattivi restano "manipulation"; Safari iOS lo blocca anche assets/no_zoom.js */
+html { touch-action: pan-x pan-y; }
+body, a, button, label, input, select, textarea, [role="button"] { touch-action: manipulation; }
 body {
   margin: 0;
   min-height: 100dvh;
@@ -338,6 +340,34 @@ a.list-row:hover { background: color-mix(in srgb, var(--surface-2) 50%, transpar
 .bars__group { display: flex; justify-content: center; align-items: flex-end; gap: 3px; height: 100%; }
 .bars__bar { width: min(14px, 40%); border-radius: 6px 6px 2px 2px; background: var(--c); min-height: 2px; }
 .bars__bar.is-partial { opacity: .5; }
+/* Barre impilate (costi del veicolo mese per mese) */
+.bars--stacked .bars__group { align-items: flex-end; }
+.bars__stack { display: flex; flex-direction: column; width: min(18px, 70%); min-height: 2px; border-radius: 6px 6px 2px 2px; overflow: hidden; }
+.bars__stack > span { background: var(--c); min-height: 1px; }
+.bars--dense { gap: 2px; }
+.bars--dense .bars__bar, .bars--dense .bars__stack { width: 80%; border-radius: 3px 3px 1px 1px; }
+.bars__labels span { white-space: nowrap; overflow: visible; }
+
+/* Pagina veicolo: riquadri numerici, griglia delle card, abitudini e indicatori */
+.vstat { gap: 6px; }
+.vstat__title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--text-2); }
+.vstat .stat__value { font-size: 22px; }
+.vstat__foot { display: flex; justify-content: space-between; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 13px; font-weight: 600; }
+.vstat__foot span { display: flex; flex-direction: column; min-width: 0; }
+.vstat__foot small { font-size: 11px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vstat__right { text-align: right; }
+.vgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+@media (max-width: 700px) { .vgrid { grid-template-columns: minmax(0, 1fr); } }
+.vroutine > div { display: flex; flex-direction: column; gap: 2px; }
+.vroutine small { font-size: 12px; color: var(--muted); }
+.vroutine b { font: 700 20px/1.2 var(--font-display); }
+.gauge { display: flex; flex-direction: column; gap: 8px; }
+.gauge + .gauge { margin-top: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.gauge__track { position: relative; height: 8px; border-radius: 999px; margin: 6px 8px; }
+.gauge__track--up { background: linear-gradient(90deg, color-mix(in srgb, var(--expense) 45%, transparent), color-mix(in srgb, var(--accent-text) 45%, transparent)); }
+.gauge__track--down { background: linear-gradient(90deg, color-mix(in srgb, var(--accent-text) 45%, transparent), color-mix(in srgb, var(--expense) 45%, transparent)); }
+.gauge__dot { position: absolute; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 999px; border: 4px solid var(--text); background: var(--surface); }
+.gauge__avg { position: absolute; top: -5px; width: 2px; height: 18px; margin-left: -1px; border-radius: 2px; background: var(--muted); }
 .bars__labels { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; font-size: 12px; color: var(--muted); text-align: center; margin-top: -6px; }
 .chart-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
 .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }

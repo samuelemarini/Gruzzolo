@@ -29,7 +29,8 @@
         <label class="field"><span class="field__label">Targa</span><input type="text" name="plate" value="{{ vehicle.plate }}" maxlength="20" autocapitalize="characters" placeholder="facoltativa"></label>
         <label class="field"><span class="field__label">Km iniziali</span><input type="text" inputmode="numeric" name="initial_odometer" value="{{ vehicle.initialOdometer }}" placeholder="facoltativi"></label>
     </div>
-    <p class="hint">I km iniziali servono a contare i chilometri fatti prima del primo rifornimento registrato.</p>
+    <label class="field"><span class="field__label">Serbatoio ({{ vehicle.electric ? 'kWh' : 'litri' }})</span><input type="text" inputmode="decimal" name="tank_capacity" value="{{ vehicle.tankCapacity ? vehicle.tankCapacity|input_num(1) : '' }}" placeholder="es. 54, facoltativo"></label>
+    <p class="hint">I km iniziali servono a contare i chilometri fatti prima del primo rifornimento registrato; la capacità del serbatoio a stimare l'autonomia con il consumo medio.</p>
     <section class="card card--tight">
         <span class="label-caps">Colore</span>
         {{ ui.color_picker('color', vehicle.color) }}

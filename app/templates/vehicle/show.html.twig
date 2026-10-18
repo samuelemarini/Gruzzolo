@@ -2,6 +2,44 @@
 {% import '_ui.html.twig' as ui %}
 {% block title %}{{ vehicle.name }}{% endblock %}
 {% set unit = stats.unit %}
+
+{# Riquadro numerico alla Drivvo: titolo con icona, valore grande e due dettagli sotto #}
+{% macro vstat(icon, color, title, value, left_label, left, right_label, right, value_class, note = null) %}
+    <div class="stat vstat">
+        <span class="vstat__title"><span class="tile tile--xs" style="--c: {{ color }}">{{ icon(icon, 15) }}</span>{{ title }}</span>
+        <span class="stat__value {{ value_class }}">{{ value }}</span>
+        {% if note %}<span class="xsmall muted">{{ note }}</span>{% endif %}
+        <div class="vstat__foot">
+            <span><small>{{ left_label }}</small>{{ left }}</span>
+            {% if right_label %}<span class="vstat__right"><small>{{ right_label }}</small>{{ right }}</span>{% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+{# Indicatore fra minimo e massimo del periodo: cerchio = ultimo pieno, tacca = media #}
+{% macro gauge(label, value, min, max, avg, format, higher_better) %}
+    {% if value is not null and min is not null and max is not null %}
+        {% set span = max - min %}
+        {% set pos = span > 0 ? ((value - min) / span * 100)|round(1) : 50 %}
+        {% set avgPos = avg is not null and span > 0 ? ((avg - min) / span * 100)|round(1) : null %}
+        <div class="gauge">
+            <div class="row row--between" style="align-items: baseline">
+                <span class="small muted">{{ label }} · ultimo pieno</span>
+                <span class="display strong" style="font-size: 22px">{{ format|replace({'%': value|num(2)}) }}</span>
+            </div>
+            <div class="gauge__track {{ higher_better ? 'gauge__track--up' : 'gauge__track--down' }}">
+                {% if avgPos is not null %}<span class="gauge__avg" style="left: {{ max(0, min(100, avgPos)) }}%"></span>{% endif %}
+                <span class="gauge__dot" style="left: {{ max(0, min(100, pos)) }}%"></span>
+            </div>
+            <div class="row row--between xsmall muted">
+                <span>min {{ format|replace({'%': min|num(2)}) }}</span>
+                {% if avg is not null %}<span>media {{ format|replace({'%': avg|num(2)}) }}</span>{% endif %}
+                <span>max {{ format|replace({'%': max|num(2)}) }}</span>
+            </div>
+        </div>
+    {% endif %}
+{% endmacro %}
+
 {% block body %}
 <div class="page page--wide">
     <div class="topbar">
@@ -20,98 +58,249 @@
         </div>
     </div>
 
-    <div class="seg" style="max-width: 420px">
-        {% for key, label in periods %}
-            <a href="{{ path('vehicle_show', {id: vehicle.id, period: key}) }}" class="{{ period == key ? 'is-active' }}">{{ label }}</a>
+    <div class="chips chips--scroll" role="tablist" aria-label="Sezioni">
+        {% for key, label in tabs %}
+            <a class="chip {{ tab == key ? 'is-active' }}" role="tab" aria-selected="{{ tab == key ? 'true' : 'false' }}" href="{{ path('vehicle_show', {id: vehicle.id, period: period, tab: key}) }}">{{ label }}</a>
         {% endfor %}
     </div>
+    <div class="seg" style="max-width: 420px">
+        {% for key, label in periods %}
+            <a href="{{ path('vehicle_show', {id: vehicle.id, period: key, tab: tab}) }}" class="{{ period == key ? 'is-active' }}">{{ label }}</a>
+        {% endfor %}
+    </div>
+    <p class="xsmall muted" style="margin: -6px 0 0">
+        {{ stats.count }} rifornimenti{{ stats.days ? ' · ' ~ stats.days|num ~ ' giorni' }}{% if stats.odometerSeries is not empty %} · dal {{ (stats.odometerSeries|first).date|it_date('d MMM yyyy') }}{% endif %}
+    </p>
 
-    <div class="cols">
-    <div class="col-main">
-        <div class="grid-2">
-            <div class="stat">
-                <span class="stat__label">Consumo medio</span>
-                <span class="stat__value text-accent">{{ stats.efficiency ? stats.efficiency|num(1) ~ ' km/' ~ unit : '—' }}</span>
-                <span class="stat__sub">{{ stats.perHundred ? stats.perHundred|num(2) ~ ' ' ~ unit ~ '/100 km' : 'servono almeno due pieni' }}</span>
+    {% if tab == 'general' %}
+    {# ---------------- Generale ---------------- #}
+    <div class="grid-2">
+        {{ _self.vstat('wallet', '#FF8A80', 'Costo totale', stats.totalCost|money, 'Per giorno', stats.totalPerDay is not null ? stats.totalPerDay|money : '—', 'Per km', stats.costPerKm ? stats.costPerKm|money(false, 2) : '—', 'text-expense') }}
+        {{ _self.vstat('route', '#8AB4FF', 'Distanza', stats.km|num ~ ' km', 'Al giorno', stats.kmPerDay is not null ? stats.kmPerDay|num(0) ~ ' km' : '—', 'Km attuali', stats.odometer ? stats.odometer|num ~ ' km' : '—', '') }}
+    </div>
+
+    <div class="vgrid">
+        <section class="card">
+            <div class="row row--between" style="align-items: baseline">
+                <h2 class="h2" style="font-size: 17px">Costi mese per mese</h2>
+                <span class="xsmall muted">{{ monthlyBars.rows|length }} mesi</span>
             </div>
-            <div class="stat">
-                <span class="stat__label">Carburante al km</span>
-                <span class="stat__value">{{ stats.fuelPerKm ? stats.fuelPerKm|money(false, 3) : '—' }}</span>
-                <span class="stat__sub">solo rifornimenti</span>
+            {% if monthlyBars.rows is not empty and monthlyBars.max > 0 %}
+                {% set every = (monthlyBars.rows|length / 6)|round(0, 'ceil') %}
+                <div class="bars bars--stacked {{ monthlyBars.rows|length > 18 ? 'bars--dense' }}" role="img" aria-label="Costi del veicolo per mese">
+                    {% for r in monthlyBars.rows %}
+                        <div class="bars__group" title="{{ r.month|month_label }}: carburante {{ r.fuel|money }}, altre spese {{ r.other|money }}">
+                            <span class="bars__stack" style="height: {{ r.totalPct }}%">
+                                {% if r.other > 0 %}<span style="--c: #C3A6FF; flex: {{ r.other }} 1 0"></span>{% endif %}
+                                {% if r.fuel > 0 %}<span style="--c: {{ vehicle.color }}; flex: {{ r.fuel }} 1 0"></span>{% endif %}
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="bars__labels" style="gap: 2px">
+                    {% for r in monthlyBars.rows %}<span>{{ loop.index0 % every == 0 ? r.month|it_date(monthlyBars.rows|length > 12 ? 'MM/yy' : 'LLL')|capitalize }}</span>{% endfor %}
+                </div>
+                <div class="chart-legend">
+                    <span><i style="--c: {{ vehicle.color }}"></i>Carburante</span>
+                    <span><i style="--c: #C3A6FF"></i>Altre spese</span>
+                </div>
+            {% else %}
+                <p class="small muted">Nessuna spesa nel periodo.</p>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2 class="h2" style="font-size: 17px">Confronto dei costi</h2>
+            {% if costs is not empty %}
+                <div class="row" style="justify-content: center">{{ ui.donut(costsDonut, stats.totalCost|money(false, 0), 'in totale', 'Costi del veicolo') }}</div>
+                <div class="list">
+                    {% for c in costs %}
+                        <div class="row" style="min-height: 34px; font-size: 14px">
+                            <span class="dot" style="--c: {{ c.color }}"></span>
+                            <span class="grow ellipsis">{{ c.name }}</span>
+                            <span class="xsmall muted">{{ (c.total / stats.totalCost * 100)|pct }}</span>
+                            <span class="strong" style="width: 96px; text-align: right">{{ c.total|money }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="small muted">Nessun costo nel periodo.</p>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="row row--between" style="align-items: baseline">
+                <h2 class="h2" style="font-size: 17px">Contachilometri</h2>
+                <span class="xsmall muted">{{ stats.km|num }} km nel periodo</span>
             </div>
-            <div class="stat">
-                <span class="stat__label">Speso in carburante</span>
-                <span class="stat__value">{{ stats.fuelCost|money }}</span>
-                <span class="stat__sub">{{ stats.liters|num(0) }} {{ unit }}{{ stats.avgPrice ? ' · media ' ~ stats.avgPrice|num(3) ~ ' €/' ~ unit }}</span>
+            {% if stats.odometerSeries|length >= 2 %}
+                {{ ui.line_chart(odometerChart, {odo: '#8AB4FF'}, 'Chilometri del veicolo nel tempo') }}
+                <div class="row row--between xsmall muted"><span>{{ (stats.odometerSeries|first).date|it_date('MMM yyyy') }}</span><span>{{ (stats.odometerSeries|last).date|it_date('MMM yyyy') }}</span></div>
+            {% else %}
+                <p class="small muted">Servono almeno due rifornimenti.</p>
+            {% endif %}
+        </section>
+    </div>
+
+    {% elseif tab == 'fuel' %}
+    {# ---------------- Rifornimenti ---------------- #}
+    <div class="grid-2">
+        {% set pumpNote = stats.pumpCost > stats.fuelCost * 1.01 ? stats.pumpCost|money ~ ' alla pompa (' ~ (stats.pumpCost - stats.fuelCost)|money(false, 0) ~ ' non pagati da qui)' : null %}
+        {{ _self.vstat('fuel', vehicle.color, 'Costo', stats.fuelCost|money, 'Per giorno', stats.fuelPerDay is not null ? stats.fuelPerDay|money : '—', 'Per km', stats.fuelPerKm ? stats.fuelPerKm|money(false, 2) : '—', '', pumpNote) }}
+        {{ _self.vstat('droplet', '#7FD6FF', 'Volume', stats.liters|num(0) ~ ' ' ~ unit, 'Ogni volta', stats.litersPerRefuel ? stats.litersPerRefuel|num(1) ~ ' ' ~ unit : '—', 'Al giorno', stats.litersPerDay is not null ? stats.litersPerDay|num(2) ~ ' ' ~ unit : '—', '') }}
+        {{ _self.vstat('euro', '#F3E06A', 'Prezzo medio', stats.avgPrice ? stats.avgPrice|num(3) ~ ' €/' ~ unit : '—', 'Minimo', stats.priceMin ? stats.priceMin|num(3) ~ ' €' : '—', 'Massimo', stats.priceMax ? stats.priceMax|num(3) ~ ' €' : '—', '') }}
+        {{ _self.vstat('gauge', '#9BE7A0', 'Consumo medio', stats.efficiency ? stats.efficiency|num(2) ~ ' km/' ~ unit : '—', 'Minimo', stats.efficiencyMin ? stats.efficiencyMin|num(2) : '—', 'Massimo', stats.efficiencyMax ? stats.efficiencyMax|num(2) : '—', 'text-accent') }}
+    </div>
+
+    <div class="vgrid">
+        <section class="card">
+            <h2 class="h2" style="font-size: 17px">Abitudini di rifornimento</h2>
+            <div class="grid-2 vroutine">
+                <div><small>Fra un rifornimento e l'altro</small><b>{{ stats.kmBetween ? stats.kmBetween|num(0) ~ ' km' : '—' }}</b></div>
+                <div><small>Ogni</small><b>{{ stats.daysBetween ? stats.daysBetween|num(1) ~ ' giorni' : '—' }}</b></div>
+                <div><small>Autonomia stimata</small>
+                    {% if stats.autonomy %}<b>{{ stats.autonomy|num(0) }} km</b>
+                    {% else %}<a class="link small" href="{{ path('vehicle_edit', {id: vehicle.id}) }}">Indica il serbatoio</a>{% endif %}
+                </div>
+                <div><small>Proiezione mensile</small><b>{{ stats.monthlyFuel is not null ? stats.monthlyFuel|money : '—' }}</b></div>
             </div>
-            <div class="stat">
-                <span class="stat__label">Km percorsi</span>
-                <span class="stat__value">{{ stats.km|num }}</span>
-                <span class="stat__sub">{{ stats.count }} rifornimenti</span>
+            {% if stats.count %}
+                <div class="stack-sm" style="gap: 6px">
+                    <div class="progress" style="--c: {{ vehicle.color }}"><span style="width: {{ (stats.fullCount / stats.count * 100)|round(1) }}%"></span></div>
+                    <span class="xsmall muted">{{ stats.fullCount }} di {{ stats.count }} rifornimenti a serbatoio pieno ({{ (stats.fullCount / stats.count * 100)|pct }}): il consumo si calcola da un pieno all'altro.</span>
+                </div>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2 class="h2" style="font-size: 17px">Ultimo pieno</h2>
+            {% if stats.lastPeriodEfficiency %}
+                {{ _self.gauge('Consumo', stats.lastPeriodEfficiency, stats.efficiencyMin, stats.efficiencyMax, stats.efficiency, '% km/' ~ unit, true) }}
+                {{ _self.gauge('Costo al km', stats.lastCostPerKm, stats.costPerKmMin, stats.costPerKmMax, stats.segmentCostPerKm, '% €', false) }}
+            {% else %}
+                <p class="small muted">Servono almeno due pieni nel periodo.</p>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="row row--between" style="align-items: baseline">
+                <h2 class="h2" style="font-size: 17px">Spesa di carburante per mese</h2>
+                <span class="xsmall muted">media {{ stats.monthlyFuel is not null ? stats.monthlyFuel|money(false, 0) : '—' }}</span>
             </div>
-        </div>
+            {% if fuelBars.rows is not empty and fuelBars.max > 0 %}
+                {% set every = (fuelBars.rows|length / 6)|round(0, 'ceil') %}
+                <div class="bars {{ fuelBars.rows|length > 18 ? 'bars--dense' }}" role="img" aria-label="Spesa di carburante per mese">
+                    {% for r in fuelBars.rows %}
+                        <div class="bars__group" title="{{ r.month|month_label }}: {{ r.fuel|money }}"><span class="bars__bar" style="--c: {{ vehicle.color }}; height: {{ r.fuelPct }}%"></span></div>
+                    {% endfor %}
+                </div>
+                <div class="bars__labels" style="gap: 2px">
+                    {% for r in fuelBars.rows %}<span>{{ loop.index0 % every == 0 ? r.month|it_date(fuelBars.rows|length > 12 ? 'MM/yy' : 'LLL')|capitalize }}</span>{% endfor %}
+                </div>
+            {% else %}
+                <p class="small muted">Nessun rifornimento nel periodo.</p>
+            {% endif %}
+        </section>
 
         <section class="card">
             <div class="row row--between" style="align-items: baseline">
                 <h2 class="h2" style="font-size: 17px">Consumo per pieno</h2>
-                <span class="xsmall muted">km/{{ unit }} · ultimi {{ series|length }}</span>
+                <span class="xsmall muted">km/{{ unit }} · {{ monthlyAveraged ? 'media di ogni mese' : series|length ~ ' pieni' }}</span>
             </div>
             {% if series|length >= 2 %}
-                {{ ui.line_chart(chart, {eff: 'var(--accent-text)', avg: 'muted'}, 'Consumo degli ultimi pieni') }}
+                {{ ui.line_chart(chart, {eff: 'var(--accent-text)', avg: 'muted'}, 'Consumo dei pieni nel periodo') }}
+                <div class="row row--between xsmall muted"><span>{{ (series|first).date|it_date('MMM yyyy') }}</span><span>{{ (series|last).date|it_date('MMM yyyy') }}</span></div>
                 <div class="chart-legend">
-                    <span><i class="line" style="--c: var(--accent-text)"></i>km/{{ unit }} per pieno</span>
+                    <span><i class="line" style="--c: var(--accent-text)"></i>km/{{ unit }} {{ monthlyAveraged ? 'medio del mese' : 'per pieno' }}</span>
                     {% if stats.efficiency %}<span><i class="dashed" style="--c: var(--muted)"></i>media {{ stats.efficiency|num(1) }}</span>{% endif %}
                 </div>
             {% else %}
                 <p class="small muted">Il grafico compare dal secondo pieno: il consumo si calcola fra un pieno e l'altro.</p>
             {% endif %}
         </section>
-    </div>
 
-    <div class="col-side">
         <section class="card">
             <div class="row row--between" style="align-items: baseline">
-                <h2 class="h2" style="font-size: 17px">Costi del veicolo</h2>
-                <span class="strong">{{ stats.totalCost|money }}</span>
+                <h2 class="h2" style="font-size: 17px">Prezzo del carburante</h2>
+                <span class="xsmall muted">€/{{ unit }}</span>
             </div>
-            {% set otherColors = ['#8AB4FF', '#FFB86B', '#C3A6FF', '#F3E06A', '#FF9EC7', '#9BE7A0', '#D9B48F'] %}
-            {% set costs = [{name: 'Carburante', color: vehicle.color, total: stats.fuelCost}] %}
-            {% for c in stats.otherCosts %}{% set costs = costs|merge([c|merge({color: otherColors[loop.index0 % 7]})]) %}{% endfor %}
-            {% set costs = costs|filter(c => c.total > 0) %}
-            {% if costs|length %}
-                <div class="split">{% for c in costs %}<span style="--c: {{ c.color }}; flex: {{ c.total }} 1 0"></span>{% endfor %}</div>
+            {% if priceSeries|length >= 2 %}
+                {{ ui.line_chart(priceChart, {price: '#F3E06A', avg: 'muted'}, 'Prezzo pagato alla pompa nel tempo') }}
+                <div class="row row--between xsmall muted"><span>{{ (priceSeries|first).date|it_date('MMM yyyy') }}</span><span>{{ (priceSeries|last).date|it_date('MMM yyyy') }}</span></div>
+                <div class="chart-legend">
+                    <span><i class="line" style="--c: #F3E06A"></i>€/{{ unit }}</span>
+                    {% if stats.avgPrice %}<span><i class="dashed" style="--c: var(--muted)"></i>media {{ stats.avgPrice|num(3) }}</span>{% endif %}
+                </div>
+            {% else %}
+                <p class="small muted">Servono almeno due rifornimenti con il prezzo.</p>
+            {% endif %}
+        </section>
+    </div>
+
+    <section>
+        <div class="section-head"><h2>Rifornimenti</h2><span class="small muted">{{ stats.refuels|length }} in totale</span></div>
+        <div class="list list--lines">
+            {% for row in stats.refuels|slice(0, 30) %}
+                {% set r = row.refuel %}
+                <a class="list-row" href="{{ path('movement_edit', {id: r.movement.id, back: app.request.requestUri}) }}">
+                    <div class="list-row__body">
+                        <span class="list-row__title">{{ r.movement.date|short_day }} · {{ r.odometer|num }} km</span>
+                        <span class="list-row__meta">{{ r.liters|num(2) }} {{ unit }} · {{ r.pricePerLiter|num(3) }} €/{{ unit }} · {{ r.fullTank ? 'pieno' : 'parziale' }}{{ row.distance ? ' · +' ~ row.distance|num ~ ' km' }}{{ r.missedPrevious ? ' · dopo un salto' }}</span>
+                    </div>
+                    <span class="list-row__amount">{{ r.movement.amount|money }}<small class="text-accent" style="color: var(--accent-text)">{{ row.efficiency ? row.efficiency|num(1) ~ ' km/' ~ unit : '' }}</small></span>
+                </a>
+            {% else %}
+                <p class="small muted">Nessun rifornimento. Usa la categoria Carburante quando registri una spesa.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% else %}
+    {# ---------------- Spese (non carburante) ---------------- #}
+    <div class="grid-2">
+        {{ _self.vstat('wrench', '#C3A6FF', 'Altre spese', stats.otherTotal|money, 'Per giorno', stats.otherPerDay is not null ? stats.otherPerDay|money : '—', 'Per km', stats.km > 0 ? (stats.otherTotal / stats.km)|money(false, 2) : '—', '') }}
+        {{ _self.vstat('wallet', '#FF8A80', 'Con il carburante', stats.totalCost|money, 'Per giorno', stats.totalPerDay is not null ? stats.totalPerDay|money : '—', 'Per km', stats.costPerKm ? stats.costPerKm|money(false, 2) : '—', '') }}
+    </div>
+
+    <div class="vgrid">
+        <section class="card">
+            <h2 class="h2" style="font-size: 17px">Per categoria</h2>
+            {% if others is not empty %}
+                <div class="row" style="justify-content: center">{{ ui.donut(othersDonut, stats.otherTotal|money(false, 0), 'altre spese', 'Spese del veicolo per categoria') }}</div>
                 <div class="list">
-                    {% for c in costs %}
+                    {% for c in others %}
                         <div class="row" style="min-height: 34px; font-size: 14px">
                             <span class="dot" style="--c: {{ c.color }}"></span>
-                            <span class="grow">{{ c.name }}</span>
-                            <span class="xsmall muted">{{ (c.total / stats.totalCost * 100)|pct }}</span>
-                            <span class="strong" style="width: 92px; text-align: right">{{ c.total|money }}</span>
+                            <span class="grow ellipsis">{{ c.name }}</span>
+                            <span class="xsmall muted">{{ (c.total / stats.otherTotal * 100)|pct }}</span>
+                            <span class="strong" style="width: 96px; text-align: right">{{ c.total|money }}</span>
                         </div>
                     {% endfor %}
                 </div>
+            {% else %}
+                <p class="small muted">Nessuna spesa collegata al veicolo nel periodo.</p>
             {% endif %}
-            <span class="xsmall muted">Collega al veicolo anche assicurazione, bollo e tagliandi (campo "Veicolo" nel movimento){{ stats.costPerKm ? ': costo totale ' ~ stats.costPerKm|money(false, 2) ~ '/km' }}.</span>
         </section>
 
-        <section>
-            <div class="section-head"><h2>Rifornimenti</h2><span class="small muted">{{ stats.refuels|length }} in totale</span></div>
-            <div class="list list--lines">
-                {% for row in stats.refuels|slice(0, 30) %}
-                    {% set r = row.refuel %}
-                    <a class="list-row" href="{{ path('movement_edit', {id: r.movement.id, back: app.request.requestUri}) }}">
-                        <div class="list-row__body">
-                            <span class="list-row__title">{{ r.movement.date|short_day }} · {{ r.odometer|num }} km</span>
-                            <span class="list-row__meta">{{ r.liters|num(2) }} {{ unit }} · {{ r.pricePerLiter|num(3) }} €/{{ unit }} · {{ r.fullTank ? 'pieno' : 'parziale' }}{{ row.distance ? ' · +' ~ row.distance|num ~ ' km' }}{{ r.missedPrevious ? ' · dopo un salto' }}</span>
+        <section class="card">
+            <h2 class="h2" style="font-size: 17px">Voci principali</h2>
+            {% if stats.otherItems is not empty %}
+                <div class="list">
+                    {% for i in stats.otherItems %}
+                        <div class="row" style="min-height: 40px; font-size: 14px">
+                            <span class="dot" style="--c: {{ i.color }}"></span>
+                            <span class="grow stack-sm" style="gap: 0; min-width: 0"><span class="ellipsis">{{ i.name }}</span><span class="xsmall muted">{{ i.category }}{{ i.count > 1 ? ' · ' ~ i.count ~ ' volte' }}</span></span>
+                            <span class="strong" style="width: 96px; text-align: right">{{ i.total|money }}</span>
                         </div>
-                        <span class="list-row__amount">{{ r.movement.amount|money }}<small class="text-accent" style="color: var(--accent-text)">{{ row.efficiency ? row.efficiency|num(1) ~ ' km/' ~ unit : '' }}</small></span>
-                    </a>
-                {% else %}
-                    <p class="small muted">Nessun rifornimento. Usa la categoria Carburante quando registri una spesa.</p>
-                {% endfor %}
-            </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="small muted">Nessuna spesa nel periodo.</p>
+            {% endif %}
+            <a class="link small" href="{{ path('movement_index', {vehicle: vehicle.id, account: 'all', period: 'all'}) }}">Tutti i movimenti del veicolo</a>
         </section>
     </div>
-    </div>
+    <p class="xsmall muted">Collega al veicolo assicurazione, bollo, tagliandi e manutenzioni con il campo "Veicolo" del movimento: finiscono qui e nel costo al km.</p>
+    {% endif %}
 </div>
 {% endblock %}

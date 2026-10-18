@@ -62,6 +62,10 @@ Backup: il volume `db_data`, oppure `mariadb-dump` dal container `database`.
   Dei tre valori prezzo/litri/totale bastano due. Il consumo si calcola da pieno a pieno
   (rabbocchi parziali compresi); "Ho saltato un rifornimento" spezza la catena.
   Qualsiasi spesa può essere collegata a un veicolo per avere il costo totale al km.
+  La pagina del veicolo ha le statistiche alla Drivvo in tre schede (Generale, Rifornimenti, Spese):
+  costo al giorno e al km, volumi, prezzo e consumo minimo/massimo, km e giorni fra un rifornimento
+  e l'altro, autonomia stimata (serve la capacità del serbatoio), indicatori dell'ultimo pieno e grafici
+  mensili. Il costo al km di ogni pieno usa il prezzo alla pompa, non l'importo pagato.
 - **Investimenti**: per ogni titolo si registrano versamenti/prelievi e il valore del momento.
   Rendimento = ultimo valore − somma dei versamenti. Un versamento può uscire da un conto
   (giroconto, non spesa).

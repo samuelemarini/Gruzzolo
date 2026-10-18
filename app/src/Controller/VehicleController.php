@@ -7,6 +7,7 @@ use App\Entity\Vehicle;
 use App\Repository\VehicleRepository;
 use App\Service\ChartBuilder;
 use App\Service\Palette;
+use App\Util\Money;
 use App\Service\VehicleStats;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,6 +18,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class VehicleController extends AppController
 {
     private const PERIODS = ['3m' => '3 mesi', '12m' => '12 mesi', 'all' => 'Sempre'];
+    private const TABS = ['general' => 'Generale', 'fuel' => 'Rifornimenti', 'costs' => 'Spese'];
 
     public function __construct(
         private readonly VehicleRepository $vehicles,
@@ -48,24 +50,72 @@ final class VehicleController extends AppController
         $vehicle = $this->own($this->vehicles->find($id));
         $period = (string) $request->query->get('period', '12m');
         $period = array_key_exists($period, self::PERIODS) ? $period : '12m';
+        $tab = (string) $request->query->get('tab', 'general');
+        $tab = array_key_exists($tab, self::TABS) ? $tab : 'general';
         $from = match ($period) {
             '3m' => new \DateTimeImmutable('today -3 months'),
             '12m' => new \DateTimeImmutable('today -12 months'),
             default => null,
         };
         $stats = $this->stats->compute($vehicle, $from);
-        $series = array_slice($stats['series'], -12);
-        $values = array_column($series, 'value');
         $avg = $stats['efficiency'];
+        // Con tanti pieni i grafici diventano illeggibili: oltre 36 punti si mostra la media di ogni mese (come Drivvo).
+        $series = self::byMonth($stats['series']);
+        $priceSeries = self::byMonth($stats['priceSeries']);
+        $values = array_column($series, 'value');
+        $prices = array_column($priceSeries, 'value');
+        $odometers = array_column($stats['odometerSeries'], 'value');
+
+        // Costi del veicolo: carburante e le categorie delle altre spese (per la ciambella).
+        $palette = ['#8AB4FF', '#FFB86B', '#C3A6FF', '#F3E06A', '#FF9EC7', '#9BE7A0', '#D9B48F'];
+        $costs = [['name' => 'Carburante', 'color' => $vehicle->getColor(), 'total' => $stats['fuelCost']]];
+        foreach ($stats['otherCosts'] as $i => $c) {
+            $costs[] = ['name' => $c['name'], 'color' => $palette[$i % count($palette)], 'total' => $c['total']];
+        }
+        $costs = array_values(array_filter($costs, fn ($c) => $c['total'] > 0));
+        $others = array_slice($costs, $costs && $costs[0]['name'] === 'Carburante' ? 1 : 0);
 
         return $this->render('vehicle/show.html.twig', [
             'vehicle' => $vehicle,
             'stats' => $stats,
             'period' => $period,
             'periods' => self::PERIODS,
+            'tab' => $tab,
+            'tabs' => self::TABS,
             'series' => $series,
+            'priceSeries' => $priceSeries,
+            'monthlyAveraged' => count($series) < count($stats['series']),
+            'fuelBars' => $charts->bars($stats['monthly'], ['fuel']),
             'chart' => $charts->lines(['eff' => $values, 'avg' => $avg ? array_fill(0, count($values), round($avg, 2)) : []], 320, 160),
+            'priceChart' => $charts->lines(['price' => $prices, 'avg' => $stats['avgPrice'] ? array_fill(0, count($prices), round($stats['avgPrice'], 3)) : []], 320, 150),
+            'odometerChart' => $charts->lines(['odo' => $odometers], 320, 150),
+            'monthlyBars' => $charts->bars(array_map(fn ($m) => $m + ['total' => $m['fuel'] + $m['other']], $stats['monthly']), ['total']),
+            'costs' => $costs,
+            'costsDonut' => $charts->donut(array_map(fn ($c) => ['value' => $c['total'], 'color' => $c['color'], 'label' => $c['name']], $costs), 180, 22),
+            'others' => $others,
+            'othersDonut' => $charts->donut(array_map(fn ($c) => ['value' => $c['total'], 'color' => $c['color'], 'label' => $c['name']], $others), 180, 22),
         ]);
+    }
+
+    /**
+     * @param list<array{date: \DateTimeImmutable, value: float}> $series
+     *
+     * @return list<array{date: \DateTimeImmutable, value: float}> la serie, o la media di ogni mese se ha piu' di 36 punti
+     */
+    private static function byMonth(array $series): array
+    {
+        if (count($series) <= 36) {
+            return $series;
+        }
+        $months = [];
+        foreach ($series as $point) {
+            $months[$point['date']->format('Y-m')][] = $point;
+        }
+
+        return array_values(array_map(fn ($points) => [
+            'date' => $points[0]['date']->modify('first day of this month'),
+            'value' => round(array_sum(array_column($points, 'value')) / count($points), 3),
+        ], $months));
     }
 
     #[Route('/nuovo', name: 'vehicle_new', methods: ['GET', 'POST'])]
@@ -108,6 +158,8 @@ final class VehicleController extends AppController
                 ->setArchived($data->getBoolean('archived'));
             $odometer = preg_replace('/\D/', '', (string) $data->get('initial_odometer'));
             $vehicle->setInitialOdometer($odometer !== '' ? (int) $odometer : null);
+            $tank = Money::parse((string) $data->get('tank_capacity'));
+            $vehicle->setTankCapacity($tank !== null ? (float) $tank : null);
             $color = (string) $data->get('color');
             $vehicle->setColor(array_key_exists($color, Palette::COLORS) ? $color : '#6FDCCB');
             if ($vehicle->getName() === '') {
