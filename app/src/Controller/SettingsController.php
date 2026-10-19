@@ -25,6 +25,10 @@ final class SettingsController extends AppController
                     $user->setTheme((string) $data->get('theme'));
                     $em->flush();
                     break;
+                case 'style':
+                    $user->setStyle((string) $data->get('style'));
+                    $em->flush();
+                    break;
                 case 'profile':
                     $name = trim((string) $data->get('display_name'));
                     if ($name === '') {
@@ -55,7 +59,7 @@ final class SettingsController extends AppController
             }
         }
 
-        return $this->render('settings/index.html.twig', ['errors' => $errors, 'themes' => User::THEMES],
+        return $this->render('settings/index.html.twig', ['errors' => $errors, 'themes' => User::THEMES, 'styles' => User::STYLES],
             new Response(status: $errors ? 422 : 200));
     }
 }

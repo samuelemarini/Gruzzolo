@@ -14,6 +14,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     public const THEMES = ['system' => 'Automatico', 'light' => 'Chiaro', 'dark' => 'Scuro'];
 
+    /** Stile dell'interfaccia: superfici piene oppure "Liquid Glass" (vetro traslucido alla iOS 26/27). */
+    public const STYLES = ['classic' => 'Classico', 'glass' => 'Liquid Glass'];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -34,6 +37,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 10, options: ['default' => 'system'])]
     private string $theme = 'system';
+
+    #[ORM\Column(length: 10, options: ['default' => 'classic'])]
+    private string $style = 'classic';
 
     #[ORM\Column(options: ['default' => true])]
     private bool $active = true;
@@ -105,6 +111,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setTheme(string $theme): static
     {
         $this->theme = array_key_exists($theme, self::THEMES) ? $theme : 'system';
+
+        return $this;
+    }
+
+    public function getStyle(): string { return $this->style; }
+    public function setStyle(string $style): static
+    {
+        $this->style = array_key_exists($style, self::STYLES) ? $style : 'classic';
 
         return $this;
     }

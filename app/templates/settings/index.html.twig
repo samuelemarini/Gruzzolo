@@ -18,6 +18,20 @@
         <p class="small muted">"Automatico" segue il tema del telefono o del computer.</p>
     </form>
 
+    {# Anche lo stile sta su <html> (data-style): caricamento completo come per il tema. #}
+    <form method="post" class="card" data-turbo="false">
+        <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
+        <input type="hidden" name="section" value="style">
+        <h2 class="h2">Stile</h2>
+        <div class="seg seg--inset">
+            {% for value, label in styles %}
+                <label><input type="radio" name="style" value="{{ value }}" {{ app.user.style == value ? 'checked' }} onchange="this.form.submit()">{{ icon(value == 'glass' ? 'sparkles' : 'layout-grid', 16) }}&nbsp;{{ label }}</label>
+            {% endfor %}
+        </div>
+        <noscript><button type="submit" class="btn btn--sm">Applica</button></noscript>
+        <p class="small muted">"Liquid Glass" usa superfici di vetro traslucido, come iOS: funziona sia col tema chiaro sia con quello scuro.</p>
+    </form>
+
     <form method="post" class="card">
         <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
         <input type="hidden" name="section" value="profile">

@@ -1,0 +1,197 @@
+/* ==========================================================================
+   Gruzzolo — stile "Liquid Glass" (alla iOS 26/27)
+   Livello sopra i temi chiaro/scuro di app.css, attivo con html[data-style="glass"] (scelta
+   dell'utente, Impostazioni › Stile). Le superfici sono lastre di vetro traslucido: sfocano e
+   saturano cio' che hanno dietro, con un bordo chiaro "rifratto" e un riflesso in alto. Lo sfondo
+   ha degli aloni colorati, altrimenti il vetro non avrebbe nulla da rifrangere. Forme piu' tonde,
+   barra inferiore a capsula con la voce attiva in rilievo.
+   Blur solo sulle superfici di primo livello (card, barre, bottoni): quelle interne (campi, riquadri
+   dentro una card) sono solo velate, per non impilare filtri costosi.
+   ========================================================================== */
+
+html[data-style="glass"] {
+  --glass-blur: 28px;
+  --glass-sat: 1.7;
+  --glass-a: .56;
+  --glass-rgb: 26, 28, 30;
+  --glass-bg: rgba(var(--glass-rgb), var(--glass-a));
+  --glass-inner: rgba(255, 255, 255, .07);
+  --glass-well: rgba(0, 0, 0, .22);
+  --glass-edge: rgba(255, 255, 255, .13);
+  --glass-edge-soft: rgba(255, 255, 255, .07);
+  --glass-hi: rgba(255, 255, 255, .24);
+  --glass-pill: rgba(255, 255, 255, .15);
+  --glass-shade: rgba(0, 0, 0, .10);
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, .38);
+  --glass-gloss: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, 0) 48%);
+  --glass-glow-1: color-mix(in srgb, var(--accent) 24%, transparent);
+  --glass-glow-2: rgba(138, 180, 255, .20);
+  --glass-glow-3: rgba(195, 166, 255, .16);
+  --line: rgba(255, 255, 255, .08);
+  --line-strong: rgba(255, 255, 255, .18);
+  --nav-bg: rgba(var(--glass-rgb), .52);
+  --r-sm: 18px;
+  --r-md: 22px;
+  --r-lg: 28px;
+  --r-xl: 32px;
+}
+html[data-style="glass"][data-theme="light"] {
+  --glass-a: .55;
+  --glass-rgb: 255, 255, 255;
+  --glass-inner: rgba(255, 255, 255, .45);
+  --glass-well: rgba(20, 21, 19, .07);
+  --glass-edge: rgba(255, 255, 255, .85);
+  --glass-edge-soft: rgba(255, 255, 255, .6);
+  --glass-hi: rgba(255, 255, 255, 1);
+  --glass-pill: rgba(255, 255, 255, .9);
+  --glass-shade: rgba(0, 0, 0, .02);
+  --glass-shadow: 0 10px 32px rgba(30, 32, 28, .10);
+  /* Sfuma su tutta l'altezza: un riflesso che finisce a meta' si legge come una fascia scura in basso */
+  --glass-gloss: linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, .18));
+  --glass-glow-1: color-mix(in srgb, var(--accent) 55%, transparent);
+  --glass-glow-2: rgba(138, 180, 255, .45);
+  --glass-glow-3: rgba(195, 166, 255, .40);
+  --line: rgba(20, 21, 19, .08);
+  --line-strong: rgba(20, 21, 19, .18);
+  --nav-bg: rgba(255, 255, 255, .5);
+}
+@media (prefers-color-scheme: light) {
+  html[data-style="glass"][data-theme="system"] {
+    --glass-a: .55;
+    --glass-rgb: 255, 255, 255;
+    --glass-inner: rgba(255, 255, 255, .45);
+    --glass-well: rgba(20, 21, 19, .07);
+    --glass-edge: rgba(255, 255, 255, .85);
+    --glass-edge-soft: rgba(255, 255, 255, .6);
+    --glass-hi: rgba(255, 255, 255, 1);
+    --glass-pill: rgba(255, 255, 255, .9);
+    --glass-shade: rgba(0, 0, 0, .02);
+    --glass-shadow: 0 10px 32px rgba(30, 32, 28, .10);
+    /* Sfuma su tutta l'altezza: un riflesso che finisce a meta' si legge come una fascia scura in basso */
+    --glass-gloss: linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, .18));
+    --glass-glow-1: color-mix(in srgb, var(--accent) 55%, transparent);
+    --glass-glow-2: rgba(138, 180, 255, .45);
+    --glass-glow-3: rgba(195, 166, 255, .40);
+    --line: rgba(20, 21, 19, .08);
+    --line-strong: rgba(20, 21, 19, .18);
+    --nav-bg: rgba(255, 255, 255, .5);
+  }
+}
+/* Chi ha chiesto meno trasparenza al sistema, o un browser senza backdrop-filter: vetro quasi opaco. */
+@media (prefers-reduced-transparency: reduce) { html[data-style="glass"] { --glass-a: .93; --glass-blur: 0px; } }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { html[data-style="glass"] { --glass-a: .94; } }
+
+/* ---------- Sfondo: aloni colorati fissi dietro tutto (background-attachment: fixed non vale su iOS) ---------- */
+html[data-style="glass"] body { position: relative; }
+html[data-style="glass"] body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(55% 38% at 12% -4%, var(--glass-glow-1), transparent 70%),
+    radial-gradient(45% 32% at 95% 18%, var(--glass-glow-2), transparent 70%),
+    radial-gradient(50% 36% at 50% 104%, var(--glass-glow-3), transparent 70%);
+}
+html[data-style="glass"] .fade-bottom { background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--bg) 75%, transparent) 70%); }
+
+/* ---------- La ricetta del vetro ---------- */
+html[data-style="glass"] :is(
+  .card, .stat, .icon-btn:not(.icon-btn--plain), .month-nav:not(.month-nav--plain), .seg, .summary-grid, .rows,
+  .menu-card, .cat-current, .keypad button, .filter-group, .fuel-average, .tag-select__menu, .btn--ghost,
+  .field--on-bg, .page > .form > .field, .login .field, .dropzone, .ptr, .flash, .sheet, .form-dock
+) {
+  background-color: var(--glass-bg);
+  background-image: var(--glass-gloss);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-shade), var(--glass-shadow);
+}
+html[data-style="glass"] .card--outline { background-color: transparent; background-image: none; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+html[data-style="glass"] .card--warn { background-color: color-mix(in srgb, var(--warning) 14%, var(--glass-bg)); border-color: color-mix(in srgb, var(--warning) 40%, transparent); }
+html[data-style="glass"] .form-dock { border-radius: var(--r-xl) var(--r-xl) 0 0; border-bottom: 0; box-shadow: inset 0 1px 0 var(--glass-hi), 0 -10px 40px rgba(0, 0, 0, .18); }
+html[data-style="glass"] .sheet { border-bottom: 0; }
+html[data-style="glass"] .sheet::backdrop { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+
+/* Superfici interne: solo velate, niente blur (starebbe sopra un altro blur) */
+html[data-style="glass"] :is(.stat--inner, .card .field, .sheet .field, .sheet .rows, .card .rows, .field, .tag-pill, .icon-grid label, .filter-group, .cat-current, .fuel-average, .tag-select__menu, .badge) {
+  background-color: var(--glass-inner); background-image: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  border: 0; box-shadow: inset 0 0 0 1px var(--glass-edge-soft);
+}
+html[data-style="glass"] .field:focus-within { box-shadow: inset 0 0 0 1px var(--glass-edge-soft), 0 0 0 2px var(--accent); }
+html[data-style="glass"] .field.has-error { box-shadow: inset 0 0 0 1px var(--glass-edge-soft), 0 0 0 2px var(--danger); }
+html[data-style="glass"] .field.is-computed { background-color: transparent; box-shadow: none; border: 1px dashed var(--line-strong); }
+html[data-style="glass"] :is(.seg--inset, .split, .progress, .switch input, .tag-pill) { background-color: var(--glass-well); }
+html[data-style="glass"] .seg--inset { border: 0; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .18); background-image: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+html[data-style="glass"] .switch input:checked { background-color: var(--accent); }
+html[data-style="glass"] a.list-row:hover, html[data-style="glass"] .menu-card:hover { background-color: var(--glass-inner); }
+html[data-style="glass"] .month-nav a:hover { background: var(--glass-pill); }
+
+/* Segmenti e chip: la voce attiva e' una pastiglia di vetro in rilievo */
+html[data-style="glass"] .seg > .is-active, html[data-style="glass"] .seg > label:has(input:checked) {
+  background: var(--glass-pill); color: var(--text);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 2px 10px rgba(0, 0, 0, .16);
+}
+html[data-style="glass"] .chip { background: var(--glass-inner); border-color: var(--glass-edge-soft); box-shadow: inset 0 1px 0 var(--glass-edge-soft); }
+html[data-style="glass"] .chip.is-active, html[data-style="glass"] .chip:has(input:checked) { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent-text) 60%, transparent); }
+html[data-style="glass"] .chip--solid.is-active { background: var(--glass-pill); color: var(--text); border-color: var(--glass-edge); }
+html[data-style="glass"] .chip--dashed { background: transparent; border-style: dashed; }
+
+/* Bottoni: capsule con riflesso; quello principale brilla del colore d'accento */
+html[data-style="glass"] .btn { border-radius: 999px; transition: transform .15s cubic-bezier(.2, .9, .3, 1), filter .15s; }
+html[data-style="glass"] .btn:not(.btn--ghost, .btn--outline, .btn--danger) {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .38), rgba(255, 255, 255, 0) 55%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -1px 0 rgba(0, 0, 0, .08), 0 8px 24px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+html[data-style="glass"] .btn--danger { background-color: color-mix(in srgb, var(--danger) 16%, var(--glass-inner)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent); }
+html[data-style="glass"] .btn--outline { border-color: var(--line-strong); }
+html[data-style="glass"] :is(.btn, .icon-btn, .chip, .menu-card, .keypad button, .tabbar a, .cat-pick, .seg > *):active { transform: scale(.96); }
+html[data-style="glass"] :is(.icon-btn, .chip, .menu-card, .keypad button, .tabbar a, .seg > *) { transition: transform .15s cubic-bezier(.2, .9, .3, 1), background-color .15s; }
+html[data-style="glass"] .keypad button { border-radius: 22px; }
+html[data-style="glass"] .keypad button:active { background-color: var(--glass-pill); }
+
+/* Icone colorate: tinta con un riflesso in cima, come le app di iOS */
+html[data-style="glass"] .tile:not(.tile--solid) {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 60%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), inset 0 0 0 1px rgba(255, 255, 255, .05);
+}
+html[data-style="glass"] .tile--solid { background-image: linear-gradient(180deg, rgba(255, 255, 255, .35), rgba(255, 255, 255, 0) 60%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5); }
+html[data-style="glass"] .cat-pick:has(input:checked) .tile, html[data-style="glass"] .cat-pick.is-parent .tile { box-shadow: 0 0 0 3px var(--accent-text); }
+html[data-style="glass"] .cat-pick.is-parent .tile { box-shadow: 0 0 0 3px var(--line-strong); }
+html[data-style="glass"] .swatch:has(input:checked), html[data-style="glass"] .card .swatch:has(input:checked) { box-shadow: 0 0 0 3px var(--text); }
+html[data-style="glass"] .icon-grid label:has(input:checked) { background-color: color-mix(in srgb, var(--accent) 22%, transparent); box-shadow: inset 0 0 0 1.5px var(--accent-text); }
+
+/* ---------- Barra inferiore: capsula flottante, voce attiva in rilievo, "+" che brilla ---------- */
+html[data-style="glass"] .tabbar {
+  height: 72px; padding: 6px; border-radius: 999px; align-items: stretch;
+  background-color: var(--nav-bg); background-image: var(--glass-gloss);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)); backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-shade), 0 14px 44px rgba(0, 0, 0, .30);
+}
+html[data-style="glass"] .tabbar a { justify-content: center; border-radius: 999px; }
+html[data-style="glass"] .tabbar a.is-active { background: var(--glass-pill); box-shadow: inset 0 1px 0 var(--glass-hi), 0 2px 10px rgba(0, 0, 0, .16); }
+html[data-style="glass"] .tabbar .fab {
+  align-self: center; border-radius: 999px;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .42), rgba(255, 255, 255, 0) 55%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 8px 24px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+html[data-style="glass"] .flashes { top: calc(env(safe-area-inset-top) + 14px); }
+html[data-style="glass"] .flash { color: var(--text); border-radius: 999px; }
+html[data-style="glass"] .flash--error { background-color: color-mix(in srgb, var(--danger) 72%, var(--glass-bg)); color: #fff; }
+html[data-style="glass"] .ptr { border-radius: 999px; }
+
+/* ---------- Desktop: barra laterale di vetro ---------- */
+@media (min-width: 1024px) {
+  html[data-style="glass"] .sidebar {
+    background: color-mix(in srgb, var(--bg) 45%, transparent);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)); backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    border-right-color: var(--glass-edge-soft);
+  }
+  html[data-style="glass"] .sidebar nav a { border-radius: 999px; }
+  html[data-style="glass"] .sidebar nav a:hover { background: var(--glass-inner); }
+  html[data-style="glass"] .sidebar nav a.is-active { background: var(--glass-pill); box-shadow: inset 0 1px 0 var(--glass-hi), 0 2px 10px rgba(0, 0, 0, .12); }
+  html[data-style="glass"] .sheet { border-radius: var(--r-xl); }
+}
+
+/* ---------- Login: le tessere inclinate galleggiano sul vetro ---------- */
+html[data-style="glass"] .login__tiles .tile { border-color: transparent; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 8px 20px rgba(0, 0, 0, .25); }

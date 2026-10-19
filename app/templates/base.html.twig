@@ -12,7 +12,7 @@
     : route starts with 'import' ? 'import'
     : 'more' -%}
 <!doctype html>
-<html lang="it" data-theme="{{ app.user ? app.user.theme : 'system' }}">
+<html lang="it" data-theme="{{ app.user ? app.user.theme : 'system' }}" data-style="{{ app.user ? app.user.style : 'classic' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">

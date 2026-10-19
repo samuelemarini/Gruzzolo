@@ -104,6 +104,10 @@ Backup: il volume `db_data`, oppure `mariadb-dump` dal container `database`.
   Per un nuovo formato basta una classe che implementa `App\Import\ImportFormat` (si registra da sola).
   Da terminale, per conto di un utente (i movimenti risultano suoi):
   `php bin/console app:import <utente> <file.csv> --account=<id> [--dry-run]`, e `--undo=<id>` per annullare.
+- **Stile Liquid Glass** (Impostazioni › Stile, `app_user.style`): superfici di vetro traslucido alla iOS 26/27
+  sopra il tema chiaro o scuro. Tutto in `assets/styles/glass.css`, scoperto da `html[data-style="glass"]`:
+  blur solo sulle superfici di primo livello (card, barre, bottoni), quelle interne sono solo velate; con
+  `prefers-reduced-transparency` o senza `backdrop-filter` il vetro diventa quasi opaco.
 - **Importi nascosti**: l'occhio (Home, Movimenti, Report, Conti, Investimenti, barra laterale) sfoca
   gli importi su quel dispositivo (`localStorage`). `assets/privacy.js` riconosce gli importi dal formato
   ("1.247,80 €") e li avvolge in `.money`; i saldi grandi sono `.hero-amount__value`.
