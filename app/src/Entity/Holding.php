@@ -45,6 +45,10 @@ class Holding implements OwnedInterface
     #[ORM\Column(options: ['default' => false])]
     private bool $archived = false;
 
+    /** Visibile fra i titoli ma fuori da valore, versato e rendimento del portafoglio. */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $excludedFromReturns = false;
+
     /** @var Collection<int, InvestmentEntry> */
     #[ORM\OneToMany(mappedBy: 'holding', targetEntity: InvestmentEntry::class, cascade: ['remove'])]
     #[ORM\OrderBy(['date' => \SortDirection::Ascending, 'id' => \SortDirection::Ascending])]
@@ -85,6 +89,9 @@ class Holding implements OwnedInterface
 
     public function isArchived(): bool { return $this->archived; }
     public function setArchived(bool $archived): static { $this->archived = $archived; return $this; }
+
+    public function isExcludedFromReturns(): bool { return $this->excludedFromReturns; }
+    public function setExcludedFromReturns(bool $excluded): static { $this->excludedFromReturns = $excluded; return $this; }
 
     /** @return Collection<int, InvestmentEntry> */
     public function getEntries(): Collection { return $this->entries; }

@@ -158,7 +158,7 @@ final class InvestmentController extends AppController
             $holding->setName((string) $data->get('name'))->setSymbol((string) $data->get('symbol'))
                 ->setQuoteSymbol((string) $data->get('quote_symbol'))
                 ->setKind((string) $data->get('kind'))->setNote((string) $data->get('note'))
-                ->setArchived($data->getBoolean('archived'));
+                ->setArchived($data->getBoolean('archived'))->setExcludedFromReturns($data->getBoolean('excluded'));
             $color = (string) $data->get('color');
             $holding->setColor(array_key_exists($color, Palette::COLORS) ? $color : '#7FD6FF');
             if ($holding->getName() === '') {

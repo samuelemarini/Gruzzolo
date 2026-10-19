@@ -45,7 +45,8 @@ final class InvestmentLive
     }
 
     /**
-     * Stima del portafoglio: i titoli senza prezzo contano col loro ultimo valore registrato.
+     * Stima del portafoglio: i titoli senza prezzo contano col loro ultimo valore registrato, quelli
+     * esclusi dal rendimento hanno la loro stima ma restano fuori dal totale.
      *
      * @param array{invested: float, value: float, holdings: list<array{holding: Holding, stats: array}>} $portfolio
      *
@@ -58,7 +59,9 @@ final class InvestmentLive
         $time = null;
         foreach ($portfolio['holdings'] as $item) {
             $estimate = $this->estimate($item['holding'], $item['stats']);
-            $value += $estimate['value'] ?? $item['stats']['value'];
+            if (!$item['holding']->isExcludedFromReturns()) {
+                $value += $estimate['value'] ?? $item['stats']['value'];
+            }
             if ($estimate) {
                 $items[$item['holding']->getId()] = $estimate;
                 $time = !$time || $estimate['time'] > $time ? $estimate['time'] : $time;

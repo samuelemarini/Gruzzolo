@@ -35,6 +35,12 @@
         <span class="label-caps">Colore</span>
         {{ ui.color_picker('color', holding.color) }}
     </section>
+    <div class="card card--tight" style="gap: 0">
+        <label class="switch">
+            <span class="switch__text"><span>Escludi dal rendimento</span><small>resta fra i titoli ma non conta nel valore, nel versato e nel rendimento del portafoglio</small></span>
+            <input type="checkbox" name="excluded" value="1" {{ holding.excludedFromReturns ? 'checked' }}>
+        </label>
+    </div>
     {% if not isNew %}
         <div class="card card--tight" style="gap: 0">
             <label class="switch">

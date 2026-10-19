@@ -241,7 +241,8 @@ final class ReportService
 
     /**
      * Investimenti nel periodo: valore a inizio e fine (ultimo valore noto di ogni titolo), versamenti netti
-     * e rendimento = variazione del valore al netto dei versamenti. Null se l'utente non ha titoli.
+     * e rendimento = variazione del valore al netto dei versamenti, senza i titoli esclusi dal rendimento.
+     * Null se l'utente non ha titoli conteggiati.
      *
      * @return array{start: float, end: float, contributions: float, gain: float, pct: ?float}|null
      */
@@ -250,16 +251,16 @@ final class ReportService
         $valueAt = fn (string $date) => (float) $this->db->fetchOne(<<<'SQL'
             SELECT COALESCE(SUM((SELECT e.value FROM investment_entry e WHERE e.holding_id = h.id AND e.date <= :d
                                  ORDER BY e.date DESC, e.id DESC LIMIT 1)), 0)
-            FROM holding h WHERE h.user_id = :user
+            FROM holding h WHERE h.user_id = :user AND h.excluded_from_returns = 0
             SQL, ['d' => $date, 'user' => $user->getId()]);
-        if (!$this->db->fetchOne('SELECT 1 FROM holding WHERE user_id = ? LIMIT 1', [$user->getId()])) {
+        if (!$this->db->fetchOne('SELECT 1 FROM holding WHERE user_id = ? AND excluded_from_returns = 0 LIMIT 1', [$user->getId()])) {
             return null;
         }
         $start = $valueAt($from->modify('-1 day')->format('Y-m-d'));
         $end = $valueAt($to->format('Y-m-d'));
         $contributions = (float) $this->db->fetchOne(<<<'SQL'
             SELECT COALESCE(SUM(e.contribution), 0) FROM investment_entry e JOIN holding h ON h.id = e.holding_id
-            WHERE h.user_id = :user AND e.date BETWEEN :from AND :to
+            WHERE h.user_id = :user AND h.excluded_from_returns = 0 AND e.date BETWEEN :from AND :to
             SQL, ['user' => $user->getId(), 'from' => $from->format('Y-m-d'), 'to' => $to->format('Y-m-d')]);
         $gain = $end - $start - $contributions;
         $base = $start + max($contributions, 0);

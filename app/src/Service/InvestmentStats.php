@@ -43,6 +43,7 @@ final class InvestmentStats
 
     /**
      * Portafoglio: totali e andamento nel tempo (per ogni data, ultimo valore noto di ogni titolo).
+     * I titoli esclusi dal rendimento restano nell'elenco ma non entrano in totali e andamento.
      *
      * @param list<Holding> $holdings
      *
@@ -55,11 +56,15 @@ final class InvestmentStats
         foreach ($holdings as $holding) {
             $stats = $this->holding($holding);
             $items[] = ['holding' => $holding, 'stats' => $stats];
+            if ($holding->isExcludedFromReturns()) {
+                continue;
+            }
             foreach ($holding->getEntries() as $entry) {
                 $events[$entry->getDate()->format('Y-m-d')][] = $entry;
             }
         }
-        usort($items, fn ($a, $b) => $b['stats']['value'] <=> $a['stats']['value']);
+        usort($items, fn ($a, $b) => [$a['holding']->isExcludedFromReturns(), $b['stats']['value']] <=> [$b['holding']->isExcludedFromReturns(), $a['stats']['value']]);
+        $counted = array_filter($items, fn ($i) => !$i['holding']->isExcludedFromReturns());
         ksort($events);
 
         $lastValue = [];
@@ -74,8 +79,8 @@ final class InvestmentStats
             $timeline[] = ['date' => new \DateTimeImmutable($day), 'value' => round(array_sum($lastValue), 2), 'invested' => round(array_sum($invested), 2)];
         }
 
-        $totalInvested = array_sum(array_map(fn ($i) => $i['stats']['invested'], $items));
-        $totalValue = array_sum(array_map(fn ($i) => $i['stats']['value'], $items));
+        $totalInvested = array_sum(array_map(fn ($i) => $i['stats']['invested'], $counted));
+        $totalValue = array_sum(array_map(fn ($i) => $i['stats']['value'], $counted));
         $gain = $totalValue - $totalInvested;
 
         return [

@@ -15,7 +15,7 @@
         {{ ui.tile(holding.icon, holding.color, 'lg') }}
         <div class="stack-sm" style="gap: 3px">
             <h1 class="display" style="font-size: 28px; font-weight: 700; line-height: 1.1">{{ holding.name }}</h1>
-            <span class="small muted">{{ holding.kindLabel }}{{ holding.symbol ? ' · ' ~ holding.symbol }}{{ holding.archived ? ' · archiviato' }}</span>
+            <span class="small muted">{{ holding.kindLabel }}{{ holding.symbol ? ' · ' ~ holding.symbol }}{{ holding.archived ? ' · archiviato' }}{{ holding.excludedFromReturns ? ' · escluso dal rendimento' }}</span>
         </div>
     </div>
 

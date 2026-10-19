@@ -52,19 +52,19 @@
                 <div class="section-head"><h2>Titoli</h2></div>
                 {% for item in portfolio.holdings %}
                     {% set h = item.holding %}{% set s = item.stats %}{% set e = live ? live.items[h.id] ?? null : null %}
-                    <a class="card card--tight" href="{{ path('investment_show', {id: h.id}) }}">
+                    <a class="card card--tight" href="{{ path('investment_show', {id: h.id}) }}"{{ h.excludedFromReturns ? ' style="opacity: .75"' }}>
                         <div class="row">
                             {{ ui.tile(h.icon, h.color, 'sm') }}
                             <div class="grow stack-sm" style="gap: 1px">
                                 <span class="strong ellipsis">{{ h.name }}</span>
-                                <span class="xsmall muted">{{ h.kindLabel }}{{ s.lastDate ? ' · agg. ' ~ s.lastDate|short_day|lower }}{% if e %} · <span class="{{ e.changePct >= 0 ? 'text-income' : 'text-expense' }}">{{ e.changePct|pct(1, true) }} da allora</span>{% endif %}</span>
+                                <span class="xsmall muted">{{ h.kindLabel }}{{ h.excludedFromReturns ? ' · escluso dal rendimento' }}{{ s.lastDate ? ' · agg. ' ~ s.lastDate|short_day|lower }}{% if e %} · <span class="{{ e.changePct >= 0 ? 'text-income' : 'text-expense' }}">{{ e.changePct|pct(1, true) }} da allora</span>{% endif %}</span>
                             </div>
                             <div class="stack-sm" style="gap: 1px; align-items: flex-end">
                                 <span class="strong">{{ (e ? e.value : s.value)|money }}</span>
                                 <span class="xsmall strong {{ (e ? e.gain : s.gain) >= 0 ? 'text-income' : 'text-expense' }}">{{ (e ? e.gain : s.gain)|money(true) }} · {{ (e ? e.pct : s.pct)|pct(1, true) }}</span>
                             </div>
                         </div>
-                        {% if portfolio.value > 0 %}
+                        {% if portfolio.value > 0 and not h.excludedFromReturns %}
                             <div class="progress" style="--c: {{ h.color }}"><span style="width: {{ ((e ? e.value : s.value) / value * 100)|round(1) }}%"></span></div>
                         {% endif %}
                     </a>
