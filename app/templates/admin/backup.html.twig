@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+{% block title %}Backup{% endblock %}
+{% block body %}
+<div class="page">
+    <div class="topbar">
+        <a href="{{ path('more_index') }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">Backup</span>
+        <span style="width: 44px"></span>
+    </div>
+
+    <section class="card">
+        <div class="row">
+            {{ ui.tile('download', '#9BE7A0') }}
+            <div class="grow stack-sm" style="gap: 2px">
+                <span class="strong">Esporta tutti i dati</span>
+                <span class="small muted">{{ users|num }} utenti · {{ movements|num }} movimenti</span>
+            </div>
+        </div>
+        <p class="small muted">Un file JSON con tutto il contenuto dell'app: utenti (con le password cifrate), conti e condivisioni, categorie, etichette, movimenti, veicoli e rifornimenti, investimenti, storico delle importazioni. Conservalo in un posto sicuro.</p>
+        <a href="{{ path('admin_backup_download') }}" class="btn btn--block" data-turbo="false" download>{{ icon('download', 20) }}Scarica il backup</a>
+    </section>
+
+    <form method="post" enctype="multipart/form-data" class="card" data-turbo="false" data-controller="upload">
+        <input type="hidden" name="_token" value="{{ csrf_token('backup-upload') }}">
+        <h2 class="h2">Ripristina da un backup</h2>
+        <label class="dropzone" data-upload-target="zone">
+            {{ icon('file-up', 30) }}
+            <span class="strong" data-upload-target="name">Scegli il file di backup</span>
+            <span class="small muted">oppure trascinalo qui (.json o .json.gz)</span>
+            <input type="file" name="file" accept=".json,.gz,application/json,application/gzip" required data-action="upload#picked">
+        </label>
+        {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+        <p class="small muted">Il ripristino <strong>sostituisce tutti i dati attuali</strong>, di tutti gli utenti, con quelli del file. Prima vedrai cosa contiene e dovrai confermare.</p>
+        <button type="submit" class="btn btn--outline btn--block">{{ icon('upload', 20) }}Carica e mostra l'anteprima</button>
+    </form>
+</div>
+{% endblock %}

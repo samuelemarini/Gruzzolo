@@ -26,6 +26,11 @@
                 <span class="menu-card__title">Utenti</span>
                 <span class="menu-card__sub">Crea e gestisci gli accessi</span>
             </a>
+            <a class="menu-card" href="{{ path('admin_backup') }}">
+                {{ ui.tile('archive', '#9BE7A0') }}
+                <span class="menu-card__title">Backup</span>
+                <span class="menu-card__sub">Esporta e ripristina tutti i dati</span>
+            </a>
         {% endif %}
     </div>
     <form method="post" action="{{ path('app_logout') }}" data-turbo="false">

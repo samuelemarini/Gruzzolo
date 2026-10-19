@@ -7,6 +7,7 @@
     : route starts with 'category' ? 'categories'
     : route starts with 'tag' ? 'tags'
     : route starts with 'vehicle' ? 'vehicles'
+    : route starts with 'admin_backup' ? 'backup'
     : route starts with 'admin' ? 'admin'
     : route starts with 'settings' ? 'settings'
     : route starts with 'import' ? 'import'
@@ -56,6 +57,7 @@
                 <a href="#" class="privacy-toggle" data-controller="privacy" data-action="privacy#toggle">{{ icon('eye', 20, 'privacy-toggle__show') }}{{ icon('eye-off', 20, 'privacy-toggle__hide') }}<span class="privacy-toggle__show">Nascondi importi</span><span class="privacy-toggle__hide">Mostra importi</span></a>
                 {% if is_granted('ROLE_ADMIN') %}
                     <a href="{{ path('admin_user_index') }}" class="{{ section == 'admin' ? 'is-active' }}">{{ icon('users') }}Utenti</a>
+                    <a href="{{ path('admin_backup') }}" class="{{ section == 'backup' ? 'is-active' }}">{{ icon('archive') }}Backup</a>
                 {% endif %}
                 <a href="{{ path('import_index') }}" class="{{ section == 'import' ? 'is-active' }}">{{ icon('file-up') }}Importa</a>
                 <a href="{{ path('settings_index') }}" class="{{ section == 'settings' ? 'is-active' }}">{{ icon('settings') }}Impostazioni</a>

@@ -47,7 +47,9 @@ del tunnel il servizio è `http://web:80`, nessuna porta da aprire sul router. G
 `X-Forwarded-*` del tunnel sono accettati (`TRUSTED_PROXIES=private_ranges`), altrimenti il login
 fallirebbe per il controllo CSRF.
 
-Backup: il volume `db_data`, oppure `mariadb-dump` dal container `database`.
+Backup: il volume `db_data`, `mariadb-dump` dal container `database`, oppure il backup dell'app
+(Altro › Backup, vedi sotto). Per portare i dati da un'istanza all'altra (es. sviluppo → produzione):
+"Scarica il backup" da una, "Ripristina" sull'altra.
 
 ## Come ragiona l'app
 
@@ -104,6 +106,14 @@ Backup: il volume `db_data`, oppure `mariadb-dump` dal container `database`.
   Per un nuovo formato basta una classe che implementa `App\Import\ImportFormat` (si registra da sola).
   Da terminale, per conto di un utente (i movimenti risultano suoi):
   `php bin/console app:import <utente> <file.csv> --account=<id> [--dry-run]`, e `--undo=<id>` per annullare.
+- **Backup e ripristino** (Altro › Backup, solo admin; `BackupService`): un file JSON con tutte le tabelle
+  del database (lette da `information_schema`, quindi una tabella nuova entra da sola), utenti e password
+  cifrate compresi, e l'elenco delle migration. Il ripristino **sostituisce tutto**: anteprima con le righe
+  del file e quelle attuali, conferma scrivendo `RIPRISTINA`, poi in una transazione svuota le tabelle e
+  reinserisce le righe con i loro id (vincoli spenti, riferimenti controllati prima del commit: se qualcosa
+  non torna resta tutto com'era). Rifiuta backup di una versione più recente dell'app, colonne sconosciute e
+  file senza un admin attivo; alla fine fa logout. Accetta anche `.json.gz`. Da terminale:
+  `php bin/console app:backup:export [file.json|file.json.gz|-]` e `app:backup:restore <file> [--force]`.
 - **Stile Liquid Glass** (Impostazioni › Stile, `app_user.style`): superfici di vetro traslucido alla iOS 26/27
   sopra il tema chiaro o scuro. Tutto in `assets/styles/glass.css`, scoperto da `html[data-style="glass"]`:
   blur solo sulle superfici di primo livello (card, barre, bottoni), quelle interne sono solo velate; con
