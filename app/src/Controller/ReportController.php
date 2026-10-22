@@ -102,16 +102,16 @@ final class ReportController extends AppController
     }
 
     /**
-     * Chip dei conti: ognuno porta alla selezione con quel conto aggiunto o tolto.
+     * Chip dei conti: col tocco si guarda solo quel conto (only), tenendo premuto lo si aggiunge o toglie (param).
      *
      * @param list<\App\Entity\Account> $accounts
      * @param list<int> $ids
      *
-     * @return list<array{label: string, color: ?string, icon: ?string, active: bool, param: list<string>}>
+     * @return list<array{label: string, color: ?string, icon: ?string, active: bool, param: list<string>, only: ?list<string>}>
      */
     private static function chips(array $accounts, bool $hasHoldings, array $ids, bool $all, bool $investments): array
     {
-        $chips = [['label' => 'Tutti i conti', 'color' => null, 'icon' => null, 'active' => $all, 'param' => self::tokens([], true, $investments)]];
+        $chips = [['label' => 'Tutti i conti', 'color' => null, 'icon' => null, 'active' => $all, 'param' => self::tokens([], true, $investments), 'only' => null]];
         foreach ($accounts as $account) {
             $id = $account->getId();
             if ($account->isArchived() && !in_array($id, $ids, true)) {
@@ -120,11 +120,11 @@ final class ReportController extends AppController
             $active = !$all && in_array($id, $ids, true);
             $next = $all ? [$id] : ($active ? array_values(array_diff($ids, [$id])) : [...$ids, $id]);
             $chips[] = ['label' => $account->getName(), 'color' => $account->getColor(), 'icon' => null, 'active' => $active,
-                'param' => self::tokens($next, !$next && !$investments, $investments)];
+                'param' => self::tokens($next, !$next && !$investments, $investments), 'only' => self::tokens([$id], false, false)];
         }
         if ($hasHoldings) {
             $chips[] = ['label' => 'Investimenti', 'color' => null, 'icon' => 'trending-up', 'active' => $investments,
-                'param' => self::tokens($ids, $all || (!$ids && $investments), !$investments)];
+                'param' => self::tokens($ids, $all || (!$ids && $investments), !$investments), 'only' => self::tokens([], false, true)];
         }
 
         return $chips;

@@ -24,9 +24,16 @@
         </div>
 
         {% if chips|length > 2 %}
-            <div class="chips chips--scroll" aria-label="Conti">
+            {# Come nei Movimenti: un tocco guarda solo quel conto, tenendo premuto lo aggiunge o lo toglie #}
+            <div class="chips chips--scroll chips--hold" aria-label="Conti" data-controller="chip-hold">
                 {% for c in chips %}
-                    <a class="chip {{ c.active ? 'is-active' }}" href="{{ path('report_index', q.all|merge({account: c.param})) }}">{% if c.icon %}{{ icon(c.icon, 15) }}{% elseif c.color %}<span class="chip__dot" style="--c: {{ c.color }}"></span>{% endif %}{{ c.label }}</a>
+                    {% if c.only %}
+                        <a class="chip {{ c.active ? 'is-active' }}" href="{{ path('report_index', q.all|merge({account: c.only})) }}"
+                           data-hold-href="{{ path('report_index', q.all|merge({account: c.param})) }}" draggable="false"
+                           data-action="pointerdown->chip-hold#press pointermove->chip-hold#move pointerup->chip-hold#cancel pointercancel->chip-hold#cancel pointerleave->chip-hold#cancel click->chip-hold#click contextmenu->chip-hold#menu">
+                    {% else %}
+                        <a class="chip {{ c.active ? 'is-active' }}" href="{{ path('report_index', q.all|merge({account: c.param})) }}">
+                    {% endif %}{% if c.icon %}{{ icon(c.icon, 15) }}{% elseif c.color %}<span class="chip__dot" style="--c: {{ c.color }}"></span>{% endif %}{{ c.label }}</a>
                 {% endfor %}
             </div>
         {% endif %}
