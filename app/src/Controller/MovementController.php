@@ -13,6 +13,7 @@ use App\Repository\CategoryRepository;
 use App\Repository\MovementRepository;
 use App\Repository\TagRepository;
 use App\Repository\VehicleRepository;
+use App\Service\BalanceService;
 use App\Service\VehicleStats;
 use App\Util\Money;
 use Doctrine\ORM\EntityManagerInterface;
@@ -32,6 +33,7 @@ final class MovementController extends AppController
         private readonly AccountRepository $accounts,
         private readonly TagRepository $tags,
         private readonly VehicleRepository $vehicles,
+        private readonly BalanceService $balances,
         private readonly EntityManagerInterface $em,
     ) {
     }
@@ -62,16 +64,27 @@ final class MovementController extends AppController
         }
         $totals = $this->movements->totals($user, $filter);
 
+        // Saldo attuale dei conti scelti, indipendente dagli altri filtri; con "tutti" quello dei conti attivi.
+        $accounts = $this->accounts->findForUser($user, true);
+        $balances = $this->balances->balances($user);
+        $balance = 0.0;
+        foreach ($accounts as $a) {
+            if ($filter->accounts ? in_array($a->getId(), $filter->accounts, true) : !$a->isArchived()) {
+                $balance += $balances[$a->getId()] ?? 0.0;
+            }
+        }
+
         return $this->render('movement/index.html.twig', [
             'filter' => $filter,
             'groups' => $groups,
             'totals' => $totals,
+            'balance' => round($balance, 2),
             'scope' => $scope,
             'hasMore' => $totals['count'] > count($list),
             'page' => $page,
             'categoryTrees' => array_map(fn ($a) => ['account' => $a, 'tree' => $this->categories->findTree($a)], $this->accounts->findForUser($user)),
             'tags' => $this->tags->findForUser($user),
-            'accounts' => $this->accounts->findForUser($user, true),
+            'accounts' => $accounts,
             'vehicles' => $this->vehicles->findForUser($user, true),
             'month' => $filter->period === 'month' ? $filter->from : null,
         ]);

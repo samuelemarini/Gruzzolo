@@ -27,14 +27,16 @@
         </label>
     </form>
 
-    {# Conti: un tocco aggiunge o toglie il conto (come nel Report); "Tutti i conti" li mostra tutti #}
+    {# Conti: un tocco mostra solo quel conto, tenendo premuto lo aggiunge o lo toglie; "Tutti i conti" li mostra tutti #}
     {% if accounts|length > 1 %}
         {% set selected = filter.accounts %}
-        <div class="chips chips--scroll" aria-label="Conti">
+        <div class="chips chips--scroll chips--hold" aria-label="Conti" data-controller="chip-hold">
             <a class="chip {{ selected is empty ? 'is-active' }}" href="{{ path('movement_index', q.all|merge({account: 'all', page: null})) }}">Tutti i conti</a>
             {% for a in accounts|filter(a => not a.archived or a.id in selected) %}
                 {% set toggled = a.id in selected ? selected|filter(x => x != a.id) : selected|merge([a.id]) %}
-                <a class="chip {{ a.id in selected ? 'is-active' }}" href="{{ path('movement_index', q.all|merge({account: toggled is empty ? 'all' : toggled, page: null})) }}"><span class="chip__dot" style="--c: {{ a.color }}"></span>{{ a.name }}</a>
+                <a class="chip {{ a.id in selected ? 'is-active' }}" href="{{ path('movement_index', q.all|merge({account: [a.id], page: null})) }}"
+                   data-hold-href="{{ path('movement_index', q.all|merge({account: toggled is empty ? 'all' : toggled, page: null})) }}" draggable="false"
+                   data-action="pointerdown->chip-hold#press pointermove->chip-hold#move pointerup->chip-hold#cancel pointercancel->chip-hold#cancel pointerleave->chip-hold#cancel click->chip-hold#click contextmenu->chip-hold#menu"><span class="chip__dot" style="--c: {{ a.color }}"></span>{{ a.name }}</a>
             {% endfor %}
         </div>
     {% endif %}
@@ -74,6 +76,13 @@
         <div class="summary-grid__cell summary-grid__cell--net">
             <span class="summary-grid__label">Saldo</span>
             <span class="summary-grid__value {{ net < 0 ? 'text-expense' : (net > 0 ? 'text-income') }}">{{ net|money(true) }}</span>
+        </div>
+        {# Saldo ad oggi dei conti scelti: non dipende da periodo e altri filtri #}
+        {% set chosen = filter.accounts ?: accounts|filter(a => not a.archived)|map(a => a.id) %}
+        {% set names = accounts|filter(a => a.id in chosen)|map(a => a.name) %}
+        <div class="summary-grid__balance">
+            <span class="summary-grid__label">Saldo attuale{% if names|length == 1 %} · {{ names|first }}{% elseif filter.accounts is empty %} · tutti i conti{% elseif names is not empty %} · {{ names|length }} conti{% endif %}</span>
+            <span class="summary-grid__value {{ balance < 0 ? 'text-expense' }}">{{ balance|money }}</span>
         </div>
     </section>
 
