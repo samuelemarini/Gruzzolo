@@ -14,6 +14,7 @@
     : 'more' -%}
 <!doctype html>
 {%- set userAccent = palette_accents()[app.user ? app.user.accent : 'lime'] -%}
+{%- set iconShape = app.user ? app.user.iconShape : 'anello' -%}
 {%- set iconColor = app.user ? app.user.iconAccent : 'indaco' -%}
 <html lang="it" data-theme="{{ app.user ? app.user.theme : 'system' }}" data-style="{{ app.user ? app.user.style : 'classic' }}" style="--user-accent: {{ userAccent[1] }}; --user-accent-text: {{ userAccent[2] }}">
 <head>
@@ -26,9 +27,9 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Gruzzolo">
-    <link rel="manifest" href="{{ path('pwa_manifest', {colore: iconColor}) }}">
-    <link rel="icon" href="{{ path('pwa_icon', {color: iconColor, file: 'icon.svg'}) }}" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="{{ path('pwa_icon', {color: iconColor, file: 'icon-180.png'}) }}">
+    <link rel="manifest" href="{{ path('pwa_manifest', {forma: iconShape, colore: iconColor}) }}">
+    <link rel="icon" href="{{ path('pwa_icon', {shape: iconShape, color: iconColor, file: 'icon.svg'}) }}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{{ path('pwa_icon', {shape: iconShape, color: iconColor, file: 'icon-180.png'}) }}">
     <link rel="preload" href="{{ asset('fonts/geist-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ asset('fonts/bricolage-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
     {# Prima del disegno, cosi' gli importi non compaiono nemmeno per un istante. #}
@@ -38,7 +39,7 @@
 <body>
 {% if app.user %}
     <aside class="sidebar" aria-label="Menu">
-        <a href="{{ path('app_home') }}" class="brand"><img class="brand__mark" src="{{ path('pwa_icon', {color: iconColor, file: 'icon.svg'}) }}" alt="" width="34" height="34"><span class="brand__name">Gruzzolo</span></a>
+        <a href="{{ path('app_home') }}" class="brand"><img class="brand__mark" src="{{ path('pwa_icon', {shape: iconShape, color: iconColor, file: 'icon.svg'}) }}" alt="" width="34" height="34"><span class="brand__name">Gruzzolo</span></a>
         <a href="{{ path('movement_new') }}" class="btn btn--sm">{{ icon('plus', 18) }}Nuovo movimento</a>
         <nav>
             {% for item in [

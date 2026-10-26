@@ -32,6 +32,7 @@ final class SettingsController extends AppController
                     break;
                 case 'colors':
                     $user->setAccent((string) $data->get('accent'));
+                    $user->setIconShape((string) $data->get('icon_shape', $user->getIconShape()));
                     // Staccando l'icona dall'accento parte dal colore che aveva gia'
                     $user->setIconColor($data->getBoolean('icon_follow') ? Palette::ICON_FOLLOWS_ACCENT : (string) $data->get('icon_color', $user->getIconAccent()));
                     $em->flush();

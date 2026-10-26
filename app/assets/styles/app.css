@@ -256,6 +256,7 @@ img, svg { display: block; }
 }
 .seg--sm > a, .seg--sm > label, .seg--sm > button { height: 32px; font-size: 13px; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg__icon { border-radius: 5px; }
 .seg > .is-active, .seg > label:has(input:checked) { background: var(--text); color: var(--bg); font-weight: 600; }
 .seg > label:has(input:focus-visible) { outline: 2px solid var(--accent); }
 

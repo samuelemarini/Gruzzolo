@@ -46,14 +46,19 @@
         <p class="small muted">Il bottone "Nuovo movimento", la voce attiva del menu e le evidenziazioni. Le entrate restano verdi.</p>
 
         <span class="label-caps" style="margin-top: 6px">Icona dell'app</span>
+        <div class="seg seg--inset">
+            {% for value, shape in app_icons() %}
+                <label><input type="radio" name="icon_shape" value="{{ value }}" {{ app.user.iconShape == value ? 'checked' }} onchange="this.form.submit()"><img class="seg__icon" src="{{ path('pwa_icon', {shape: value, color: shape[2], file: 'icon.svg'}) }}" alt="" width="18" height="18">&nbsp;{{ shape[0] }}</label>
+            {% endfor %}
+        </div>
         <label class="switch">
             <span class="switch__text"><span>Come l'accento</span><small>l'icona cambia colore insieme all'accento</small></span>
             <input type="checkbox" name="icon_follow" value="1" {{ app.user.iconFollowingAccent ? 'checked' }} onchange="this.form.submit()">
         </label>
         {% if not app.user.iconFollowingAccent %}
             <div class="swatches" role="radiogroup" aria-label="Colore dell'icona">
-                {% for key, name in {indaco: 'Originale'}|merge(palette_accents()|map(a => a[0])) %}
-                    <label class="swatch swatch--app" title="{{ name }}"><input type="radio" name="icon_color" value="{{ key }}" {{ app.user.iconAccent == key ? 'checked' }} aria-label="{{ name }}" onchange="this.form.submit()"><img src="{{ path('pwa_icon', {color: key, file: 'icon.svg'}) }}" alt="" width="44" height="44"></label>
+                {% for key, name in (app.user.iconShape == 'anello' ? {indaco: 'Indaco'} : {})|merge(palette_accents()|map(a => a[0])) %}
+                    <label class="swatch swatch--app" title="{{ name }}"><input type="radio" name="icon_color" value="{{ key }}" {{ app.user.iconAccent == key ? 'checked' }} aria-label="{{ name }}" onchange="this.form.submit()"><img src="{{ path('pwa_icon', {shape: app.user.iconShape, color: key, file: 'icon.svg'}) }}" alt="" width="44" height="44"></label>
                 {% endfor %}
             </div>
         {% endif %}

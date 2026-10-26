@@ -73,32 +73,35 @@ final class HomeController extends AppController
         return $this->render('more/index.html.twig');
     }
 
-    /** Il manifest si scarica senza cookie: il colore dell'icona arriva nell'indirizzo (?colore=blu). */
+    /** Il manifest si scarica senza cookie: l'icona arriva nell'indirizzo (?forma=anello&colore=blu). */
     #[Route('/manifest.webmanifest', name: 'pwa_manifest')]
     public function manifest(Request $request): Response
     {
+        $shape = (string) $request->query->get('forma');
+        $shape = isset(Palette::APP_ICONS[$shape]) ? $shape : 'anello';
         $color = (string) $request->query->get('colore');
-        $response = $this->render('pwa/manifest.json.twig', ['iconColor' => isset(Palette::ACCENTS[$color]) ? $color : Palette::APP_ICON]);
+        $response = $this->render('pwa/manifest.json.twig', [
+            'iconShape' => $shape,
+            'iconColor' => self::iconHex($shape, $color) ? $color : Palette::APP_ICONS[$shape][2],
+        ]);
         $response->headers->set('Content-Type', 'application/manifest+json');
 
         return $response;
     }
 
     /**
-     * Icona dell'app nel colore scelto, ricavata da assets/images/icon.svg (indaco col simbolo bianco):
-     * negli altri colori, tutti chiari, il simbolo diventa scuro. L'anello sta gia' nella zona sicura
-     * delle icone "maskable", quindi i PNG sono tutti uguali a parte la misura.
+     * Icona dell'app nella forma e nel colore scelti, ricavata dal suo SVG in assets/images: SVG come sta
+     * nel file, PNG quadrati (li arrotonda il sistema) e "maskable" col simbolo nella zona sicura
+     * (l'anello ci sta gia', il maialino va rimpicciolito).
      */
-    #[Route('/icona/{color}/{file}', name: 'pwa_icon', requirements: ['file' => 'icon(-180|-192|-512|-maskable-512)?\.(png|svg)'])]
-    public function icon(string $color, string $file, #[Autowire('%kernel.project_dir%/assets/images')] string $dir): Response
+    #[Route('/icona/{shape}/{color}/{file}', name: 'pwa_icon', requirements: ['shape' => 'anello|maialino', 'file' => 'icon(-180|-192|-512|-maskable-512)?\.(png|svg)'])]
+    public function icon(string $shape, string $color, string $file, #[Autowire('%kernel.project_dir%/assets/images')] string $dir): Response
     {
-        if ($color !== Palette::APP_ICON && !isset(Palette::ACCENTS[$color])) {
+        if (!$hex = self::iconHex($shape, $color)) {
             throw $this->createNotFoundException();
         }
-        $svg = (string) file_get_contents($dir.'/icon.svg');
-        if ($color !== Palette::APP_ICON) {
-            $svg = strtr($svg, ['#4F46E5' => Palette::ACCENTS[$color][1], '#FFFFFF' => '#0D0E0C']);
-        }
+        [, $source, , $original] = Palette::APP_ICONS[$shape];
+        $svg = str_replace($original, $hex, (string) file_get_contents($dir.'/'.$source));
         if ($file === 'icon.svg') {
             $response = new Response($svg, 200, ['Content-Type' => 'image/svg+xml']);
         } else {
@@ -106,6 +109,10 @@ final class HomeController extends AppController
                 return new BinaryFileResponse($dir.'/'.$file);
             }
             $size = (int) $m[1];
+            $svg = str_replace('rx="112"', 'rx="0"', $svg);
+            if (str_contains($file, 'maskable')) {
+                $svg = str_replace('scale(12.5)', 'scale(10)', $svg);
+            }
             $image = new \Imagick();
             // Disegnato a 4x e poi ridotto: l'antialiasing del renderer SVG di Imagick da solo lascia i bordi seghettati
             $image->readImageBlob(preg_replace('/(<svg[^>]*?) width="\d+" height="\d+"/', '$1 width="'.(4 * $size).'" height="'.(4 * $size).'"', $svg, 1));
@@ -115,6 +122,16 @@ final class HomeController extends AppController
         }
 
         return $response->setPublic()->setMaxAge(7 * 86400);
+    }
+
+    /** Esadecimale di un colore dell'icona: i preset d'accento, piu' l'indaco solo per l'anello. */
+    private static function iconHex(string $shape, string $color): ?string
+    {
+        return match (true) {
+            isset(Palette::ACCENTS[$color]) => Palette::ACCENTS[$color][1],
+            $color === Palette::INDIGO && $shape === 'anello' => Palette::APP_ICONS['anello'][3],
+            default => null,
+        };
     }
 
     /** Mese richiesto (?month=2026-10), primo giorno; default il mese corrente. */

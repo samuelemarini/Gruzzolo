@@ -33,6 +33,13 @@ final class AppExtension
         return \App\Service\Palette::ACCENTS;
     }
 
+    /** @return array<string, array{string, string, string, string}> */
+    #[AsTwigFunction('app_icons')]
+    public function appIcons(): array
+    {
+        return \App\Service\Palette::APP_ICONS;
+    }
+
     /** Icona Lucide inline: eredita il colore del testo (currentColor). */
     #[AsTwigFunction('icon', isSafe: ['html'])]
     public function icon(string $name, int $size = 20, string $class = '', ?string $label = null): string

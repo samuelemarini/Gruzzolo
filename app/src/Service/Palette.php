@@ -31,8 +31,19 @@ final class Palette
         'sabbia' => ['Sabbia', '#D9B48F', '#8A5A2B'],
     ];
 
-    /** Colore originale dell'icona dell'app (indaco, simbolo bianco): non e' un accento. */
-    public const APP_ICON = 'indaco';
+    /**
+     * Forme dell'icona dell'app: nome, file in assets/images, colore originale e il suo esadecimale nel file
+     * (sostituito dal colore scelto). L'anello resta bianco su ogni sfondo, il maialino scuro.
+     *
+     * @var array<string, array{string, string, string, string}>
+     */
+    public const APP_ICONS = [
+        'anello' => ['Anello', 'icon.svg', 'indaco', '#4F46E5'],
+        'maialino' => ['Maialino', 'icon-maialino.svg', 'lime', '#C8F169'],
+    ];
+
+    /** Colore originale dell'anello: non e' un accento, si sceglie solo per l'icona. */
+    public const INDIGO = 'indaco';
 
     /** Valore di User::iconColor per l'icona che segue l'accento. */
     public const ICON_FOLLOWS_ACCENT = 'accento';

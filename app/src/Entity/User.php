@@ -46,7 +46,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 10, options: ['default' => 'lime'])]
     private string $accent = 'lime';
 
-    /** Colore dell'icona dell'app: chiave di Palette::ACCENTS, "accento" per seguirlo, null = originale (indaco). */
+    /** Forma dell'icona dell'app, chiave di Palette::APP_ICONS. */
+    #[ORM\Column(length: 10, options: ['default' => 'anello'])]
+    private string $iconShape = 'anello';
+
+    /** Colore dell'icona dell'app: chiave di Palette::ACCENTS, "accento" per seguirlo, null = originale della forma. */
     #[ORM\Column(length: 10, nullable: true)]
     private ?string $iconColor = null;
 
@@ -140,6 +144,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getIconShape(): string { return array_key_exists($this->iconShape, Palette::APP_ICONS) ? $this->iconShape : 'anello'; }
+    public function setIconShape(string $shape): static
+    {
+        $this->iconShape = array_key_exists($shape, Palette::APP_ICONS) ? $shape : 'anello';
+
+        return $this;
+    }
+
     public function getIconColor(): ?string { return $this->iconColor; }
     public function setIconColor(?string $color): static
     {
@@ -150,13 +162,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function isIconFollowingAccent(): bool { return $this->iconColor === Palette::ICON_FOLLOWS_ACCENT; }
 
-    /** Colore effettivo dell'icona dell'app: chiave di Palette::ACCENTS oppure Palette::APP_ICON. */
+    /** Colore effettivo dell'icona dell'app: chiave di Palette::ACCENTS oppure l'originale della forma. */
     public function getIconAccent(): string
     {
         return match (true) {
             $this->isIconFollowingAccent() => $this->getAccent(),
             array_key_exists((string) $this->iconColor, Palette::ACCENTS) => $this->iconColor,
-            default => Palette::APP_ICON,
+            default => Palette::APP_ICONS[$this->getIconShape()][2],
         };
     }
 
