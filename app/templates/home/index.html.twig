@@ -24,7 +24,7 @@
                 </div>
                 <div class="grid-2">
                     <a class="stat stat--inner" href="{{ path('movement_index', {kind: 'income', month: month|date('Y-m')}|merge(scope)) }}">
-                        <span class="stat__label"><span class="tile tile--xs" style="--c: var(--accent)">{{ icon('arrow-down-left', 15) }}</span>Entrate</span>
+                        <span class="stat__label"><span class="tile tile--xs" style="--c: var(--income)">{{ icon('arrow-down-left', 15) }}</span>Entrate</span>
                         <span class="stat__value">{{ summary.income|money }}</span>
                     </a>
                     <a class="stat stat--inner" href="{{ path('movement_index', {kind: 'expense', month: month|date('Y-m')}|merge(scope)) }}">

@@ -32,9 +32,13 @@
   --text-2: #D8D9D4;
   --muted: #A3A59F;
   --faint: #858881;
-  --accent: #C8F169;
+  /* Accento scelto dall'utente (Impostazioni › Colori): --user-accent/--user-accent-text su <html> */
+  --accent: var(--user-accent, #C8F169);
   --on-accent: #0D0E0C;
-  --accent-text: #C8F169;
+  --accent-text: var(--user-accent, #C8F169);
+  /* Le entrate restano verde lime qualunque sia l'accento */
+  --income: #C8F169;
+  --income-text: #C8F169;
   --accent-soft: color-mix(in srgb, var(--accent) 15%, transparent);
   --expense: #FF8A80;
   --danger: #FF7A6E;
@@ -67,9 +71,11 @@
   --text-2: #2C2E2A;
   --muted: #5E615B;
   --faint: #73766F;
-  --accent: #C8F169;
+  --accent: var(--user-accent, #C8F169);
   --on-accent: #151613;
-  --accent-text: #4A6800;
+  --accent-text: var(--user-accent-text, #4A6800);
+  --income: #C8F169;
+  --income-text: #4A6800;
   --accent-soft: color-mix(in srgb, var(--accent) 38%, transparent);
   --expense: #D9534A;
   --danger: #C2362B;
@@ -93,9 +99,11 @@
     --text-2: #2C2E2A;
     --muted: #5E615B;
     --faint: #73766F;
-    --accent: #C8F169;
+    --accent: var(--user-accent, #C8F169);
     --on-accent: #151613;
-    --accent-text: #4A6800;
+    --accent-text: var(--user-accent-text, #4A6800);
+    --income: #C8F169;
+    --income-text: #4A6800;
     --accent-soft: color-mix(in srgb, var(--accent) 38%, transparent);
     --expense: #D9534A;
     --danger: #C2362B;
@@ -145,7 +153,7 @@ img, svg { display: block; }
 .strong { font-weight: 600; }
 .nowrap { white-space: nowrap; }
 .ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.text-income, .is-income { color: var(--accent-text); }
+.text-income, .is-income { color: var(--income-text); }
 .text-expense { color: var(--expense); }
 .text-danger { color: var(--danger); }
 .text-accent { color: var(--accent-text); }
@@ -372,8 +380,8 @@ a.list-row:hover { background: color-mix(in srgb, var(--surface-2) 50%, transpar
 .gauge { display: flex; flex-direction: column; gap: 8px; }
 .gauge + .gauge { margin-top: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
 .gauge__track { position: relative; height: 8px; border-radius: 999px; margin: 6px 8px; }
-.gauge__track--up { background: linear-gradient(90deg, color-mix(in srgb, var(--expense) 45%, transparent), color-mix(in srgb, var(--accent-text) 45%, transparent)); }
-.gauge__track--down { background: linear-gradient(90deg, color-mix(in srgb, var(--accent-text) 45%, transparent), color-mix(in srgb, var(--expense) 45%, transparent)); }
+.gauge__track--up { background: linear-gradient(90deg, color-mix(in srgb, var(--expense) 45%, transparent), color-mix(in srgb, var(--income-text) 45%, transparent)); }
+.gauge__track--down { background: linear-gradient(90deg, color-mix(in srgb, var(--income-text) 45%, transparent), color-mix(in srgb, var(--expense) 45%, transparent)); }
 .gauge__dot { position: absolute; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 999px; border: 4px solid var(--text); background: var(--surface); }
 .gauge__avg { position: absolute; top: -5px; width: 2px; height: 18px; margin-left: -1px; border-radius: 2px; background: var(--muted); }
 .bars__labels { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; font-size: 12px; color: var(--muted); text-align: center; margin-top: -6px; }
@@ -436,6 +444,8 @@ a.list-row:hover { background: color-mix(in srgb, var(--surface-2) 50%, transpar
 .swatch input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
 .swatch:has(input:checked) { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--text); }
 .card .swatch:has(input:checked) { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--text); }
+.swatch--app { width: 44px; height: 44px; border-radius: 12px; }
+.swatch--app img { width: 100%; height: 100%; border-radius: inherit; }
 .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 8px; }
 .icon-grid label { height: 44px; border-radius: var(--r-sm); background: var(--surface-2); color: var(--muted); display: grid; place-items: center; cursor: pointer; position: relative; }
 .icon-grid input { position: absolute; opacity: 0; pointer-events: none; }
@@ -543,7 +553,7 @@ form[data-mode="grid"] .fields-only, form[data-mode="fields"] .grid-only { displ
 .sidebar { display: none; }
 
 .brand { display: flex; align-items: center; gap: 10px; }
-.brand__mark { width: 34px; height: 34px; border-radius: 11px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font: 800 18px/1 var(--font-display); }
+.brand__mark { width: 34px; height: 34px; border-radius: 11px; }
 .brand__name { font: 700 20px/1 var(--font-display); letter-spacing: -0.02em; }
 
 @media (min-width: 1024px) {
@@ -553,6 +563,8 @@ form[data-mode="grid"] .fields-only, form[data-mode="fields"] .grid-only { displ
     display: flex; flex-direction: column; gap: 28px; padding: 28px 16px;
     border-right: 1px solid var(--line); background: var(--bg); overflow-y: auto;
   }
+  /* Sulle finestre basse la sidebar scorre: senza flex: none il bottone "Nuovo movimento" si schiaccerebbe */
+  .sidebar > * { flex: none; }
   .sidebar .brand { padding: 0 10px; }
   .sidebar nav { display: flex; flex-direction: column; gap: 2px; }
   .sidebar nav a { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: var(--r-sm); color: var(--muted); font-weight: 500; }

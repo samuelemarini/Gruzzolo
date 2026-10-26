@@ -1,4 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-<rect width="512" height="512" rx="112" fill="#C8F169"/>
-<g transform="translate(256 256) scale(12.5) translate(-12 -12)" fill="none" stroke="#0D0E0C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z" /><path d="M16 10h.01" /><path d="M2 8v1a2 2 0 0 0 2 2h1" /></g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 512 512">
+<rect width="512" height="512" fill="#4F46E5"/>
+<!-- Anello = arco r120 spesso 56 con estremita' tonde, disegnato come forma piena: il renderer SVG di Imagick
+     (PNG generati da HomeController::icon) chiude i tracciati aperti quando ne disegna il contorno -->
+<path d="M318.5 145.9C381.4 175.2 415.5 244.3 400.5 312C385.5 379.8 325.4 428 256 428C186.6 428 126.5 379.8 111.5 312C96.5 244.3 130.6 175.2 193.5 145.9C207.5 139.3 224.2 145.4 230.7 159.4C237.2 173.4 231.2 190.1 217.1 196.6C178 214.8 156.8 257.8 166.2 299.9C175.5 342 212.9 372 256 372C299.1 372 336.5 342 345.8 299.9C355.2 257.8 334 214.8 294.9 196.6C280.8 190.1 274.8 173.4 281.3 159.4C287.8 145.4 304.5 139.3 318.5 145.9Z" fill="#FFFFFF"/>
+<circle cx="256" cy="108" r="30" fill="#FFFFFF"/>
 </svg>

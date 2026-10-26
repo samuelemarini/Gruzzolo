@@ -69,7 +69,7 @@
             </div>
             <div class="grid-2">
                 <div class="stat stat--inner">
-                    <span class="stat__label"><span class="tile tile--xs" style="--c: var(--accent)">{{ icon('arrow-down-left', 15) }}</span>Entrate</span>
+                    <span class="stat__label"><span class="tile tile--xs" style="--c: var(--income)">{{ icon('arrow-down-left', 15) }}</span>Entrate</span>
                     <span class="stat__value">{{ summary.income|money }}</span>
                 </div>
                 <div class="stat stat--inner">
@@ -154,7 +154,7 @@
             <div class="bars" role="img" aria-label="Entrate e uscite per mese">
                 {% for r in bars.rows %}
                     <div class="bars__group" title="{{ r.month|month_label }}: entrate {{ r.income|money }}, uscite {{ r.expense|money }}">
-                        <span class="bars__bar {{ r.partial ? 'is-partial' }}" style="--c: var(--accent); height: {{ r.incomePct }}%"></span>
+                        <span class="bars__bar {{ r.partial ? 'is-partial' }}" style="--c: var(--income); height: {{ r.incomePct }}%"></span>
                         <span class="bars__bar {{ r.partial ? 'is-partial' }}" style="--c: #FF8A80; height: {{ r.expensePct }}%"></span>
                     </div>
                 {% endfor %}
@@ -163,7 +163,7 @@
                 {% for r in bars.rows %}<span>{{ r.month|it_date(bars.rows|length > 8 ? 'LLLLL' : 'LLL')|capitalize }}</span>{% endfor %}
             </div>
             <div class="chart-legend">
-                <span><i style="--c: var(--accent)"></i>Entrate</span>
+                <span><i style="--c: var(--income)"></i>Entrate</span>
                 <span><i style="--c: #FF8A80"></i>Uscite</span>
                 {% if bars.rows|filter(r => r.partial)|length %}<span style="margin-left: auto">mese in corso più chiaro</span>{% endif %}
             </div>

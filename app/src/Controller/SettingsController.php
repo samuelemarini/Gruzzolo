@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Service\Palette;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,6 +28,12 @@ final class SettingsController extends AppController
                     break;
                 case 'style':
                     $user->setStyle((string) $data->get('style'));
+                    $em->flush();
+                    break;
+                case 'colors':
+                    $user->setAccent((string) $data->get('accent'));
+                    // Staccando l'icona dall'accento parte dal colore che aveva gia'
+                    $user->setIconColor($data->getBoolean('icon_follow') ? Palette::ICON_FOLLOWS_ACCENT : (string) $data->get('icon_color', $user->getIconAccent()));
                     $em->flush();
                     break;
                 case 'profile':

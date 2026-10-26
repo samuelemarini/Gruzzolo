@@ -8,7 +8,10 @@ use App\Repository\MovementRepository;
 use App\Service\BalanceService;
 use App\Service\InvestmentLive;
 use App\Service\InvestmentStats;
+use App\Service\Palette;
 use App\Service\ReportService;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -70,13 +73,48 @@ final class HomeController extends AppController
         return $this->render('more/index.html.twig');
     }
 
+    /** Il manifest si scarica senza cookie: il colore dell'icona arriva nell'indirizzo (?colore=blu). */
     #[Route('/manifest.webmanifest', name: 'pwa_manifest')]
-    public function manifest(): Response
+    public function manifest(Request $request): Response
     {
-        $response = $this->render('pwa/manifest.json.twig');
+        $color = (string) $request->query->get('colore');
+        $response = $this->render('pwa/manifest.json.twig', ['iconColor' => isset(Palette::ACCENTS[$color]) ? $color : Palette::APP_ICON]);
         $response->headers->set('Content-Type', 'application/manifest+json');
 
         return $response;
+    }
+
+    /**
+     * Icona dell'app nel colore scelto, ricavata da assets/images/icon.svg (indaco col simbolo bianco):
+     * negli altri colori, tutti chiari, il simbolo diventa scuro. L'anello sta gia' nella zona sicura
+     * delle icone "maskable", quindi i PNG sono tutti uguali a parte la misura.
+     */
+    #[Route('/icona/{color}/{file}', name: 'pwa_icon', requirements: ['file' => 'icon(-180|-192|-512|-maskable-512)?\.(png|svg)'])]
+    public function icon(string $color, string $file, #[Autowire('%kernel.project_dir%/assets/images')] string $dir): Response
+    {
+        if ($color !== Palette::APP_ICON && !isset(Palette::ACCENTS[$color])) {
+            throw $this->createNotFoundException();
+        }
+        $svg = (string) file_get_contents($dir.'/icon.svg');
+        if ($color !== Palette::APP_ICON) {
+            $svg = strtr($svg, ['#4F46E5' => Palette::ACCENTS[$color][1], '#FFFFFF' => '#0D0E0C']);
+        }
+        if ($file === 'icon.svg') {
+            $response = new Response($svg, 200, ['Content-Type' => 'image/svg+xml']);
+        } else {
+            if (!preg_match('/-(\d+)\.png$/', $file, $m) || !extension_loaded('imagick')) {
+                return new BinaryFileResponse($dir.'/'.$file);
+            }
+            $size = (int) $m[1];
+            $image = new \Imagick();
+            // Disegnato a 4x e poi ridotto: l'antialiasing del renderer SVG di Imagick da solo lascia i bordi seghettati
+            $image->readImageBlob(preg_replace('/(<svg[^>]*?) width="\d+" height="\d+"/', '$1 width="'.(4 * $size).'" height="'.(4 * $size).'"', $svg, 1));
+            $image->resizeImage($size, $size, \Imagick::FILTER_LANCZOS, 1);
+            $image->setImageFormat('png');
+            $response = new Response($image->getImageBlob(), 200, ['Content-Type' => 'image/png']);
+        }
+
+        return $response->setPublic()->setMaxAge(7 * 86400);
     }
 
     /** Mese richiesto (?month=2026-10), primo giorno; default il mese corrente. */

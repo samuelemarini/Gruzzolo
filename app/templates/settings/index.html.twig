@@ -32,6 +32,35 @@
         <p class="small muted">"Liquid Glass" usa superfici di vetro traslucido, come iOS: funziona sia col tema chiaro sia con quello scuro.</p>
     </form>
 
+    {# Accento e icona stanno su <html> e nei <link> della testata: caricamento completo. #}
+    <form method="post" class="card" data-turbo="false">
+        <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
+        <input type="hidden" name="section" value="colors">
+        <h2 class="h2">Colori</h2>
+        <span class="label-caps">Accento</span>
+        <div class="swatches" role="radiogroup" aria-label="Colore d'accento">
+            {% for key, a in palette_accents() %}
+                <label class="swatch" style="--c: {{ a[1] }}" title="{{ a[0] }}"><input type="radio" name="accent" value="{{ key }}" {{ app.user.accent == key ? 'checked' }} aria-label="{{ a[0] }}" onchange="this.form.submit()"></label>
+            {% endfor %}
+        </div>
+        <p class="small muted">Il bottone "Nuovo movimento", la voce attiva del menu e le evidenziazioni. Le entrate restano verdi.</p>
+
+        <span class="label-caps" style="margin-top: 6px">Icona dell'app</span>
+        <label class="switch">
+            <span class="switch__text"><span>Come l'accento</span><small>l'icona cambia colore insieme all'accento</small></span>
+            <input type="checkbox" name="icon_follow" value="1" {{ app.user.iconFollowingAccent ? 'checked' }} onchange="this.form.submit()">
+        </label>
+        {% if not app.user.iconFollowingAccent %}
+            <div class="swatches" role="radiogroup" aria-label="Colore dell'icona">
+                {% for key, name in {indaco: 'Originale'}|merge(palette_accents()|map(a => a[0])) %}
+                    <label class="swatch swatch--app" title="{{ name }}"><input type="radio" name="icon_color" value="{{ key }}" {{ app.user.iconAccent == key ? 'checked' }} aria-label="{{ name }}" onchange="this.form.submit()"><img src="{{ path('pwa_icon', {color: key, file: 'icon.svg'}) }}" alt="" width="44" height="44"></label>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <noscript><button type="submit" class="btn btn--sm">Applica</button></noscript>
+        <p class="small muted">Sulla schermata Home l'icona si aggiorna togliendo l'app e aggiungendola di nuovo (su Android a volte cambia da sola).</p>
+    </form>
+
     <form method="post" class="card">
         <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
         <input type="hidden" name="section" value="profile">

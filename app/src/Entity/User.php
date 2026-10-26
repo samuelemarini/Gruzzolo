@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use App\Service\Palette;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -40,6 +41,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 10, options: ['default' => 'classic'])]
     private string $style = 'classic';
+
+    /** Colore d'accento, chiave di Palette::ACCENTS. */
+    #[ORM\Column(length: 10, options: ['default' => 'lime'])]
+    private string $accent = 'lime';
+
+    /** Colore dell'icona dell'app: chiave di Palette::ACCENTS, "accento" per seguirlo, null = originale (indaco). */
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $iconColor = null;
 
     #[ORM\Column(options: ['default' => true])]
     private bool $active = true;
@@ -121,6 +130,34 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->style = array_key_exists($style, self::STYLES) ? $style : 'classic';
 
         return $this;
+    }
+
+    public function getAccent(): string { return array_key_exists($this->accent, Palette::ACCENTS) ? $this->accent : 'lime'; }
+    public function setAccent(string $accent): static
+    {
+        $this->accent = array_key_exists($accent, Palette::ACCENTS) ? $accent : 'lime';
+
+        return $this;
+    }
+
+    public function getIconColor(): ?string { return $this->iconColor; }
+    public function setIconColor(?string $color): static
+    {
+        $this->iconColor = $color === Palette::ICON_FOLLOWS_ACCENT || array_key_exists((string) $color, Palette::ACCENTS) ? $color : null;
+
+        return $this;
+    }
+
+    public function isIconFollowingAccent(): bool { return $this->iconColor === Palette::ICON_FOLLOWS_ACCENT; }
+
+    /** Colore effettivo dell'icona dell'app: chiave di Palette::ACCENTS oppure Palette::APP_ICON. */
+    public function getIconAccent(): string
+    {
+        return match (true) {
+            $this->isIconFollowingAccent() => $this->getAccent(),
+            array_key_exists((string) $this->iconColor, Palette::ACCENTS) => $this->iconColor,
+            default => Palette::APP_ICON,
+        };
     }
 
     public function isActive(): bool { return $this->active; }
