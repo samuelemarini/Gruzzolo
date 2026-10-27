@@ -250,9 +250,9 @@
     <section>
         <div class="section-head"><h2>Rifornimenti</h2><span class="small muted">{{ stats.refuels|length }} in totale</span></div>
         <div class="list list--lines">
-            {% for row in stats.refuels|slice(0, 30) %}
+            {% for row in stats.refuels|slice(0, refuelsShown) %}
                 {% set r = row.refuel %}
-                <a class="list-row" href="{{ path('movement_edit', {id: r.movement.id, back: app.request.requestUri}) }}">
+                <a class="list-row" id="rifornimento-{{ loop.index }}" href="{{ path('movement_edit', {id: r.movement.id, back: app.request.requestUri}) }}">
                     <div class="list-row__body">
                         <span class="list-row__title">{{ r.movement.date|short_day }} · {{ r.odometer|num }} km</span>
                         <span class="list-row__meta">{{ r.liters|num(2) }} {{ unit }} · {{ r.pricePerLiter|num(3) }} €/{{ unit }} · {{ r.fullTank ? 'pieno' : 'parziale' }}{{ row.distance ? ' · +' ~ row.distance|num ~ ' km' }}{{ r.missedPrevious ? ' · dopo un salto' }}</span>
@@ -263,6 +263,9 @@
                 <p class="small muted">Nessun rifornimento. Usa la categoria Carburante quando registri una spesa.</p>
             {% endfor %}
         </div>
+        {% if stats.refuels|length > refuelsShown %}
+            <a class="btn btn--ghost btn--sm" href="{{ path('vehicle_show', range|merge({id: vehicle.id, tab: 'fuel', page: refuelsPage + 1})) }}#rifornimento-{{ refuelsShown + 1 }}" data-turbo-action="replace">Mostra altri</a>
+        {% endif %}
     </section>
 
     {% else %}

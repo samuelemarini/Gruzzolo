@@ -8,6 +8,7 @@ use App\Repository\VehicleRepository;
 use App\Service\ChartBuilder;
 use App\Service\Palette;
 use App\Util\Money;
+use App\Util\Param;
 use App\Service\VehicleStats;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,6 +20,8 @@ final class VehicleController extends AppController
 {
     private const PERIODS = ['1m' => '1 mese', '12m' => '12 mesi', 'all' => 'Sempre', 'custom' => 'Periodo'];
     private const TABS = ['general' => 'Generale', 'fuel' => 'Rifornimenti', 'costs' => 'Spese'];
+    /** Rifornimenti mostrati per pagina nella scheda Rifornimenti ("Mostra altri" ne aggiunge altrettanti). */
+    private const REFUELS_PAGE = 30;
 
     public function __construct(
         private readonly VehicleRepository $vehicles,
@@ -52,6 +55,7 @@ final class VehicleController extends AppController
         $period = array_key_exists($period, self::PERIODS) ? $period : '12m';
         $tab = (string) $request->query->get('tab', 'general');
         $tab = array_key_exists($tab, self::TABS) ? $tab : 'general';
+        $refuelsPage = max(1, Param::int($request->query, 'page', 1));
         $from = $to = null;
         switch ($period) {
             case '1m':
@@ -98,6 +102,8 @@ final class VehicleController extends AppController
             'range' => $period === 'custom' ? ['period' => 'custom', 'from' => $from->format('Y-m-d'), 'to' => $to->format('Y-m-d')] : ['period' => $period],
             'tab' => $tab,
             'tabs' => self::TABS,
+            'refuelsPage' => $refuelsPage,
+            'refuelsShown' => self::REFUELS_PAGE * $refuelsPage,
             'series' => $series,
             'priceSeries' => $priceSeries,
             'monthlyAveraged' => count($series) < count($stats['series']),
