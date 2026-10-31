@@ -1,32 +1,104 @@
-# Gruzzolo
+<p align="center">
+  <img src="app/assets/images/icon.svg" width="88" height="88" alt="">
+</p>
 
-Money manager personale e multi-utente: entrate, uscite, giroconti fra conti, categorie con
-sottocategorie, etichette (#viaggio, #festa…), report, rifornimenti con consumi dei veicoli
-e portafoglio investimenti con rendimento.
+<h1 align="center">Gruzzolo</h1>
 
-Symfony 8.1 + MariaDB, AssetMapper (niente Node), Turbo + Stimulus. Font (Geist, Bricolage
-Grotesque) e icone (Lucide) sono nel repository: nessuna risorsa da CDN. Tema chiaro, scuro o
-automatico. Installabile sul telefono come app (manifest PWA).
+<p align="center">
+  Money manager personale e multi-utente, self-hosted.<br>
+  Entrate, uscite, conti condivisi, report, consumi dei veicoli e investimenti, in un'app web che si installa sul telefono.
+</p>
 
-## Sviluppo
+<p align="center">
+  <img alt="PHP 8.4" src="https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white">
+  <img alt="Symfony 8.1" src="https://img.shields.io/badge/Symfony-8.1-000000?logo=symfony&logoColor=white">
+  <img alt="MariaDB" src="https://img.shields.io/badge/MariaDB-11.4-003545?logo=mariadb&logoColor=white">
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-compose-2496ED?logo=docker&logoColor=white">
+  <img alt="Senza Node" src="https://img.shields.io/badge/build-niente%20Node-success">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/mobile.webp" alt="Gruzzolo sul telefono: home, modifica di un movimento col tastierino, report e statistiche di un'auto">
+</p>
+
+## Cosa fa
+
+- **Movimenti** — entrate, uscite e giroconti fra conti, con categorie e sottocategorie, etichette
+  (`#viaggio`, `#festa`…), note e ricerca. Sul telefono l'importo si scrive col tastierino dell'app.
+- **Conti** — corrente, risparmio, contanti; saldo sempre aggiornato e patrimonio complessivo.
+  Un conto si può **condividere** con altri utenti (es. il conto di casa), con le sue categorie.
+- **Report** — mese, anno o intervallo libero, su uno o più conti: spese per categoria, entrate e uscite
+  degli ultimi mesi, media al giorno, spesa più alta, spese per etichetta e rendimento degli investimenti.
+- **Veicoli** — rifornimenti con consumo da pieno a pieno, costo al km e al giorno, autonomia stimata;
+  qualsiasi spesa (bollo, tagliando, pedaggi…) si collega al veicolo.
+- **Investimenti** — versamenti, prelievi e valore di ogni titolo, rendimento e **stima del valore di
+  oggi** dai prezzi di mercato.
+- **Importazione** da Spendee, Wallet (BudgetBakers) e Money Manager, annullabile; **backup e
+  ripristino** dell'intera istanza da un file.
+- **Su misura** — tema chiaro, scuro o automatico, stile classico o *Liquid Glass*, colore d'accento e
+  icona dell'app a scelta, importi nascosti con un tocco quando si è in pubblico.
+- **PWA** — si aggiunge alla schermata Home e si usa come un'app, con trascina-giù per aggiornare.
+
+## Schermate
+
+**Desktop**
+
+<p align="center">
+  <img src="docs/screenshots/desktop-home.webp" alt="Home su desktop: saldo del mese, dove vanno i soldi, ultimi movimenti, conti e investimenti">
+</p>
+
+<details>
+<summary>Report e veicoli su desktop</summary>
+<br>
+<p align="center">
+  <img src="docs/screenshots/desktop-report.webp" alt="Report su desktop: saldo, spese per categoria, entrate e uscite degli ultimi mesi, spese per etichetta">
+  <img src="docs/screenshots/desktop-veicolo.webp" alt="Pagina di un'auto: costo totale, distanza, costi mese per mese, confronto dei costi, contachilometri">
+</p>
+</details>
+
+**Storico, investimenti, etichette e conti**
+
+<p align="center">
+  <img src="docs/screenshots/mobile-altro.webp" alt="Storico dei movimenti, investimenti con grafico, etichetta di un viaggio, patrimonio e conti">
+</p>
+
+**Tema scuro**
+
+<p align="center">
+  <img src="docs/screenshots/scuro.webp" alt="Home, report e veicolo nel tema scuro">
+</p>
+
+<sub>Le schermate usano i dati di esempio di `app:demo` e lo stile Liquid Glass.</sub>
+
+## Provalo in locale
+
+Serve solo Docker.
 
 ```bash
+git clone https://github.com/samuelemarini/Gruzzolo.git && cd Gruzzolo
 cp .env.example .env          # imposta DB_PASSWORD
+echo "APP_SECRET=$(openssl rand -hex 16)" > app/.env.local && chmod 644 app/.env.local
 docker compose up -d --build  # web su http://localhost:20029, MariaDB su 30029
 docker compose exec -u application -w /app web composer install
 docker compose exec -u application -w /app web php bin/console doctrine:migrations:migrate -n
+# utente "demo" / "demo1234" con sei mesi di dati di esempio
+docker compose exec -u application -w /app web php bin/console app:demo
 ```
 
-In `app/.env.local` serve `APP_SECRET=...` (`openssl rand -hex 16`), con permessi 644.
+Poi apri <http://localhost:20029> ed entra con `demo` / `demo1234`.
 
-Comandi utili (sempre come utente `application`, altrimenti la cache diventa illeggibile per php-fpm):
+Altri comandi (sempre come utente `application`, altrimenti la cache diventa illeggibile per php-fpm):
 
 ```bash
 # utente vero (chiede la password); --admin per poter creare altri utenti dall'app
 docker compose exec -u application -w /app web php bin/console app:user:create mario "Mario" --admin
-# utente "demo" / "demo1234" con sei mesi di dati finti (lo ricrea da zero ogni volta)
-docker compose exec -u application -w /app web php bin/console app:demo
 ```
+
+## Tecnologia
+
+Symfony 8.1 + MariaDB, AssetMapper (niente Node né build), Turbo + Stimulus. I grafici sono SVG
+disegnati lato server. Font (Geist, Bricolage Grotesque) e icone (Lucide) sono nel repository:
+nessuna risorsa da CDN, nessun tracciamento.
 
 ## Produzione (Portainer, stack da Git)
 
@@ -138,3 +210,9 @@ Backup: il volume `db_data`, `mariadb-dump` dal container `database`, oppure il 
 - `assets/styles/app.css` design system (token chiaro/scuro + componenti)
 - `assets/controllers/` Stimulus: form movimento, tastierino, rifornimento, etichette, sheet
 - `resources/icons/` icone Lucide usate (`{{ icon('nome') }}` in Twig)
+
+## Crediti
+
+Icone [Lucide](https://lucide.dev) (ISC, vedi `app/resources/icons/LICENSE-lucide`), font
+[Geist](https://vercel.com/font) e [Bricolage Grotesque](https://github.com/ateliertriay/bricolage)
+(SIL Open Font License). Prezzi di mercato da Yahoo Finance (servizio non ufficiale).

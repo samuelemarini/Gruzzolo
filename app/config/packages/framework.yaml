@@ -8,7 +8,7 @@ framework:
     trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
 
     # Note that the session will be started ONLY if you read or write from it.
-    # Nome proprio: i cookie ignorano la porta, e un'altra app sullo stesso host (home.mariuzzi.com:XXXX)
+    # Nome proprio: i cookie ignorano la porta, e un'altra app sullo stesso host (es. home.example.com:XXXX)
     # con PHPSESSID Secure impedisce a Chrome di salvare il nostro -> login che torna al login.
     session:
         name: GRUZZOLO_SESSID
