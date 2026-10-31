@@ -20,7 +20,7 @@ export default class extends Controller {
         // In modifica i tre valori ci sono gia': si considerano "scelti" prezzo e totale.
         if (this.priceTarget.value && this.totalTarget.value) this.order = ['total', 'price'];
         this.onAmount = () => {
-            this.totalTarget.value = this.amount.value;
+            this.totalTarget.value = this.amount.value.replace(/\./g, '');
             this.touch('total');
             this.compute();
         };
@@ -36,7 +36,11 @@ export default class extends Controller {
     edited(event) {
         const field = event.currentTarget.dataset.field;
         this.touch(field);
-        if (field === 'total') this.amount.value = this.totalTarget.value;
+        if (field === 'total') {
+            // L'importo vuole la virgola: un "1.5" scritto qui e' 1,50, non 15
+            const total = this.num(this.totalTarget.value);
+            this.amount.value = total ? this.fmt(total, 2) : '';
+        }
         this.compute();
     }
 

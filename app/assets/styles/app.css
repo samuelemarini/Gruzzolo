@@ -498,6 +498,8 @@ form[data-mode="grid"] .fields-only, form[data-mode="fields"] .grid-only { displ
 .form-dock .keypad button { height: 46px; }
 .form-dock__actions { display: grid; gap: 8px; }
 .form-dock__actions.has-another { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+.form-dock__actions.has-delete { grid-template-columns: minmax(0, 1fr) 52px; }
+.form-dock__actions .form-dock__delete { padding: 0; }
 .form-dock__actions .btn { height: 52px; padding: 0 12px; }
 .fuel-average { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: 16px; background: var(--surface-2); }
 .form-dock__another { order: -1; gap: 6px; font-size: 15px; white-space: nowrap; }

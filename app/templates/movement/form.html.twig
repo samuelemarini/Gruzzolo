@@ -74,7 +74,7 @@
             <span class="amount-input__sign" data-movement-form-target="sign">{{ movement.income ? '+' : (movement.expense ? '−' : '') }}</span>
             <input type="text" name="amount" inputmode="decimal" autocomplete="off" placeholder="0,00" aria-label="Importo"
                    value="{{ movement.amount > 0 ? movement.amount|input_num : '' }}"
-                   data-keypad-target="input" data-movement-form-target="amount" {{ isNew ? 'autofocus' }}>
+                   data-keypad-target="input" data-movement-form-target="amount" data-action="beforeinput->keypad#typed paste->keypad#pasted" {{ isNew ? 'autofocus' }}>
             <span class="amount-input__cur">€</span>
         </div>
         {% if errors.amount is defined %}<p class="field__error" style="text-align: center">{{ errors.amount }}</p>{% endif %}
@@ -266,11 +266,14 @@
             <button type="button" data-action="keypad#press" data-key="0">0</button>
             <button type="button" data-action="keypad#back" aria-label="Cancella">{{ icon('delete', 22) }}</button>
         </div>
-        <div class="form-dock__actions {{ isNew ? 'has-another' }}">
+        <div class="form-dock__actions {{ isNew ? 'has-another' : 'has-delete' }}">
             {# Salva per primo: e' quello che parte premendo Invio in un campo #}
             <button type="submit" class="btn">{{ icon('check', 20) }}<span data-movement-form-target="submitLabel">{{ isNew ? 'Salva' : 'Salva modifiche' }}</span></button>
             {% if isNew %}
                 <button type="submit" name="_another" value="1" class="btn btn--ghost form-dock__another">{{ icon('plus', 18) }}Salva e nuovo</button>
+            {% else %}
+                {# Invia il modulo di eliminazione qui sotto (i form non si annidano) #}
+                <button type="submit" form="movement-delete" class="btn btn--danger form-dock__delete" aria-label="Elimina movimento" title="Elimina movimento">{{ icon('trash-2', 20) }}</button>
             {% endif %}
         </div>
     </div>
@@ -279,10 +282,9 @@
 </form>
 
 {% if not isNew %}
-    <form method="post" action="{{ path('movement_delete', {id: movement.id}) }}" class="page page--plain" style="padding-top: 0" data-turbo-confirm="Eliminare questo movimento?">
+    <form id="movement-delete" method="post" action="{{ path('movement_delete', {id: movement.id}) }}" data-turbo-confirm="Eliminare questo movimento?" hidden>
         <input type="hidden" name="_token" value="{{ csrf_token('delete-movement-' ~ movement.id) }}">
         <input type="hidden" name="_back" value="{{ back }}">
-        <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}Elimina movimento</button>
     </form>
 {% endif %}
 {% endblock %}
