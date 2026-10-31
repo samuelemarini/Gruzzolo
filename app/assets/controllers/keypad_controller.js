@@ -14,18 +14,37 @@ export default class extends Controller {
         }
         // Larghezza al contenuto, cosi' segno e simbolo dell'euro restano attaccati alla cifra
         // (dove field-sizing non esiste ancora).
-        if (this.hasInputTarget && !CSS.supports('field-sizing', 'content')) {
-            this.resize = () => {
+        if (!this.hasInputTarget) return;
+        const sizing = CSS.supports('field-sizing', 'content');
+        // Ascolta tutto il modulo: anche il totale del rifornimento riscrive l'importo
+        this.refresh = () => {
+            if (!sizing) {
                 const length = (this.inputTarget.value || this.inputTarget.placeholder).length;
                 this.inputTarget.style.width = `${Math.max(length, 3) + 0.6}ch`;
-            };
-            this.inputTarget.addEventListener('input', this.resize);
-            this.resize();
-        }
+            }
+            this.fit();
+        };
+        this.element.addEventListener('input', this.refresh);
+        window.addEventListener('resize', this.refresh);
+        this.refresh();
+        document.fonts?.ready.then(() => this.inputTarget && this.refresh());
     }
 
     disconnect() {
-        if (this.resize) this.inputTarget.removeEventListener('input', this.resize);
+        if (!this.refresh) return;
+        this.element.removeEventListener('input', this.refresh);
+        window.removeEventListener('resize', this.refresh);
+    }
+
+    // Cifre grandi: il carattere si rimpicciolisce finche' l'importo sta tutto nella riga
+    fit() {
+        const input = this.inputTarget;
+        input.style.fontSize = '';
+        let size = parseFloat(getComputedStyle(input).fontSize);
+        while (input.scrollWidth > input.clientWidth + 1 && size > 28) {
+            size -= 2;
+            input.style.fontSize = `${size}px`;
+        }
     }
 
     press(event) {

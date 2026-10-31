@@ -473,22 +473,27 @@ form[data-mode="grid"] .fields-only, form[data-mode="fields"] .grid-only { displ
 
 /* Importo grande + tastierino */
 .amount-input { display: flex; align-items: baseline; justify-content: center; gap: 8px; padding: 6px 0; }
-.amount-input__sign { font: 600 34px/1 var(--font-display); color: var(--muted); }
+.amount-input__sign { flex: none; font: 600 34px/1 var(--font-display); color: var(--muted); }
+/* Largo quanto la cifra; se non sta nella riga si stringe e il keypad controller rimpicciolisce il carattere */
 .amount-input input {
-  width: 4.2ch; min-width: 3.2ch; max-width: 72vw; field-sizing: content; border: 0; background: transparent; outline: none; padding: 0;
+  flex: 0 1 auto; width: 4.2ch; min-width: 3.2ch; field-sizing: content; border: 0; background: transparent; outline: none; padding: 0;
   font: 700 64px/1.05 var(--font-display); letter-spacing: -0.03em; color: var(--text); text-align: center;
   caret-color: var(--accent);
 }
 .amount-input input::placeholder { color: var(--line-strong); }
-.amount-input__cur { font: 600 30px/1 var(--font-display); color: var(--muted); }
+@supports (field-sizing: content) { .amount-input input { width: auto; } }
+.amount-input__cur { flex: none; font: 600 30px/1 var(--font-display); color: var(--muted); }
 .keypad { display: none; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .keypad button { user-select: none; -webkit-user-select: none; }
-/* Nuovo movimento: tastierino e Salva sempre a schermo, attaccati in fondo mentre il modulo scorre */
-.form-dock {
-  position: sticky; bottom: 0; z-index: 20; display: flex; flex-direction: column; gap: 8px;
-  margin: 0 calc(var(--gutter) * -1) calc((env(safe-area-inset-bottom) + 32px) * -1);
-  padding: 10px var(--gutter) calc(env(safe-area-inset-bottom) + 12px);
-  background: var(--bg); border-top: 1px solid var(--line);
+/* Nuovo movimento: tastierino e Salva sempre a schermo, attaccati in fondo mentre il modulo scorre.
+   Il pannello attorno serve solo dove c'e' il tastierino: altrove resta il pulsante e basta. */
+.form-dock { position: sticky; bottom: 0; z-index: 20; display: flex; flex-direction: column; gap: 8px; }
+@media (pointer: coarse) and (max-width: 700px) {
+  .form-dock {
+    margin: 0 calc(var(--gutter) * -1) calc((env(safe-area-inset-bottom) + 32px) * -1);
+    padding: 10px var(--gutter) calc(env(safe-area-inset-bottom) + 12px);
+    background: var(--bg); border-top: 1px solid var(--line);
+  }
 }
 .form-dock .keypad button { height: 46px; }
 .form-dock__actions { display: grid; gap: 8px; }
