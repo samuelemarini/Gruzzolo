@@ -21,7 +21,7 @@
   <img src="docs/screenshots/mobile.webp" alt="Gruzzolo on a phone: home, editing a transaction with the keypad, report and car statistics">
 </p>
 
-> *Gruzzolo* is Italian for "nest egg". The interface is in Italian.
+> *Gruzzolo* is Italian for "nest egg". The interface speaks English, Italian, Spanish, German and French.
 
 ## Features
 
@@ -41,6 +41,8 @@
   restore** of the whole instance from a single file.
 - **Make it yours** — light, dark or automatic theme, classic or *Liquid Glass* style, accent colour
   and app icon of your choice, and a one-tap toggle to blur amounts when you're in public.
+- **Five languages** — English, Italian, Spanish, German and French, picked from the browser or in
+  Settings; numbers, dates and the amount keypad follow the language (`1,247.80 €`, `1.247,80 €`, `1 247,80 €`).
 - **PWA** — add it to your home screen and use it like a native app, with pull-to-refresh.
 
 ## Screenshots
@@ -72,7 +74,7 @@
   <img src="docs/screenshots/scuro.webp" alt="Home, report and vehicle in the dark theme">
 </p>
 
-<sub>Screenshots show the sample data from `app:demo` in the Liquid Glass style.</sub>
+<sub>Screenshots show the English interface in the Liquid Glass style, with the sample data from `app:demo` (created in Italian).</sub>
 
 ## Try it locally
 
@@ -202,6 +204,13 @@ download the backup from one and restore it on the other.
 - **Hidden amounts**: the eye icon (Home, Transactions, Reports, Accounts, Investments, sidebar) blurs
   amounts on that device (`localStorage`). `assets/privacy.js` recognises amounts by their format
   ("1.247,80 €") and wraps them in `.money`; large balances are `.hero-amount__value`.
+- **Languages**: the Italian sentence is the translation key (`{{ 'Nuovo movimento'|trans }}`), translations
+  live in `app/translations/messages.{en,es,de,fr}.json`. The language comes from `app_user.locale` or, when
+  empty, from the browser (`LocaleSubscriber`); separators per language are in `App\Service\Language` and
+  are used by the Twig filters, `Money::parseLocal()` and `assets/i18n.js` (which also carries the few
+  strings used by scripts). Entities and static code translate through `App\Util\Trans`. Default
+  categories are created in the language of whoever creates the user; data already stored (account and
+  category names, descriptions) is never translated.
 - **Multi-user**: every table has an owner; controllers use `AppController::own()`, which returns 404
   for other users' data.
 - **Shared accounts**: the owner shares an account with other users (table `account_member`, from the
