@@ -49,8 +49,11 @@ final class UserSeeder
             $parent = (new Category($account))->setName($name)->setIcon($icon)->setColor($color)->setKind(Category::EXPENSE)->setPosition($pos);
             $this->em->persist($parent);
             foreach ($children as $childPos => $child) {
-                $this->em->persist((new Category($account))->setParent($parent)->setName($child[0])->setIcon($child[1])
-                    ->setColor($color)->setKind(Category::EXPENSE)->setFuel($child[2] ?? false)->setPosition($childPos));
+                $sub = (new Category($account))->setParent($parent)->setName($child[0])->setIcon($child[1])
+                    ->setColor($color)->setKind(Category::EXPENSE)->setFuel($child[2] ?? false)->setPosition($childPos);
+                // Anche nella collezione del padre: chi copia le categorie subito dopo (app:demo) le deve vedere
+                $parent->getChildren()->add($sub);
+                $this->em->persist($sub);
             }
         }
         foreach (self::INCOME as $pos => [$name, $icon, $color]) {
