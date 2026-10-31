@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 {% import '_ui.html.twig' as ui %}
-{% block title %}Ordina categorie{% endblock %}
+{% block title %}{{ 'Ordina categorie'|trans }}{% endblock %}
 
 {% macro item(c, counts, siblings) %}
     {% import '_ui.html.twig' as ui %}
@@ -11,11 +11,11 @@
             <span class="grow stack-sm" style="gap: 0; min-width: 0">
                 <span class="strong ellipsis" style="font-weight: 500">{{ c.name }}</span>
                 {% set n = (counts[c.id] ?? 0) + c.children|reduce((s, ch) => s + (counts[ch.id] ?? 0), 0) %}
-                <span class="xsmall muted">{{ n|num }} moviment{{ n == 1 ? 'o' : 'i' }}</span>
+                <span class="xsmall muted">{{ '%count% movimento|%count% movimenti'|trans({'%count%': n}) }}</span>
             </span>
             {% if siblings > 1 %}
-                <button type="button" class="icon-btn icon-btn--plain sort-move" data-action="category-sort#up" aria-label="Sposta su {{ c.name }}">{{ icon('chevron-up', 18) }}</button>
-                <button type="button" class="icon-btn icon-btn--plain sort-move" data-action="category-sort#down" aria-label="Sposta giù {{ c.name }}">{{ icon('chevron-down', 18) }}</button>
+                <button type="button" class="icon-btn icon-btn--plain sort-move" data-action="category-sort#up" aria-label="{{ 'Sposta su %name%'|trans({'%name%': c.name}) }}">{{ icon('chevron-up', 18) }}</button>
+                <button type="button" class="icon-btn icon-btn--plain sort-move" data-action="category-sort#down" aria-label="{{ 'Sposta giù %name%'|trans({'%name%': c.name}) }}">{{ icon('chevron-down', 18) }}</button>
             {% endif %}
         </div>
         {% set kids = c.children.toArray|filter(ch => not ch.archived) %}
@@ -32,23 +32,23 @@
      data-category-sort-url-value="{{ path('category_sort_save') }}"
      data-category-sort-token-value="{{ csrf_token('category-sort') }}">
     <div class="topbar">
-        <a href="{{ path('category_index', {account: account.id, kind: kind}) }}" class="icon-btn" aria-label="Fine">{{ icon('chevron-left') }}</a>
-        <span class="topbar__center">Ordina categorie<span class="xsmall muted" style="display: block; font-family: var(--font-ui); font-weight: 400">conto «{{ account.name }}»</span></span>
+        <a href="{{ path('category_index', {account: account.id, kind: kind}) }}" class="icon-btn" aria-label="{{ 'Fine'|trans }}">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">{{ 'Ordina categorie'|trans }}<span class="xsmall muted" style="display: block; font-family: var(--font-ui); font-weight: 400">{{ 'conto «%name%»'|trans({'%name%': account.name}) }}</span></span>
         <span class="small strong text-accent" style="width: 64px; text-align: right" data-category-sort-target="status" aria-live="polite"></span>
     </div>
 
     <div class="seg">
-        <a href="{{ path('category_sort', {account: account.id}) }}" class="{{ kind == 'expense' ? 'is-active' }}">Uscite</a>
-        <a href="{{ path('category_sort', {account: account.id, kind: 'income'}) }}" class="{{ kind == 'income' ? 'is-active' }}">Entrate</a>
+        <a href="{{ path('category_sort', {account: account.id}) }}" class="{{ kind == 'expense' ? 'is-active' }}">{{ 'Uscite'|trans }}</a>
+        <a href="{{ path('category_sort', {account: account.id, kind: 'income'}) }}" class="{{ kind == 'income' ? 'is-active' }}">{{ 'Entrate'|trans }}</a>
     </div>
 
-    <p class="small muted">Trascina dalla maniglia a sinistra o usa le frecce. È l'ordine con cui le categorie ti vengono proposte quando inserisci un movimento; le sottocategorie si ordinano dentro la loro categoria. Si salva da solo.</p>
+    <p class="small muted">{{ "Trascina dalla maniglia a sinistra o usa le frecce. È l'ordine con cui le categorie ti vengono proposte quando inserisci un movimento; le sottocategorie si ordinano dentro la loro categoria. Si salva da solo."|trans }}</p>
 
-    <form method="post" action="{{ path('category_sort_usage') }}" data-turbo-confirm="Riordinare le categorie dalla più usata alla meno usata?">
+    <form method="post" action="{{ path('category_sort_usage') }}" data-confirm-kind="sort" data-turbo-confirm="{{ 'Riordinare le categorie dalla più usata alla meno usata?'|trans }}">
         <input type="hidden" name="_token" value="{{ csrf_token('category-sort') }}">
         <input type="hidden" name="kind" value="{{ kind }}">
         <input type="hidden" name="account" value="{{ account.id }}">
-        <button type="submit" class="btn btn--ghost btn--block btn--sm">{{ icon('chart-bar-decreasing', 18) }}Ordina per utilizzo</button>
+        <button type="submit" class="btn btn--ghost btn--block btn--sm">{{ icon('chart-bar-decreasing', 18) }}{{ 'Ordina per utilizzo'|trans }}</button>
     </form>
 
     <ul class="sort-list card card--list" data-category-sort-target="list">

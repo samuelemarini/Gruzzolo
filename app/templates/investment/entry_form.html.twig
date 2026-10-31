@@ -3,64 +3,64 @@
 {% set hide_tabbar = true %}
 {% set isNew = entry.id is null %}
 {% set amount = entry.contribution + 0 %}
-{% block title %}{{ holding.name }} · aggiornamento{% endblock %}
+{% block title %}{{ holding.name }} · {{ 'aggiornamento'|trans }}{% endblock %}
 {% block body %}
 <form method="post" class="page page--plain form" data-controller="entry-form">
     <input type="hidden" name="_token" value="{{ csrf_token('entry') }}">
     <div class="topbar">
-        <a href="{{ path('investment_show', {id: holding.id}) }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
+        <a href="{{ path('investment_show', {id: holding.id}) }}" class="icon-btn" aria-label="{{ 'Indietro'|trans }}">{{ icon('chevron-left') }}</a>
         <span class="topbar__center">{{ holding.name }}</span>
         <span style="width: 44px"></span>
     </div>
 
-    <div class="seg" role="radiogroup" aria-label="Operazione">
-        <label><input type="radio" name="mode" value="deposit" {{ mode == 'deposit' ? 'checked' }} data-action="entry-form#sync">Versamento</label>
-        <label><input type="radio" name="mode" value="withdraw" {{ mode == 'withdraw' ? 'checked' }} data-action="entry-form#sync">Prelievo</label>
-        <label><input type="radio" name="mode" value="value" {{ mode == 'value' ? 'checked' }} data-action="entry-form#sync">Solo valore</label>
+    <div class="seg" role="radiogroup" aria-label="{{ 'Operazione'|trans }}">
+        <label><input type="radio" name="mode" value="deposit" {{ mode == 'deposit' ? 'checked' }} data-action="entry-form#sync">{{ 'Versamento'|trans }}</label>
+        <label><input type="radio" name="mode" value="withdraw" {{ mode == 'withdraw' ? 'checked' }} data-action="entry-form#sync">{{ 'Prelievo'|trans }}</label>
+        <label><input type="radio" name="mode" value="value" {{ mode == 'value' ? 'checked' }} data-action="entry-form#sync">{{ 'Solo valore'|trans }}</label>
     </div>
 
     {% if last and isNew %}
-        <p class="small muted">Ultimo aggiornamento {{ last.entry.date|it_date('d MMM yyyy') }}: valeva {{ last.entry.value|money }}, versati {{ stats.invested|money }}.</p>
+        <p class="small muted">{{ 'Ultimo aggiornamento %date%: valeva %value%, versati %invested%.'|trans({'%date%': last.entry.date|local_date('d MMM yyyy'), '%value%': last.entry.value|money, '%invested%': stats.invested|money}) }}</p>
     {% endif %}
 
     <div class="grid-2">
         <label class="field {{ errors.amount is defined ? 'has-error' }}" data-entry-form-target="amount">
-            <span class="field__label" data-entry-form-target="amountLabel">{{ mode == 'withdraw' ? 'Ritirati €' : 'Versati €' }}</span>
-            <input type="text" inputmode="decimal" name="amount" value="{{ amount != 0 ? amount|abs|input_num }}" placeholder="50,00" {{ isNew ? 'autofocus' }}>
+            <span class="field__label" data-entry-form-target="amountLabel">{{ mode == 'withdraw' ? 'Ritirati €'|trans : 'Versati €'|trans }}</span>
+            <input type="text" inputmode="decimal" name="amount" value="{{ amount != 0 ? amount|abs|input_num }}" placeholder="{{ 50|input_num }}" {{ isNew ? 'autofocus' }}>
         </label>
         <label class="field {{ errors.value is defined ? 'has-error' }}">
-            <span class="field__label">Valore adesso €</span>
-            <input type="text" inputmode="decimal" name="value" value="{{ entry.id ? entry.value|input_num }}" placeholder="1.100,00" required>
+            <span class="field__label">{{ 'Valore adesso €'|trans }}</span>
+            <input type="text" inputmode="decimal" name="value" value="{{ entry.id ? entry.value|input_num }}" placeholder="{{ 1100|num(2) }}" required>
         </label>
     </div>
-    <p class="hint" data-entry-form-target="hint">Il valore è quello del titolo <strong>dopo</strong> il versamento, come lo vedi nell'app della banca o del broker.</p>
+    <p class="hint" data-entry-form-target="hint">{{ 'Il valore è quello del titolo <strong>dopo</strong> il versamento, come lo vedi nell\'app della banca o del broker.'|trans|raw }}</p>
     {% for f in ['amount', 'value', 'date'] %}{% if errors[f] is defined %}<p class="field__error">{{ errors[f] }}</p>{% endif %}{% endfor %}
 
     <label class="field">
-        <span class="field__label">Data</span>
+        <span class="field__label">{{ 'Data'|trans }}</span>
         <input type="date" name="date" value="{{ entry.date|date('Y-m-d') }}" required>
     </label>
 
     <label class="field" data-entry-form-target="account">
-        <span class="field__label">Soldi presi dal conto (facoltativo)</span>
+        <span class="field__label">{{ 'Soldi presi dal conto (facoltativo)'|trans }}</span>
         <select name="account">
-            <option value="">— non registrare il movimento —</option>
+            <option value="">{{ '— non registrare il movimento —'|trans }}</option>
             {% for a in accounts %}<option value="{{ a.id }}" {{ accountId == a.id ? 'selected' }}>{{ a.name }}</option>{% endfor %}
         </select>
     </label>
-    <p class="hint" data-entry-form-target="accountHint">Se scegli un conto, il versamento esce da lì come giroconto: cala il saldo e nei totali conta come uscita (verso gli investimenti).</p>
+    <p class="hint" data-entry-form-target="accountHint">{{ 'Se scegli un conto, il versamento esce da lì come giroconto: cala il saldo e nei totali conta come uscita (verso gli investimenti).'|trans }}</p>
 
     <label class="field">
-        <span class="field__label">Nota</span>
-        <input type="text" name="note" value="{{ entry.note }}" maxlength="255" placeholder="facoltativa">
+        <span class="field__label">{{ 'Nota'|trans }}</span>
+        <input type="text" name="note" value="{{ entry.note }}" maxlength="255" placeholder="{{ 'facoltativa'|trans }}">
     </label>
 
-    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}Salva</button>
+    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}{{ 'Salva'|trans }}</button>
 </form>
 {% if not isNew %}
-    <form method="post" action="{{ path('investment_entry_delete', {id: entry.id}) }}" class="page page--plain" style="padding-top: 0" data-turbo-confirm="Eliminare questo aggiornamento?">
+    <form method="post" action="{{ path('investment_entry_delete', {id: entry.id}) }}" class="page page--plain" style="padding-top: 0" data-confirm-kind="delete" data-turbo-confirm="{{ 'Eliminare questo aggiornamento?'|trans }}">
         <input type="hidden" name="_token" value="{{ csrf_token('delete-entry-' ~ entry.id) }}">
-        <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}Elimina aggiornamento</button>
+        <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}{{ 'Elimina aggiornamento'|trans }}</button>
     </form>
 {% endif %}
 {% endblock %}

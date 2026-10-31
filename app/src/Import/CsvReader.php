@@ -2,6 +2,8 @@
 
 namespace App\Import;
 
+use Symfony\Component\Translation\TranslatableMessage;
+
 /**
  * Legge un CSV qualsiasi: toglie il BOM, indovina il separatore, restituisce righe per nome di colonna.
  * Le colonne con lo stesso nome diventano "Nome", "Nome (2)", ...; le celle non UTF-8 si leggono come Windows-1252 o Mac Roman.
@@ -19,7 +21,7 @@ final class CsvReader
     }
 
     /**
-     * @return \Generator<int, array<string, string>|string> numero di riga => colonne, oppure il messaggio d'errore
+     * @return \Generator<int, array<string, string>|TranslatableMessage> numero di riga => colonne, oppure il messaggio d'errore
      */
     public static function rows(string $path): \Generator
     {
@@ -32,7 +34,7 @@ final class CsvReader
                 continue;
             }
             if (count($cells) !== count($header)) {
-                yield $line => sprintf('ha %d colonne invece di %d (riga incompleta?)', count($cells), count($header));
+                yield $line => new TranslatableMessage('ha %found% colonne invece di %expected% (riga incompleta?)', ['%found%' => count($cells), '%expected%' => count($header)]);
                 continue;
             }
             yield $line => array_combine($header, array_map(self::utf8(...), $cells));

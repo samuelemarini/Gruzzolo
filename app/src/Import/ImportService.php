@@ -16,6 +16,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Translation\TranslatableMessage;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Importazione in tre passi: il file caricato si parcheggia in var/imports, si analizza (anteprima e
@@ -51,6 +53,7 @@ final class ImportService
         private readonly AccountRepository $accounts,
         private readonly CategoryRepository $categories,
         private readonly TagRepository $tags,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -63,9 +66,13 @@ final class ImportService
     /** Parcheggia il file caricato e restituisce la chiave per i passi successivi. */
     public function store(User $user, UploadedFile $file): string
     {
-        $header = CsvReader::header($file->getPathname());
+        try {
+            $header = CsvReader::header($file->getPathname());
+        } catch (\RuntimeException) {
+            throw new \RuntimeException($this->translator->trans('File non leggibile.'));
+        }
         if (!$this->detect($header)) {
-            throw new \InvalidArgumentException('Formato non riconosciuto. Intestazione trovata: '.implode(', ', array_slice($header, 0, 10)));
+            throw new \InvalidArgumentException($this->translator->trans('Formato non riconosciuto. Intestazione trovata: %header%', ['%header%' => implode(', ', array_slice($header, 0, 10))]));
         }
         if (!is_dir($this->dir)) {
             mkdir($this->dir, 0777, true);
@@ -104,14 +111,14 @@ final class ImportService
         $rows = [];
         $errors = [];
         foreach (CsvReader::rows($path) as $line => $data) {
-            if (is_string($data)) {
-                $errors[] = ['line' => $line, 'message' => $data];
+            if ($data instanceof TranslatableMessage) {
+                $errors[] = ['line' => $line, 'message' => $data->trans($this->translator)];
                 continue;
             }
             try {
                 $row = $format->parse($data, $line);
                 if ($row->currency !== 'EUR') {
-                    throw new \InvalidArgumentException(sprintf('valuta %s non supportata', $row->currency));
+                    throw new \InvalidArgumentException($this->translator->trans('valuta %currency% non supportata', ['%currency%' => $row->currency]));
                 }
                 $rows[] = $row;
             } catch (\InvalidArgumentException $e) {
@@ -147,7 +154,7 @@ final class ImportService
                 ++$transfers;
             } else {
                 $k = $row->categoryKey();
-                $cats[$k] ??= ['key' => $k, 'kind' => $row->kind, 'name' => $row->category ?? 'Senza categoria', 'count' => 0, 'total' => 0.0];
+                $cats[$k] ??= ['key' => $k, 'kind' => $row->kind, 'name' => $row->category ?? $this->translator->trans('Senza categoria'), 'count' => 0, 'total' => 0.0];
                 ++$cats[$k]['count'];
                 $cats[$k]['total'] += (float) $row->amount;
                 $row->kind === 'income' ? $income += (float) $row->amount : $expense += (float) $row->amount;
@@ -224,7 +231,7 @@ final class ImportService
             if ($choice === 'skip') {
                 return false;
             }
-            $name = $row->category ?? 'Importate';
+            $name = $row->category ?? $this->translator->trans('Importate');
             $template = null;
             if ($choice !== 'new') {
                 $found = $this->categories->find((int) $choice);

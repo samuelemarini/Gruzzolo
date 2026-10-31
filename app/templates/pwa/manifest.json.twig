@@ -1,8 +1,8 @@
 {
     "name": "Gruzzolo",
     "short_name": "Gruzzolo",
-    "description": "Entrate, uscite, rifornimenti e investimenti",
-    "lang": "it",
+    "description": "{{ 'Entrate, uscite, rifornimenti e investimenti'|trans }}",
+    "lang": "{{ app.request.locale }}",
     "start_url": "{{ path('app_home') }}",
     "scope": "/",
     "display": "standalone",
@@ -15,7 +15,7 @@
         {"src": "{{ path('pwa_icon', {shape: iconShape, color: iconColor, file: 'icon.svg'}) }}", "sizes": "any", "type": "image/svg+xml"}
     ],
     "shortcuts": [
-        {"name": "Nuovo movimento", "url": "{{ path('movement_new') }}"},
-        {"name": "Rifornimento", "url": "{{ path('movement_new', {fuel: 1}) }}"}
+        {"name": "{{ 'Nuovo movimento'|trans }}", "url": "{{ path('movement_new') }}"},
+        {"name": "{{ 'Rifornimento'|trans }}", "url": "{{ path('movement_new', {fuel: 1}) }}"}
     ]
 }

@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\AccountRepository;
+use App\Util\Trans;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -89,7 +90,7 @@ class Account implements OwnedInterface
 
     public function getKind(): string { return $this->kind; }
     public function setKind(string $kind): static { $this->kind = array_key_exists($kind, self::KINDS) ? $kind : 'other'; return $this; }
-    public function getKindLabel(): string { return self::KINDS[$this->kind] ?? $this->kind; }
+    public function getKindLabel(): string { return isset(self::KINDS[$this->kind]) ? Trans::label(self::KINDS[$this->kind]) : $this->kind; }
     public function getIcon(): string { return self::KIND_ICONS[$this->kind] ?? 'wallet'; }
 
     public function getColor(): string { return $this->color; }

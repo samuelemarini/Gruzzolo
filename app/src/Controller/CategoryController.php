@@ -99,7 +99,7 @@ final class CategoryController extends AppController
             }
         }
         $this->em->flush();
-        $this->addFlash('success', 'Categorie ordinate dalla più usata');
+        $this->addFlash('success', $this->trans('Categorie ordinate dalla più usata'));
 
         return $this->redirectToRoute('category_sort', ['account' => $account->getId(), 'kind' => $kind], 303);
     }
@@ -113,7 +113,9 @@ final class CategoryController extends AppController
         $from = $this->accessibleAccount($this->accounts->find(Param::int($request->request, 'from')));
         $created = $from === $to ? 0 : $this->categories->copyAll($from, $to);
         $this->em->flush();
-        $this->addFlash('success', $created ? sprintf('Copiate %d categorie da «%s»', $created, $from->getName()) : 'Nessuna categoria nuova da copiare');
+        $this->addFlash('success', $created
+            ? $this->trans('Copiata %count% categoria da «%name%»|Copiate %count% categorie da «%name%»', ['%count%' => $created, '%name%' => $from->getName()])
+            : $this->trans('Nessuna categoria nuova da copiare'));
 
         return $this->redirectToRoute('category_index', ['account' => $to->getId()], 303);
     }
@@ -151,13 +153,13 @@ final class CategoryController extends AppController
             foreach ($category->getChildren() as $child) {
                 $child->setArchived(true);
             }
-            $this->addFlash('success', 'Categoria archiviata: i movimenti passati la mantengono');
+            $this->addFlash('success', $this->trans('Categoria archiviata: i movimenti passati la mantengono'));
         } else {
             foreach ($category->getChildren() as $child) {
                 $this->em->remove($child);
             }
             $this->em->remove($category);
-            $this->addFlash('success', 'Categoria eliminata');
+            $this->addFlash('success', $this->trans('Categoria eliminata'));
         }
         $this->em->flush();
 
@@ -173,7 +175,7 @@ final class CategoryController extends AppController
             $data = $request->request;
             $category->setName((string) $data->get('name'));
             if ($category->getName() === '') {
-                $errors['name'] = 'Dai un nome alla categoria';
+                $errors['name'] = $this->trans('Dai un nome alla categoria');
             }
             if ($category->getId() === null && $category->getParent() === null) {
                 $category->setKind((string) $data->get('kind'));
@@ -184,7 +186,7 @@ final class CategoryController extends AppController
                 if (!$parent || $parent->getAccount() !== $account || $parent === $category || $parent->getParent() !== null
                     || $parent->getKind() !== $category->getKind() || $category->getChildren()->count() > 0) {
                     $parent = null;
-                    $errors['parent'] = 'Categoria principale non valida (sono ammessi due livelli)';
+                    $errors['parent'] = $this->trans('Categoria principale non valida (sono ammessi due livelli)');
                 }
             }
             if ($parent !== $category->getParent() || $category->getId() === null) {
@@ -201,7 +203,7 @@ final class CategoryController extends AppController
             if (!$errors) {
                 $this->em->persist($category);
                 $this->em->flush();
-                $this->addFlash('success', 'Categoria salvata');
+                $this->addFlash('success', $this->trans('Categoria salvata'));
 
                 return $this->redirectToRoute('category_index', ['account' => $account->getId(), 'kind' => $category->getKind()], 303);
             }

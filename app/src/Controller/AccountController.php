@@ -17,6 +17,7 @@ use App\Service\BalanceService;
 use App\Service\ChartBuilder;
 use App\Service\Palette;
 use App\Util\Money;
+use App\Util\Trans;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -53,7 +54,7 @@ final class AccountController extends AppController
             }
         }
         if ($investments !== null) {
-            $items[] = ['key' => 'inv', 'label' => 'Investimenti', 'color' => null, 'icon' => 'trending-up',
+            $items[] = ['key' => 'inv', 'label' => $this->trans('Investimenti'), 'color' => null, 'icon' => 'trending-up',
                 'value' => $investments, 'included' => $user->isInNetWorth('inv')];
         }
         $included = array_filter($items, fn ($i) => $i['included']);
@@ -138,13 +139,13 @@ final class AccountController extends AppController
         $this->checkCsrf($request, 'delete-account-'.$id);
         $repo = $this->em->getRepository(Movement::class);
         if ($repo->count(['account' => $account]) + $repo->count(['toAccount' => $account]) > 0) {
-            $this->addFlash('error', 'Il conto ha dei movimenti: puoi archiviarlo, non eliminarlo');
+            $this->addFlash('error', $this->trans('Il conto ha dei movimenti: puoi archiviarlo, non eliminarlo'));
 
             return $this->redirectToRoute('account_edit', ['id' => $id], 303);
         }
         $this->em->remove($account);
         $this->em->flush();
-        $this->addFlash('success', 'Conto eliminato');
+        $this->addFlash('success', $this->trans('Conto eliminato'));
 
         return $this->redirectToRoute('account_index', [], 303);
     }
@@ -157,13 +158,13 @@ final class AccountController extends AppController
         $this->checkCsrf($request, 'account-share-'.$id);
         $other = $users->findOneByUsername((string) $request->request->get('username'));
         if (!$other || !$other->isActive()) {
-            $this->addFlash('error', 'Nessun utente con questo nome');
+            $this->addFlash('error', $this->trans('Nessun utente con questo nome'));
         } elseif ($other === $this->me()) {
-            $this->addFlash('error', 'Il conto è già tuo');
+            $this->addFlash('error', $this->trans('Il conto è già tuo'));
         } else {
             $account->addMember($other);
             $this->em->flush();
-            $this->addFlash('success', sprintf('Conto condiviso con %s', $other->getDisplayName()));
+            $this->addFlash('success', $this->trans('Conto condiviso con %name%', ['%name%' => $other->getDisplayName()]));
         }
 
         return $this->redirectToRoute('account_edit', ['id' => $id], 303);
@@ -177,7 +178,7 @@ final class AccountController extends AppController
         if ($other = $users->find($userId)) {
             $account->removeMember($other);
             $this->em->flush();
-            $this->addFlash('success', sprintf('%s non vede più il conto', $other->getDisplayName()));
+            $this->addFlash('success', $this->trans('%name% non vede più il conto', ['%name%' => $other->getDisplayName()]));
         }
 
         return $this->redirectToRoute('account_edit', ['id' => $id], 303);
@@ -191,7 +192,7 @@ final class AccountController extends AppController
         $this->checkCsrf($request, 'account-leave-'.$id);
         $account->removeMember($this->me());
         $this->em->flush();
-        $this->addFlash('success', 'Sei uscito dal conto condiviso');
+        $this->addFlash('success', $this->trans('Sei uscito dal conto condiviso'));
 
         return $this->redirectToRoute('account_index', [], 303);
     }
@@ -204,7 +205,7 @@ final class AccountController extends AppController
         $this->checkCsrf($request, 'account-home-'.$id);
         $account->setOnHomeFor($this->me(), $request->request->getBoolean('show'));
         $this->em->flush();
-        $this->addFlash('success', $account->isOnHomeFor($this->me()) ? 'I movimenti del conto tornano nei totali della home' : 'I movimenti del conto non entrano più nei totali della home');
+        $this->addFlash('success', $account->isOnHomeFor($this->me()) ? $this->trans('I movimenti del conto tornano nei totali della home') : $this->trans('I movimenti del conto non entrano più nei totali della home'));
 
         return $this->redirectToRoute('account_show', ['id' => $id], 303);
     }
@@ -219,10 +220,10 @@ final class AccountController extends AppController
             $account->setName((string) $data->get('name'))->setKind((string) $data->get('kind'));
             $color = (string) $data->get('color');
             $account->setColor(array_key_exists($color, Palette::COLORS) ? $color : '#8AB4FF');
-            $initial = Money::parse($data->get('initial_balance') ?: '0');
-            $initial !== null ? $account->setInitialBalance($initial) : $errors['initial_balance'] = 'Importo non valido';
+            $initial = Money::parseLocal($data->get('initial_balance') ?: '0');
+            $initial !== null ? $account->setInitialBalance($initial) : $errors['initial_balance'] = $this->trans('Importo non valido');
             if ($account->getName() === '') {
-                $errors['name'] = 'Dai un nome al conto';
+                $errors['name'] = $this->trans('Dai un nome al conto');
             }
             $account->setArchived($data->getBoolean('archived'));
             $account->setOnHomeFor($user, $data->getBoolean('home'));
@@ -242,13 +243,13 @@ final class AccountController extends AppController
                     $onCreate($account, (string) $data->get('categories_from', 'default'));
                 }
                 $this->em->flush();
-                $this->addFlash('success', 'Conto salvato');
+                $this->addFlash('success', $this->trans('Conto salvato'));
 
                 return $this->redirectToRoute('account_show', ['id' => $account->getId()], 303);
             }
         }
 
-        return $this->render('account/form.html.twig', ['account' => $account, 'errors' => $errors, 'kinds' => Account::KINDS,
+        return $this->render('account/form.html.twig', ['account' => $account, 'errors' => $errors, 'kinds' => Trans::labels(Account::KINDS),
             'sources' => $this->accounts->findForUser($user), 'defaultSource' => $this->accounts->findDefault($user)],
             new Response(status: $errors ? 422 : 200));
     }

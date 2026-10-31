@@ -1,13 +1,13 @@
 {% extends 'base.html.twig' %}
 {% import '_ui.html.twig' as ui %}
 {% set hide_tabbar = true %}
-{% block title %}Ripristina backup{% endblock %}
+{% block title %}{{ 'Ripristina backup'|trans }}{% endblock %}
 {% block body %}
 <form method="post" class="page form" data-turbo="false">
     <input type="hidden" name="_token" value="{{ csrf_token('backup-restore-' ~ key) }}">
     <div class="topbar">
-        <a href="{{ path('admin_backup') }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
-        <span class="topbar__center">Ripristina backup</span>
+        <a href="{{ path('admin_backup') }}" class="icon-btn" aria-label="{{ 'Indietro'|trans }}">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">{{ 'Ripristina backup'|trans }}</span>
         <span style="width: 44px"></span>
     </div>
 
@@ -15,22 +15,22 @@
         <div class="row">
             {{ ui.tile('archive', '#9BE7A0') }}
             <div class="grow stack-sm" style="gap: 2px">
-                <span class="strong">Backup{% if s.created_at %} del {{ s.created_at|it_date('d MMM yyyy, HH:mm') }}{% endif %}</span>
-                <span class="small muted">{{ s.users|length }} utenti{% for u in s.users %}{{ loop.first ? ': ' : ', ' }}{{ u.username }}{{ u.admin ? ' (admin)' }}{% endfor %}</span>
+                <span class="strong">{{ s.created_at ? 'Backup del %date%'|trans({'%date%': s.created_at|local_date('d MMM yyyy, HH:mm')}) : 'Backup'|trans }}</span>
+                <span class="small muted">{{ '%count% utente|%count% utenti'|trans({'%count%': s.users|length}) }}{% for u in s.users %}{{ loop.first ? ': ' : ', ' }}{{ u.username }}{{ u.admin ? ' (' ~ 'admin'|trans ~ ')' }}{% endfor %}</span>
             </div>
         </div>
         {% if s.older and not s.problems %}
-            <p class="small muted">Creato con una versione precedente di Gruzzolo: i dati aggiunti dalle versioni successive prendono i valori predefiniti.</p>
+            <p class="small muted">{{ 'Creato con una versione precedente di Gruzzolo: i dati aggiunti dalle versioni successive prendono i valori predefiniti.'|trans }}</p>
         {% endif %}
     </section>
 
     <section class="stack-sm">
-        <div class="section-head"><h2>Contenuto</h2><span class="small muted">nel file · ora</span></div>
+        <div class="section-head"><h2>{{ 'Contenuto'|trans }}</h2><span class="small muted">{{ 'nel file · ora'|trans }}</span></div>
         <div class="card card--list">
             {% for r in s.rows %}
                 <div class="list-row" style="min-height: 48px">
                     <div class="list-row__body"><span class="list-row__title">{{ r.label }}</span></div>
-                    <span class="list-row__amount">{{ r.file|num }}<small>ora {{ r.db|num }}</small></span>
+                    <span class="list-row__amount">{{ r.file|num }}<small>{{ 'ora %n%'|trans({'%n%': r.db|num}) }}</small></span>
                 </div>
             {% endfor %}
         </div>
@@ -38,18 +38,18 @@
 
     {% if s.problems %}
         <div class="card card--warn card--tight">
-            <span class="strong">Questo backup non si può ripristinare</span>
+            <span class="strong">{{ 'Questo backup non si può ripristinare'|trans }}</span>
             <ul class="small" style="margin: 0; padding-left: 18px">{% for p in s.problems %}<li>{{ p }}</li>{% endfor %}</ul>
         </div>
     {% else %}
         <div class="card card--warn card--tight">
-            <span class="strong">Tutti i dati attuali verranno sostituiti</span>
-            <p class="small" style="margin: 0">Utenti, password, conti e movimenti diventano quelli del file; quello che c'è ora e non è nel backup va perso. Se non sei sicuro, scarica prima un backup dei dati attuali. Alla fine dovrai rientrare con le credenziali del backup.</p>
-            <label class="field field--on-bg {{ error ? 'has-error' }}"><span class="field__label">Scrivi "{{ confirm }}" per confermare</span><input type="text" name="confirm" autocomplete="off" autocapitalize="characters"></label>
+            <span class="strong">{{ 'Tutti i dati attuali verranno sostituiti'|trans }}</span>
+            <p class="small" style="margin: 0">{{ "Utenti, password, conti e movimenti diventano quelli del file; quello che c'è ora e non è nel backup va perso. Se non sei sicuro, scarica prima un backup dei dati attuali. Alla fine dovrai rientrare con le credenziali del backup."|trans }}</p>
+            <label class="field field--on-bg {{ error ? 'has-error' }}"><span class="field__label">{{ 'Scrivi "%word%" per confermare'|trans({'%word%': confirm}) }}</span><input type="text" name="confirm" autocomplete="off" autocapitalize="characters"></label>
             {% if error %}<span class="field__error">{{ error }}</span>{% endif %}
-            <button type="submit" class="btn btn--danger btn--sm">{{ icon('rotate-ccw', 18) }}Sostituisci tutti i dati</button>
+            <button type="submit" class="btn btn--danger btn--sm">{{ icon('rotate-ccw', 18) }}{{ 'Sostituisci tutti i dati'|trans }}</button>
         </div>
     {% endif %}
-    <button type="submit" name="_discard" value="1" class="btn btn--ghost btn--block btn--sm" formnovalidate>Annulla e scarta il file</button>
+    <button type="submit" name="_discard" value="1" class="btn btn--ghost btn--block btn--sm" formnovalidate>{{ 'Annulla e scarta il file'|trans }}</button>
 </form>
 {% endblock %}

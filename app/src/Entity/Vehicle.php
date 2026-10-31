@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\VehicleRepository;
+use App\Util\Trans;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: VehicleRepository::class)]
@@ -59,12 +60,12 @@ class Vehicle implements OwnedInterface
 
     public function getKind(): string { return $this->kind; }
     public function setKind(string $kind): static { $this->kind = array_key_exists($kind, self::KINDS) ? $kind : 'other'; return $this; }
-    public function getKindLabel(): string { return self::KINDS[$this->kind] ?? $this->kind; }
+    public function getKindLabel(): string { return isset(self::KINDS[$this->kind]) ? Trans::label(self::KINDS[$this->kind]) : $this->kind; }
     public function getIcon(): string { return self::KIND_ICONS[$this->kind] ?? 'car'; }
 
     public function getFuelType(): string { return $this->fuelType; }
     public function setFuelType(string $fuelType): static { $this->fuelType = array_key_exists($fuelType, self::FUELS) ? $fuelType : 'petrol'; return $this; }
-    public function getFuelLabel(): string { return self::FUELS[$this->fuelType] ?? $this->fuelType; }
+    public function getFuelLabel(): string { return isset(self::FUELS[$this->fuelType]) ? Trans::label(self::FUELS[$this->fuelType]) : $this->fuelType; }
     public function isElectric(): bool { return $this->fuelType === 'electric'; }
 
     public function getPlate(): ?string { return $this->plate; }

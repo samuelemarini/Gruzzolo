@@ -15,7 +15,9 @@ use App\Repository\TagRepository;
 use App\Repository\VehicleRepository;
 use App\Service\BalanceService;
 use App\Service\VehicleStats;
+use App\Service\Language;
 use App\Util\Money;
+use App\Util\Trans;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -90,7 +92,10 @@ final class MovementController extends AppController
         ]);
     }
 
-    /** Esporta in CSV (separatore ";" e virgola decimale: si apre direttamente in Excel italiano). */
+    /**
+     * Esporta in CSV coi separatori della lingua: virgola decimale e ";" fra le colonne (si apre direttamente
+     * in Excel italiano), oppure punto decimale e "," per le lingue che lo usano.
+     */
     #[Route('/esporta.csv', name: 'movement_export', methods: ['GET'])]
     public function export(Request $request): StreamedResponse
     {
@@ -98,16 +103,20 @@ final class MovementController extends AppController
         $filter = MovementFilter::fromRequest($request, $this->accounts->findDefault($user)?->getId());
         $list = $this->movements->search($user, $filter, 100000);
 
-        $response = new StreamedResponse(function () use ($list) {
+        $decimal = Language::separators()[0];
+        $separator = $decimal === ',' ? ';' : ',';
+        $header = array_map(fn ($h) => $h === 'Km' ? $h : $this->trans($h), ['Data', 'Tipo', 'Importo', 'Conto', 'Verso conto', 'Categoria', 'Descrizione', 'Etichette', 'Veicolo', 'Km', 'Litri', 'Prezzo/l', 'Nota']);
+        $kinds = Trans::labels(Movement::KINDS);
+        $response = new StreamedResponse(function () use ($list, $decimal, $separator, $header, $kinds) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\u{FEFF}");
-            fputcsv($out, ['Data', 'Tipo', 'Importo', 'Conto', 'Verso conto', 'Categoria', 'Descrizione', 'Etichette', 'Veicolo', 'Km', 'Litri', 'Prezzo/l', 'Nota'], ';', '"', '');
+            fputcsv($out, $header, $separator, '"', '');
             foreach ($list as $m) {
                 $r = $m->getRefuel();
                 fputcsv($out, [
                     $m->getDate()->format('d/m/Y'),
-                    Movement::KINDS[$m->getKind()],
-                    number_format($m->isTransfer() ? (float) $m->getAmount() : $m->getSignedAmount(), 2, ',', ''),
+                    $kinds[$m->getKind()],
+                    number_format($m->isTransfer() ? (float) $m->getAmount() : $m->getSignedAmount(), 2, $decimal, ''),
                     $m->getAccount()->getName(),
                     $m->getToAccount()?->getName() ?? '',
                     $m->getCategory()?->getFullName() ?? '',
@@ -115,10 +124,10 @@ final class MovementController extends AppController
                     implode(' ', array_map(fn (Tag $t) => '#'.$t->getName(), $m->getTags()->toArray())),
                     $m->getVehicle()?->getName() ?? '',
                     $r ? $r->getOdometer() : '',
-                    $r ? number_format((float) $r->getLiters(), 2, ',', '') : '',
-                    $r ? number_format((float) $r->getPricePerLiter(), 3, ',', '') : '',
+                    $r ? number_format((float) $r->getLiters(), 2, $decimal, '') : '',
+                    $r ? number_format((float) $r->getPricePerLiter(), 3, $decimal, '') : '',
                     $m->getNote() ?? '',
-                ], ';', '"', '');
+                ], $separator, '"', '');
             }
             fclose($out);
         });
@@ -135,7 +144,7 @@ final class MovementController extends AppController
         // Chi ha solo conti condivisi con lui parte dal primo di quelli.
         $account = $this->accounts->findDefault($user) ?? ($this->accounts->findForUser($user)[0] ?? null);
         if (!$account) {
-            $this->addFlash('error', 'Crea prima un conto.');
+            $this->addFlash('error', $this->trans('Crea prima un conto.'));
 
             return $this->redirectToRoute('account_new');
         }
@@ -189,7 +198,7 @@ final class MovementController extends AppController
         $this->checkCsrf($request, 'delete-movement-'.$id);
         $this->em->remove($movement);
         $this->em->flush();
-        $this->addFlash('success', 'Movimento eliminato');
+        $this->addFlash('success', $this->trans('Movimento eliminato'));
 
         return $this->back($request, 'movement_index');
     }
@@ -207,7 +216,7 @@ final class MovementController extends AppController
                 $isNew = $movement->getId() === null;
                 $this->em->persist($movement);
                 $this->em->flush();
-                $this->addFlash('success', $isNew ? 'Movimento salvato' : 'Modifiche salvate');
+                $this->addFlash('success', $isNew ? $this->trans('Movimento salvato') : $this->trans('Modifiche salvate'));
 
                 if ($isNew && $data->getBoolean('_another')) {
                     return $this->redirectToRoute('movement_new', ['kind' => $movement->getKind(), 'account' => $movement->getAccount()->getId()], 303);
@@ -237,10 +246,10 @@ final class MovementController extends AppController
             // Consumo medio dell'auto negli ultimi 12 mesi (come nella pagina del veicolo), mostrato nel
             // riquadro rifornimento col pieno; senza pieni recenti, quello di sempre.
             $efficiency = $vehicleStats->compute($vehicle, new \DateTimeImmutable('today -12 months'))['efficiency'];
-            $label = '12 mesi';
+            $label = $this->trans('12 mesi');
             if ($efficiency === null) {
                 $efficiency = $vehicleStats->compute($vehicle)['efficiency'];
-                $label = 'da sempre';
+                $label = $this->trans('da sempre');
             }
             $averages[$vehicle->getId()] = $efficiency !== null ? ['value' => round($efficiency, 2), 'label' => $label] : null;
         }
@@ -276,16 +285,16 @@ final class MovementController extends AppController
         $m->setNote((string) $data->get('note'));
 
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) $data->get('date'));
-        $date ? $m->setDate($date) : $errors['date'] = 'Data non valida';
+        $date ? $m->setDate($date) : $errors['date'] = $this->trans('Data non valida');
 
         $account = $this->accounts->find(Param::int($data, 'account'));
         if ($account && $account->isAccessibleBy($user)) {
             $m->setAccount($account);
         } else {
-            $errors['account'] = 'Scegli un conto';
+            $errors['account'] = $this->trans('Scegli un conto');
         }
 
-        $amount = Money::parse($data->get('amount'));
+        $amount = Money::parseLocal($data->get('amount'));
 
         // Rifornimento: il terzo valore fra totale, litri e prezzo si ricava dagli altri due.
         $category = null;
@@ -295,7 +304,7 @@ final class MovementController extends AppController
             $usable = $category && ($category->getAccount() === $m->getAccount() || $category === $m->getCategory());
             if (!$usable || $category->getKind() !== $m->getKind()) {
                 $category = null;
-                $errors['category'] = 'Scegli una categoria';
+                $errors['category'] = $this->trans('Scegli una categoria');
             }
         }
         $m->setCategory($category);
@@ -312,9 +321,9 @@ final class MovementController extends AppController
         if ($m->isTransfer()) {
             $to = $this->accounts->find(Param::int($data, 'to_account'));
             if (!$to || !$to->isAccessibleBy($user)) {
-                $errors['to_account'] = 'Scegli il conto di destinazione';
+                $errors['to_account'] = $this->trans('Scegli il conto di destinazione');
             } elseif ($account === $to) {
-                $errors['to_account'] = 'I due conti devono essere diversi';
+                $errors['to_account'] = $this->trans('I due conti devono essere diversi');
             } else {
                 $m->setToAccount($to);
             }
@@ -323,8 +332,8 @@ final class MovementController extends AppController
 
         $refuelData = $data->all('refuel');
         if ($category?->isFuel() && $m->isExpense()) {
-            $liters = Money::parse($refuelData['liters'] ?? '', 2);
-            $price = Money::parse($refuelData['price'] ?? '', 3);
+            $liters = Money::parseLocal($refuelData['liters'] ?? '', 2);
+            $price = Money::parseLocal($refuelData['price'] ?? '', 3);
             if ($amount === null && $liters && $price) {
                 $amount = number_format((float) $liters * (float) $price, 2, '.', '');
             } elseif ($liters === null && $amount && $price && (float) $price > 0) {
@@ -334,13 +343,13 @@ final class MovementController extends AppController
             }
             $odometer = (int) preg_replace('/\D/', '', (string) ($refuelData['odometer'] ?? ''));
             if (!$vehicle) {
-                $errors['vehicle'] = 'Scegli il veicolo';
+                $errors['vehicle'] = $this->trans('Scegli il veicolo');
             }
             if ($odometer <= 0) {
-                $errors['odometer'] = 'Indica i chilometri';
+                $errors['odometer'] = $this->trans('Indica i chilometri');
             }
             if (!$liters || (float) $liters <= 0 || !$price || (float) $price <= 0) {
-                $errors['liters'] = 'Servono due valori fra totale, litri e prezzo';
+                $errors['liters'] = $this->trans('Servono due valori fra totale, litri e prezzo');
             }
             $refuel = $m->getRefuel() ?? new Refuel($m);
             $refuel->setOdometer(max(0, $odometer))
@@ -353,7 +362,7 @@ final class MovementController extends AppController
         $m->setVehicle($m->isExpense() ? $vehicle : null);
 
         if ($amount === null || (float) $amount <= 0) {
-            $errors['amount'] = 'Inserisci un importo';
+            $errors['amount'] = $this->trans('Inserisci un importo');
         } else {
             $m->setAmount($amount);
         }

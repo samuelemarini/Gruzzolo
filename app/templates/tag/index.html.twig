@@ -1,17 +1,17 @@
 {% extends 'base.html.twig' %}
 {% import '_ui.html.twig' as ui %}
-{% block title %}Etichette{% endblock %}
+{% block title %}{{ 'Etichette'|trans }}{% endblock %}
 {% block body %}
 <div class="page">
     <div class="topbar">
-        <h1 class="topbar__title">Etichette</h1>
+        <h1 class="topbar__title">{{ 'Etichette'|trans }}</h1>
         <div class="topbar__actions">
-            <a href="{{ path('tag_new') }}" class="icon-btn" aria-label="Nuova etichetta">{{ icon('plus') }}</a>
+            <a href="{{ path('tag_new') }}" class="icon-btn" aria-label="{{ 'Nuova etichetta'|trans }}">{{ icon('plus') }}</a>
         </div>
     </div>
-    <p class="small muted">Le etichette raggruppano movimenti di categorie diverse: un viaggio, una festa, un progetto. Le crei qui e le scegli quando inserisci un movimento.</p>
+    <p class="small muted">{{ 'Le etichette raggruppano movimenti di categorie diverse: un viaggio, una festa, un progetto. Le crei qui e le scegli quando inserisci un movimento.'|trans }}</p>
     {% if tags is empty %}
-        {{ ui.empty('tag', 'Nessuna etichetta ancora. Creane una, ad esempio #vacanze-2026.', path('tag_new'), 'Nuova etichetta') }}
+        {{ ui.empty('tag', 'Nessuna etichetta ancora. Creane una, ad esempio #vacanze-2026.'|trans, path('tag_new'), 'Nuova etichetta'|trans) }}
     {% else %}
         <div class="card card--list">
             {% for tag in tags %}
@@ -20,7 +20,7 @@
                     {{ ui.tile('tag', tag.color, 'sm') }}
                     <div class="list-row__body">
                         <span class="list-row__title">#{{ tag.name }}</span>
-                        <span class="list-row__meta">{{ tag.title ? tag.title ~ ' · ' }}{{ s.n ?? 0 }} moviment{{ (s.n ?? 0) == 1 ? 'o' : 'i' }}{% if s and s.last_date %} · {{ date(s.last_date)|short_day }}{% endif %}</span>
+                        <span class="list-row__meta">{{ tag.title ? tag.title ~ ' · ' }}{{ '%count% movimento|%count% movimenti'|trans({'%count%': s.n ?? 0}) }}{% if s and s.last_date %} · {{ date(s.last_date)|short_day }}{% endif %}</span>
                     </div>
                     <span class="list-row__amount">{{ (s.expense ?? 0)|money }}</span>
                     {{ icon('chevron-right', 18, 'list-row__chev') }}

@@ -55,7 +55,7 @@ final class TagController extends AppController
                 $expense += (float) $m->getAmount();
                 $top = $m->getCategory()?->getParent() ?? $m->getCategory();
                 $key = $top?->getId() ?? 0;
-                $byCategory[$key] ??= ['name' => $top?->getName() ?? 'Senza categoria', 'color' => $top?->getColor() ?? '#A3A59F', 'total' => 0.0];
+                $byCategory[$key] ??= ['name' => $top?->getName() ?? $this->trans('Senza categoria'), 'color' => $top?->getColor() ?? '#A3A59F', 'total' => 0.0];
                 $byCategory[$key]['total'] += (float) $m->getAmount();
             } elseif ($m->isIncome()) {
                 $income += (float) $m->getAmount();
@@ -94,9 +94,9 @@ final class TagController extends AppController
             $name = Tag::normalize((string) $request->request->get('name'));
             $other = $name !== '' ? $this->tags->findOneByName($this->me(), $name) : null;
             if ($name === '') {
-                $errors['name'] = 'Il nome non può essere vuoto';
+                $errors['name'] = $this->trans('Il nome non può essere vuoto');
             } elseif ($other && $other !== $tag) {
-                $errors['name'] = 'Esiste già un\'etichetta #'.$name;
+                $errors['name'] = $this->trans('Esiste già un\'etichetta #%name%', ['%name%' => $name]);
             }
             if (!$errors) {
                 $color = (string) $request->request->get('color');
@@ -105,7 +105,7 @@ final class TagController extends AppController
                 $isNew = $tag->getId() === null;
                 $this->em->persist($tag);
                 $this->em->flush();
-                $this->addFlash('success', $isNew ? 'Etichetta #'.$tag->getName().' creata' : 'Etichetta salvata');
+                $this->addFlash('success', $isNew ? $this->trans('Etichetta #%name% creata', ['%name%' => $tag->getName()]) : $this->trans('Etichetta salvata'));
 
                 return $isNew ? $this->redirectToRoute('tag_index', [], 303) : $this->redirectToRoute('tag_show', ['id' => $tag->getId()], 303);
             }
@@ -121,7 +121,7 @@ final class TagController extends AppController
         $this->checkCsrf($request, 'delete-tag-'.$id);
         $this->em->remove($tag);
         $this->em->flush();
-        $this->addFlash('success', 'Etichetta eliminata (i movimenti restano)');
+        $this->addFlash('success', $this->trans('Etichetta eliminata (i movimenti restano)'));
 
         return $this->redirectToRoute('tag_index', [], 303);
     }

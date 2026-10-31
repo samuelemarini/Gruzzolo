@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Service\Palette;
+use App\Util\Trans;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,6 +27,10 @@ final class SettingsController extends AppController
                     $user->setTheme((string) $data->get('theme'));
                     $em->flush();
                     break;
+                case 'language':
+                    $user->setLocale((string) $data->get('locale') ?: null);
+                    $em->flush();
+                    break;
                 case 'style':
                     $user->setStyle((string) $data->get('style'));
                     $em->flush();
@@ -40,25 +45,25 @@ final class SettingsController extends AppController
                 case 'profile':
                     $name = trim((string) $data->get('display_name'));
                     if ($name === '') {
-                        $errors['display_name'] = 'Il nome non può essere vuoto';
+                        $errors['display_name'] = $this->trans('Il nome non può essere vuoto');
                         break;
                     }
                     $user->setDisplayName($name);
                     $em->flush();
-                    $this->addFlash('success', 'Profilo aggiornato');
+                    $this->addFlash('success', $this->trans('Profilo aggiornato'));
                     break;
                 case 'password':
                     $new = (string) $data->get('new_password');
                     if (!$hasher->isPasswordValid($user, (string) $data->get('current_password'))) {
-                        $errors['current_password'] = 'La password attuale non è corretta';
+                        $errors['current_password'] = $this->trans('La password attuale non è corretta');
                     } elseif (mb_strlen($new) < 8) {
-                        $errors['new_password'] = 'Almeno 8 caratteri';
+                        $errors['new_password'] = $this->trans('Almeno 8 caratteri');
                     } elseif ($new !== $data->get('confirm_password')) {
-                        $errors['confirm_password'] = 'Le due password non coincidono';
+                        $errors['confirm_password'] = $this->trans('Le due password non coincidono');
                     } else {
                         $user->setPassword($hasher->hashPassword($user, $new));
                         $em->flush();
-                        $this->addFlash('success', 'Password cambiata');
+                        $this->addFlash('success', $this->trans('Password cambiata'));
                     }
                     break;
             }
@@ -67,7 +72,9 @@ final class SettingsController extends AppController
             }
         }
 
-        return $this->render('settings/index.html.twig', ['errors' => $errors, 'themes' => User::THEMES, 'styles' => User::STYLES],
+        return $this->render('settings/index.html.twig', ['errors' => $errors, 'themes' => Trans::labels(User::THEMES),
+            // "Liquid Glass" e' un nome proprio: non si traduce.
+            'styles' => ['classic' => Trans::label(User::STYLES['classic'])] + User::STYLES],
             new Response(status: $errors ? 422 : 200));
     }
 }

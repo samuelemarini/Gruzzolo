@@ -14,6 +14,7 @@ use App\Service\InvestmentLive;
 use App\Service\InvestmentStats;
 use App\Service\Palette;
 use App\Util\Money;
+use App\Util\Trans;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -63,7 +64,7 @@ final class InvestmentController extends AppController
         $user = $this->me();
         $user->setLiveInvestments(!$user->isLiveInvestments());
         $this->em->flush();
-        $this->addFlash('success', $user->isLiveInvestments() ? 'Stima di oggi attivata' : 'Stima di oggi disattivata: si vedono i valori registrati');
+        $this->addFlash('success', $user->isLiveInvestments() ? $this->trans('Stima di oggi attivata') : $this->trans('Stima di oggi disattivata: si vedono i valori registrati'));
 
         return $this->redirectToRoute('investment_index', [], 303);
     }
@@ -111,7 +112,7 @@ final class InvestmentController extends AppController
         }
         $this->em->remove($holding);
         $this->em->flush();
-        $this->addFlash('success', 'Titolo eliminato');
+        $this->addFlash('success', $this->trans('Titolo eliminato'));
 
         return $this->redirectToRoute('investment_index', [], 303);
     }
@@ -144,7 +145,7 @@ final class InvestmentController extends AppController
         }
         $this->em->remove($entry);
         $this->em->flush();
-        $this->addFlash('success', 'Aggiornamento eliminato');
+        $this->addFlash('success', $this->trans('Aggiornamento eliminato'));
 
         return $this->redirectToRoute('investment_show', ['id' => $holding->getId()], 303);
     }
@@ -162,13 +163,13 @@ final class InvestmentController extends AppController
             $color = (string) $data->get('color');
             $holding->setColor(array_key_exists($color, Palette::COLORS) ? $color : '#7FD6FF');
             if ($holding->getName() === '') {
-                $errors['name'] = 'Dai un nome al titolo';
+                $errors['name'] = $this->trans('Dai un nome al titolo');
             }
             if (!$errors) {
                 $isNew = $holding->getId() === null;
                 $this->em->persist($holding);
                 $this->em->flush();
-                $this->addFlash('success', 'Titolo salvato');
+                $this->addFlash('success', $this->trans('Titolo salvato'));
 
                 return $isNew
                     ? $this->redirectToRoute('investment_entry_new', ['id' => $holding->getId()], 303)
@@ -176,7 +177,7 @@ final class InvestmentController extends AppController
             }
         }
 
-        return $this->render('investment/holding_form.html.twig', ['holding' => $holding, 'errors' => $errors, 'kinds' => Holding::KINDS],
+        return $this->render('investment/holding_form.html.twig', ['holding' => $holding, 'errors' => $errors, 'kinds' => Trans::labels(Holding::KINDS)],
             new Response(status: $errors ? 422 : 200));
     }
 
@@ -193,14 +194,14 @@ final class InvestmentController extends AppController
             $data = $request->request;
             $mode = in_array($data->get('mode'), ['deposit', 'withdraw', 'value'], true) ? (string) $data->get('mode') : 'deposit';
             $date = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) $data->get('date'));
-            $date ? $entry->setDate($date) : $errors['date'] = 'Data non valida';
-            $amount = $mode === 'value' ? '0.00' : Money::parse($data->get('amount'));
+            $date ? $entry->setDate($date) : $errors['date'] = $this->trans('Data non valida');
+            $amount = $mode === 'value' ? '0.00' : Money::parseLocal($data->get('amount'));
             if ($amount === null || ($mode !== 'value' && (float) $amount <= 0)) {
-                $errors['amount'] = 'Indica quanto hai '.($mode === 'withdraw' ? 'ritirato' : 'versato');
+                $errors['amount'] = $mode === 'withdraw' ? $this->trans('Indica quanto hai ritirato') : $this->trans('Indica quanto hai versato');
             }
-            $value = Money::parse($data->get('value'));
+            $value = Money::parseLocal($data->get('value'));
             if ($value === null || (float) $value < 0) {
-                $errors['value'] = 'Indica quanto vale il titolo adesso';
+                $errors['value'] = $this->trans('Indica quanto vale il titolo adesso');
             }
             $entry->setNote((string) $data->get('note'));
             $accountId = Param::int($data, 'account') ?: null;
@@ -214,7 +215,7 @@ final class InvestmentController extends AppController
                 $this->syncMovement($entry, $mode === 'deposit' ? $account : null);
                 $this->em->persist($entry);
                 $this->em->flush();
-                $this->addFlash('success', 'Investimento aggiornato');
+                $this->addFlash('success', $this->trans('Investimento aggiornato'));
 
                 return $this->redirectToRoute('investment_show', ['id' => $holding->getId()], 303);
             }
@@ -253,6 +254,6 @@ final class InvestmentController extends AppController
         }
         $movement->setKind(Movement::TRANSFER)->setAccount($account)->setToAccount(null)
             ->setAmount($entry->getContribution())->setDate($entry->getDate())
-            ->setDescription('Versamento '.$entry->getHolding()->getName());
+            ->setDescription($this->trans('Versamento %name%', ['%name%' => $entry->getHolding()->getName()]));
     }
 }

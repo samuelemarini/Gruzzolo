@@ -10,6 +10,7 @@ use App\Service\InvestmentLive;
 use App\Service\InvestmentStats;
 use App\Service\Palette;
 use App\Service\ReportService;
+use App\Util\Trans;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -45,7 +46,7 @@ final class HomeController extends AppController
         $split = array_slice($byCategory, 0, 3);
         $rest = array_slice($byCategory, 3);
         if ($rest) {
-            $split[] = ['name' => 'Altro', 'color' => '#5A5E5B', 'total' => array_sum(array_column($rest, 'total')),
+            $split[] = ['name' => Trans::label('Altro'), 'color' => '#5A5E5B', 'total' => array_sum(array_column($rest, 'total')),
                 'pct' => array_sum(array_column($rest, 'pct')), 'icon' => 'circle-ellipsis', 'category' => null];
         }
 

@@ -3,6 +3,7 @@
 namespace App\Import;
 
 use App\Util\Money;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Export CSV di Spendee: Date,Wallet,Type,"Category name",Amount,Currency,Note,Labels,Author.
@@ -11,6 +12,10 @@ use App\Util\Money;
 final class SpendeeFormat implements ImportFormat
 {
     private const HEADER = ['date', 'wallet', 'type', 'category name', 'amount', 'currency', 'note', 'labels'];
+
+    public function __construct(private readonly TranslatorInterface $translator)
+    {
+    }
 
     public function name(): string
     {
@@ -35,17 +40,17 @@ final class SpendeeFormat implements ImportFormat
         $date = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, trim($row['date']))
             ?: \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', trim($row['date']), new \DateTimeZone('UTC'));
         if (!$date) {
-            throw new \InvalidArgumentException(sprintf('data non valida "%s"', $row['date']));
+            throw new \InvalidArgumentException($this->translator->trans('data non valida "%value%"', ['%value%' => $row['date']]));
         }
         $date = $date->setTimezone(new \DateTimeZone('Europe/Rome'));
 
         $raw = trim($row['amount']);
         if (!is_numeric($raw)) {
-            throw new \InvalidArgumentException(sprintf('importo non valido "%s"', $raw));
+            throw new \InvalidArgumentException($this->translator->trans('importo non valido "%value%"', ['%value%' => $raw]));
         }
         $amount = Money::parse(ltrim($raw, '-+'));
         if ((float) $amount == 0) {
-            throw new \InvalidArgumentException('importo zero');
+            throw new \InvalidArgumentException($this->translator->trans('importo zero'));
         }
 
         $type = mb_strtolower(trim($row['type']));

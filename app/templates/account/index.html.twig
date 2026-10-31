@@ -1,24 +1,24 @@
 {% extends 'base.html.twig' %}
 {% import '_ui.html.twig' as ui %}
-{% block title %}Conti{% endblock %}
+{% block title %}{{ 'Conti'|trans }}{% endblock %}
 {% block body %}
 <div class="page">
     <div class="topbar">
-        <h1 class="topbar__title">Conti</h1>
+        <h1 class="topbar__title">{{ 'Conti'|trans }}</h1>
         <div class="topbar__actions">
             {{ ui.privacy_toggle() }}
-            <a href="{{ path('account_new') }}" class="icon-btn" aria-label="Nuovo conto">{{ icon('plus') }}</a>
+            <a href="{{ path('account_new') }}" class="icon-btn" aria-label="{{ 'Nuovo conto'|trans }}">{{ icon('plus') }}</a>
         </div>
     </div>
 
     {# Patrimonio: si sceglie cosa contare toccando i chip (la scelta resta salvata) #}
-    <section class="card" aria-label="Patrimonio">
+    <section class="card" aria-label="{{ 'Patrimonio'|trans }}">
         <div class="stack-sm" style="gap: 4px">
-            <span class="small muted">Patrimonio{{ not netWorthAll ? ' · voci scelte' }}</span>
+            <span class="small muted">{{ 'Patrimonio'|trans }}{{ not netWorthAll ? ' · ' ~ 'voci scelte'|trans }}</span>
             <div class="hero-amount"><span class="hero-amount__value {{ netWorth < 0 ? 'text-expense' }}">{{ netWorth < 0 ? '−' }}{{ netWorth|abs|num(2) }}</span><span class="hero-amount__cur">€</span></div>
         </div>
         {% if netWorthItems|length > 1 %}
-            <div class="chips" role="group" aria-label="Cosa contare nel patrimonio">
+            <div class="chips" role="group" aria-label="{{ 'Cosa contare nel patrimonio'|trans }}">
                 {% for i in netWorthItems %}
                     <form method="post" action="{{ path('account_net_worth', {key: i.key}) }}" style="display: contents">
                         <input type="hidden" name="_token" value="{{ csrf_token('net-worth') }}">
@@ -28,9 +28,9 @@
                     </form>
                 {% endfor %}
             </div>
-            <p class="xsmall muted" style="margin: 0">Tocca una voce per contarla o toglierla dal patrimonio.</p>
+            <p class="xsmall muted" style="margin: 0">{{ 'Tocca una voce per contarla o toglierla dal patrimonio.'|trans }}</p>
         {% endif %}
-        <a href="{{ path('movement_new', {kind: 'transfer'}) }}" class="btn btn--ghost btn--sm">{{ icon('arrow-left-right', 18) }}Nuovo giroconto</a>
+        <a href="{{ path('movement_new', {kind: 'transfer'}) }}" class="btn btn--ghost btn--sm">{{ icon('arrow-left-right', 18) }}{{ 'Nuovo giroconto'|trans }}</a>
     </section>
 
     <div class="card card--list">
@@ -38,8 +38,8 @@
             <a class="list-row" href="{{ path('account_show', {id: a.id}) }}">
                 {{ ui.tile(a.icon, a.color) }}
                 <div class="list-row__body">
-                    <span class="list-row__title">{{ a.name }}{% if a.default and a.user == app.user %} <span class="badge badge--accent">predefinito</span>{% endif %}</span>
-                    <span class="list-row__meta">{{ a.kindLabel }}{% if a.user != app.user %} · {{ icon('users', 13) }} di {{ a.user.displayName }}{% elseif a.shared %} · {{ icon('users', 13) }} con {{ a.members|map(u => u.displayName)|join(', ') }}{% endif %}{% if not a.onHomeFor(app.user) %} · {{ icon('eye-off', 13) }} fuori dalla home{% endif %}</span>
+                    <span class="list-row__title">{{ a.name }}{% if a.default and a.user == app.user %} <span class="badge badge--accent">{{ 'predefinito'|trans }}</span>{% endif %}</span>
+                    <span class="list-row__meta">{{ a.kindLabel }}{% if a.user != app.user %} · {{ icon('users', 13) }} {{ 'di %name%'|trans({'%name%': a.user.displayName}) }}{% elseif a.shared %} · {{ icon('users', 13) }} {{ 'con %names%'|trans({'%names%': a.members|map(u => u.displayName)|join(', ')}) }}{% endif %}{% if not a.onHomeFor(app.user) %} · {{ icon('eye-off', 13) }} {{ 'fuori dalla home'|trans }}{% endif %}</span>
                 </div>
                 <span class="list-row__amount">{{ (balances[a.id] ?? 0)|money }}</span>
                 {{ icon('chevron-right', 18, 'list-row__chev') }}
@@ -49,19 +49,19 @@
             <a class="list-row" href="{{ path('investment_index') }}">
                 {{ ui.tile('trending-up', '#7FD6FF') }}
                 <div class="list-row__body">
-                    <span class="list-row__title">Investimenti</span>
-                    <span class="list-row__meta">valore attuale dei titoli</span>
+                    <span class="list-row__title">{{ 'Investimenti'|trans }}</span>
+                    <span class="list-row__meta">{{ 'valore attuale dei titoli'|trans }}</span>
                 </div>
                 <span class="list-row__amount">{{ investments|money }}</span>
                 {{ icon('chevron-right', 18, 'list-row__chev') }}
             </a>
         {% endif %}
     </div>
-    <p class="small muted">Per il conto accantonamento: versa con un <strong>giroconto</strong> dal conto principale e paga le spese annuali (assicurazione, bollo…) direttamente da lì. Guardando un conto, i giroconti contano come entrate e uscite; fra conti che guardi insieme no.</p>
+    <p class="small muted">{{ 'Per il conto accantonamento: versa con un <strong>giroconto</strong> dal conto principale e paga le spese annuali (assicurazione, bollo…) direttamente da lì. Guardando un conto, i giroconti contano come entrate e uscite; fra conti che guardi insieme no.'|trans|raw }}</p>
 
     {% set archived = accounts|filter(a => a.archived) %}
     {% if archived|length %}
-        <div class="section-head"><h2>Archiviati</h2></div>
+        <div class="section-head"><h2>{{ 'Archiviati'|trans }}</h2></div>
         <div class="card card--list">
             {% for a in archived %}
                 <a class="list-row" href="{{ path('account_show', {id: a.id}) }}" style="opacity: .65">

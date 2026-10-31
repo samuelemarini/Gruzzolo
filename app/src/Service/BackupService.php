@@ -4,6 +4,7 @@ namespace App\Service;
 
 use Doctrine\DBAL\Connection;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Backup completo dell'istanza: tutte le tabelle, utenti e password (gia' cifrate) compresi, in un file JSON.
@@ -42,6 +43,7 @@ final class BackupService
     public function __construct(
         private readonly Connection $conn,
         #[Autowire('%kernel.project_dir%/var/backups')] private readonly string $dir,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -107,7 +109,7 @@ final class BackupService
         }
         $key = bin2hex(random_bytes(8));
         if (!copy($path, $this->path($key))) {
-            throw new \RuntimeException('Impossibile salvare il file caricato.');
+            throw new \RuntimeException($this->translator->trans('Impossibile salvare il file caricato.'));
         }
 
         return $key;
@@ -139,24 +141,24 @@ final class BackupService
     {
         $raw = @file_get_contents($path);
         if ($raw === false) {
-            throw new \InvalidArgumentException('File non leggibile.');
+            throw new \InvalidArgumentException($this->translator->trans('File non leggibile.'));
         }
         if (str_starts_with($raw, "\x1f\x8b")) {
             $raw = @gzdecode($raw);
             if ($raw === false) {
-                throw new \InvalidArgumentException('Archivio gzip danneggiato.');
+                throw new \InvalidArgumentException($this->translator->trans('Archivio gzip danneggiato.'));
             }
         }
         try {
             $data = json_decode($raw, true, 512, \JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
-            throw new \InvalidArgumentException('Il file non è un backup di Gruzzolo (JSON non valido).');
+            throw new \InvalidArgumentException($this->translator->trans('Il file non è un backup di Gruzzolo (JSON non valido).'));
         }
         if (!is_array($data) || ($data['format'] ?? null) !== self::FORMAT || !is_array($data['tables'] ?? null)) {
-            throw new \InvalidArgumentException('Il file non è un backup di Gruzzolo.');
+            throw new \InvalidArgumentException($this->translator->trans('Il file non è un backup di Gruzzolo.'));
         }
         if (!is_int($data['version'] ?? null) || $data['version'] > self::VERSION) {
-            throw new \InvalidArgumentException('Backup creato da una versione più recente di Gruzzolo: aggiorna l\'app prima di ripristinarlo.');
+            throw new \InvalidArgumentException($this->translator->trans('Backup creato da una versione più recente di Gruzzolo: aggiorna l\'app prima di ripristinarlo.'));
         }
         $data['migrations'] = array_values(array_filter((array) ($data['migrations'] ?? []), 'is_string'));
 
@@ -174,7 +176,7 @@ final class BackupService
         $rows = [];
         foreach (array_unique([...array_keys(self::LABELS), ...array_keys($db), ...array_keys($data['tables'])]) as $table) {
             if (isset($db[$table]) || isset($data['tables'][$table])) {
-                $rows[] = ['table' => $table, 'label' => self::LABELS[$table] ?? $table,
+                $rows[] = ['table' => $table, 'label' => isset(self::LABELS[$table]) ? $this->translator->trans(self::LABELS[$table]) : $table,
                     'file' => is_array($data['tables'][$table] ?? null) ? count($data['tables'][$table]) : 0, 'db' => $db[$table] ?? 0];
             }
         }
@@ -204,16 +206,16 @@ final class BackupService
     {
         $problems = [];
         if (array_diff($data['migrations'], $this->migrations())) {
-            $problems[] = 'Il backup viene da una versione più recente di Gruzzolo: aggiorna l\'app prima di ripristinarlo.';
+            $problems[] = $this->translator->trans('Il backup viene da una versione più recente di Gruzzolo: aggiorna l\'app prima di ripristinarlo.');
         }
         $tables = $this->tables();
         foreach ($data['tables'] as $table => $rows) {
             if (!in_array($table, $tables, true)) {
-                $problems[] = sprintf('Tabella sconosciuta: %s.', $table);
+                $problems[] = $this->translator->trans('Tabella sconosciuta: %table%.', ['%table%' => $table]);
                 continue;
             }
             if (!is_array($rows) || !array_is_list($rows)) {
-                $problems[] = sprintf('Righe di %s non valide.', $table);
+                $problems[] = $this->translator->trans('Righe di %table% non valide.', ['%table%' => $table]);
                 continue;
             }
             if (!$rows) {
@@ -221,11 +223,11 @@ final class BackupService
             }
             $columns = is_array($rows[0]) ? array_keys($rows[0]) : [];
             if ($unknown = array_diff($columns, $this->columns($table))) {
-                $problems[] = sprintf('Colonne sconosciute in %s: %s.', $table, implode(', ', $unknown));
+                $problems[] = $this->translator->trans('Colonne sconosciute in %table%: %columns%.', ['%table%' => $table, '%columns%' => implode(', ', $unknown)]);
             }
             foreach ($rows as $n => $row) {
                 if (!is_array($row) || array_keys($row) !== $columns || array_filter($row, static fn ($v) => $v !== null && !is_scalar($v))) {
-                    $problems[] = sprintf('Riga %d di %s non valida.', $n + 1, $table);
+                    $problems[] = $this->translator->trans('Riga %line% di %table% non valida.', ['%line%' => $n + 1, '%table%' => $table]);
                     break;
                 }
             }
@@ -233,7 +235,7 @@ final class BackupService
         // Il ripristino lo fa un amministratore: senza un admin attivo nel file nessuno potrebbe piu' rifarlo.
         $admins = array_filter((array) ($data['tables']['app_user'] ?? []), fn ($u) => is_array($u) && $this->isAdminRow($u) && ($u['active'] ?? false));
         if (!$admins) {
-            $problems[] = 'Nel backup non c\'è un amministratore attivo: dopo il ripristino nessuno potrebbe più accedere all\'amministrazione.';
+            $problems[] = $this->translator->trans('Nel backup non c\'è un amministratore attivo: dopo il ripristino nessuno potrebbe più accedere all\'amministrazione.');
         }
 
         return $problems;
@@ -266,7 +268,7 @@ final class BackupService
                 $this->checkReferences();
             });
         } catch (\Doctrine\DBAL\Exception $e) {
-            throw new \RuntimeException('Ripristino non riuscito, i dati non sono stati toccati: '.$e->getMessage(), 0, $e);
+            throw new \RuntimeException($this->translator->trans('Ripristino non riuscito, i dati non sono stati toccati: %error%', ['%error%' => $e->getMessage()]), 0, $e);
         } finally {
             $this->conn->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
         }
@@ -299,11 +301,11 @@ final class BackupService
             [$t, $c, $rt, $rc] = array_map($this->conn->quoteIdentifier(...), [$fk['t'], $fk['c'], $fk['rt'], $fk['rc']]);
             $n = (int) $this->conn->fetchOne("SELECT COUNT(*) FROM $t x WHERE x.$c IS NOT NULL AND NOT EXISTS (SELECT 1 FROM $rt y WHERE y.$rc = x.$c)");
             if ($n) {
-                $broken[] = sprintf('%s.%s (%d righe)', $fk['t'], $fk['c'], $n);
+                $broken[] = $this->translator->trans('%column% (%count% riga)|%column% (%count% righe)', ['%column%' => $fk['t'].'.'.$fk['c'], '%count%' => $n]);
             }
         }
         if ($broken) {
-            throw new \RuntimeException('Ripristino non riuscito, i dati non sono stati toccati: riferimenti a righe inesistenti in '.implode(', ', $broken).'.');
+            throw new \RuntimeException($this->translator->trans('Ripristino non riuscito, i dati non sono stati toccati: riferimenti a righe inesistenti in %references%.', ['%references%' => implode(', ', $broken)]));
         }
     }
 

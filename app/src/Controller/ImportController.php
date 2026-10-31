@@ -29,7 +29,7 @@ final class ImportController extends AppController
             $this->checkCsrf($request, 'import-upload');
             $file = $request->files->get('file');
             if (!$file || !$file->isValid()) {
-                $error = 'Scegli un file CSV da caricare.';
+                $error = $this->trans('Scegli un file CSV da caricare.');
             } else {
                 try {
                     $key = $this->imports->store($user, $file);
@@ -53,7 +53,7 @@ final class ImportController extends AppController
     {
         $user = $this->me();
         if (!$this->imports->exists($user, $key)) {
-            $this->addFlash('error', 'File non più disponibile: caricalo di nuovo');
+            $this->addFlash('error', $this->trans('File non più disponibile: caricalo di nuovo'));
 
             return $this->redirectToRoute('import_index');
         }
@@ -66,7 +66,7 @@ final class ImportController extends AppController
                 return $this->redirectToRoute('import_index', [], 303);
             }
             $batch = $this->imports->import($user, $key, $this->pairs($request, 'wallet'), $this->pairs($request, 'cat'));
-            $this->addFlash('success', sprintf('Importati %d movimenti', $batch->getImported()));
+            $this->addFlash('success', $this->trans('Importato %count% movimento|Importati %count% movimenti', ['%count%' => $batch->getImported()]));
 
             return $this->redirectToRoute('import_index', ['done' => $batch->getId()], 303);
         }
@@ -89,7 +89,7 @@ final class ImportController extends AppController
         $batch = $this->own($this->batches->find($id));
         $this->checkCsrf($request, 'import-undo-'.$id);
         $deleted = $this->imports->undo($batch);
-        $this->addFlash('success', sprintf('Importazione annullata: tolti %d movimenti', $deleted));
+        $this->addFlash('success', $this->trans('Importazione annullata: tolto %count% movimento|Importazione annullata: tolti %count% movimenti', ['%count%' => $deleted]));
 
         return $this->redirectToRoute('import_index', [], 303);
     }

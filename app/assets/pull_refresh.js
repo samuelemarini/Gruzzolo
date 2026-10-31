@@ -5,6 +5,7 @@
  * (overscroll-behavior), cosi' su Android in una scheda non si ricarica due volte.
  */
 import { visit } from '@hotwired/turbo';
+import { t } from './i18n.js';
 
 const THRESHOLD = 72; // px trascinati (gia' smorzati) per far partire l'aggiornamento
 const MAX = 110;
@@ -25,7 +26,7 @@ function el() {
         indicator = document.createElement('div');
         indicator.className = 'ptr';
         indicator.setAttribute('role', 'status');
-        indicator.setAttribute('aria-label', 'Aggiornamento');
+        indicator.setAttribute('aria-label', t('Aggiornamento'));
         indicator.innerHTML = ICON;
         document.body.append(indicator);
     }

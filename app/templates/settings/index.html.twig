@@ -1,109 +1,127 @@
 {% extends 'base.html.twig' %}
-{% block title %}Impostazioni{% endblock %}
+{% block title %}{{ 'Impostazioni'|trans }}{% endblock %}
 {% block body %}
 <div class="page">
-    <div class="topbar"><h1 class="topbar__title">Impostazioni</h1></div>
+    <div class="topbar"><h1 class="topbar__title">{{ 'Impostazioni'|trans }}</h1></div>
 
     {# Il tema cambia l'attributo su <html>: serve un caricamento completo, niente Turbo. #}
     <form method="post" class="card" data-turbo="false">
         <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
         <input type="hidden" name="section" value="theme">
-        <h2 class="h2">Tema</h2>
+        <h2 class="h2">{{ 'Tema'|trans }}</h2>
         <div class="seg seg--inset">
             {% for value, label in themes %}
                 <label><input type="radio" name="theme" value="{{ value }}" {{ app.user.theme == value ? 'checked' }} onchange="this.form.submit()">{{ icon(value == 'system' ? 'monitor' : (value == 'light' ? 'sun' : 'moon'), 16) }}&nbsp;{{ label }}</label>
             {% endfor %}
         </div>
-        <noscript><button type="submit" class="btn btn--sm">Applica</button></noscript>
-        <p class="small muted">"Automatico" segue il tema del telefono o del computer.</p>
+        <noscript><button type="submit" class="btn btn--sm">{{ 'Applica'|trans }}</button></noscript>
+        <p class="small muted">{{ '"%label%" segue il tema del telefono o del computer.'|trans({'%label%': themes.system}) }}</p>
+    </form>
+
+    {# La lingua cambia tutta la pagina (anche <html lang> e i separatori): caricamento completo. #}
+    <form method="post" class="card" data-turbo="false">
+        <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
+        <input type="hidden" name="section" value="language">
+        <h2 class="h2">{{ 'Lingua'|trans }}</h2>
+        <label class="field">
+            <span class="field__label">{{ "Lingua dell'interfaccia"|trans }}</span>
+            <select name="locale" onchange="this.form.submit()">
+                <option value="" {{ app.user.locale is null ? 'selected' }}>{{ 'Automatica'|trans }}</option>
+                {% for code, name in languages() %}
+                    <option value="{{ code }}" lang="{{ code }}" {{ app.user.locale == code ? 'selected' }}>{{ name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <noscript><button type="submit" class="btn btn--sm">{{ 'Applica'|trans }}</button></noscript>
+        <p class="small muted">{{ '"%label%" usa la lingua del browser. Cambiano anche il formato di numeri e date.'|trans({'%label%': 'Automatica'|trans}) }}</p>
     </form>
 
     {# Anche lo stile sta su <html> (data-style): caricamento completo come per il tema. #}
     <form method="post" class="card" data-turbo="false">
         <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
         <input type="hidden" name="section" value="style">
-        <h2 class="h2">Stile</h2>
+        <h2 class="h2">{{ 'Stile'|trans }}</h2>
         <div class="seg seg--inset">
             {% for value, label in styles %}
                 <label><input type="radio" name="style" value="{{ value }}" {{ app.user.style == value ? 'checked' }} onchange="this.form.submit()">{{ icon(value == 'glass' ? 'sparkles' : 'layout-grid', 16) }}&nbsp;{{ label }}</label>
             {% endfor %}
         </div>
-        <noscript><button type="submit" class="btn btn--sm">Applica</button></noscript>
-        <p class="small muted">"Liquid Glass" usa superfici di vetro traslucido, come iOS: funziona sia col tema chiaro sia con quello scuro.</p>
+        <noscript><button type="submit" class="btn btn--sm">{{ 'Applica'|trans }}</button></noscript>
+        <p class="small muted">{{ '"Liquid Glass" usa superfici di vetro traslucido, come iOS: funziona sia col tema chiaro sia con quello scuro.'|trans }}</p>
     </form>
 
     {# Accento e icona stanno su <html> e nei <link> della testata: caricamento completo. #}
     <form method="post" class="card" data-turbo="false">
         <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
         <input type="hidden" name="section" value="colors">
-        <h2 class="h2">Colori</h2>
-        <span class="label-caps">Accento</span>
-        <div class="swatches" role="radiogroup" aria-label="Colore d'accento">
+        <h2 class="h2">{{ 'Colori'|trans }}</h2>
+        <span class="label-caps">{{ 'Accento'|trans }}</span>
+        <div class="swatches" role="radiogroup" aria-label="{{ "Colore d'accento"|trans }}">
             {% for key, a in palette_accents() %}
-                <label class="swatch" style="--c: {{ a[1] }}" title="{{ a[0] }}"><input type="radio" name="accent" value="{{ key }}" {{ app.user.accent == key ? 'checked' }} aria-label="{{ a[0] }}" onchange="this.form.submit()"></label>
+                <label class="swatch" style="--c: {{ a[1] }}" title="{{ a[0]|trans }}"><input type="radio" name="accent" value="{{ key }}" {{ app.user.accent == key ? 'checked' }} aria-label="{{ a[0]|trans }}" onchange="this.form.submit()"></label>
             {% endfor %}
         </div>
-        <p class="small muted">Il bottone "Nuovo movimento", la voce attiva del menu e le evidenziazioni. Le entrate restano verdi.</p>
+        <p class="small muted">{{ 'Il bottone "%button%", la voce attiva del menu e le evidenziazioni. Le entrate restano verdi.'|trans({'%button%': 'Nuovo movimento'|trans}) }}</p>
 
-        <span class="label-caps" style="margin-top: 6px">Icona dell'app</span>
+        <span class="label-caps" style="margin-top: 6px">{{ "Icona dell'app"|trans }}</span>
         <div class="seg seg--inset">
             {% for value, shape in app_icons() %}
-                <label><input type="radio" name="icon_shape" value="{{ value }}" {{ app.user.iconShape == value ? 'checked' }} onchange="this.form.submit()"><img class="seg__icon" src="{{ path('pwa_icon', {shape: value, color: shape[2], file: 'icon.svg'}) }}" alt="" width="18" height="18">&nbsp;{{ shape[0] }}</label>
+                <label><input type="radio" name="icon_shape" value="{{ value }}" {{ app.user.iconShape == value ? 'checked' }} onchange="this.form.submit()"><img class="seg__icon" src="{{ path('pwa_icon', {shape: value, color: shape[2], file: 'icon.svg'}) }}" alt="" width="18" height="18">&nbsp;{{ shape[0]|trans }}</label>
             {% endfor %}
         </div>
         <label class="switch">
-            <span class="switch__text"><span>Come l'accento</span><small>l'icona cambia colore insieme all'accento</small></span>
+            <span class="switch__text"><span>{{ "Come l'accento"|trans }}</span><small>{{ "l'icona cambia colore insieme all'accento"|trans }}</small></span>
             <input type="checkbox" name="icon_follow" value="1" {{ app.user.iconFollowingAccent ? 'checked' }} onchange="this.form.submit()">
         </label>
         {% if not app.user.iconFollowingAccent %}
-            <div class="swatches" role="radiogroup" aria-label="Colore dell'icona">
-                {% for key, name in (app.user.iconShape == 'anello' ? {indaco: 'Indaco'} : {})|merge(palette_accents()|map(a => a[0])) %}
+            <div class="swatches" role="radiogroup" aria-label="{{ "Colore dell'icona"|trans }}">
+                {% for key, name in (app.user.iconShape == 'anello' ? {indaco: 'Indaco'|trans} : {})|merge(palette_accents()|map(a => a[0]|trans)) %}
                     <label class="swatch swatch--app" title="{{ name }}"><input type="radio" name="icon_color" value="{{ key }}" {{ app.user.iconAccent == key ? 'checked' }} aria-label="{{ name }}" onchange="this.form.submit()"><img src="{{ path('pwa_icon', {shape: app.user.iconShape, color: key, file: 'icon.svg'}) }}" alt="" width="44" height="44"></label>
                 {% endfor %}
             </div>
         {% endif %}
-        <noscript><button type="submit" class="btn btn--sm">Applica</button></noscript>
-        <p class="small muted">Sulla schermata Home l'icona si aggiorna togliendo l'app e aggiungendola di nuovo (su Android a volte cambia da sola).</p>
+        <noscript><button type="submit" class="btn btn--sm">{{ 'Applica'|trans }}</button></noscript>
+        <p class="small muted">{{ "Sulla schermata Home l'icona si aggiorna togliendo l'app e aggiungendola di nuovo (su Android a volte cambia da sola)."|trans }}</p>
     </form>
 
     <form method="post" class="card">
         <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
         <input type="hidden" name="section" value="profile">
-        <h2 class="h2">Profilo</h2>
+        <h2 class="h2">{{ 'Profilo'|trans }}</h2>
         <label class="field">
-            <span class="field__label">Nome visualizzato</span>
+            <span class="field__label">{{ 'Nome visualizzato'|trans }}</span>
             <input type="text" name="display_name" value="{{ app.user.displayName }}" maxlength="100" required>
             {% if errors.display_name is defined %}<span class="field__error">{{ errors.display_name }}</span>{% endif %}
         </label>
-        <p class="small muted">Nome utente per l'accesso: <strong>{{ app.user.username }}</strong></p>
-        <button type="submit" class="btn btn--sm btn--ghost">Salva</button>
+        <p class="small muted">{{ "Nome utente per l'accesso:"|trans }} <strong>{{ app.user.username }}</strong></p>
+        <button type="submit" class="btn btn--sm btn--ghost">{{ 'Salva'|trans }}</button>
     </form>
 
     <form method="post" class="card">
         <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
         <input type="hidden" name="section" value="password">
-        <h2 class="h2">Cambia password</h2>
+        <h2 class="h2">{{ 'Cambia password'|trans }}</h2>
         <label class="field {{ errors.current_password is defined ? 'has-error' }}">
-            <span class="field__label">Password attuale</span>
+            <span class="field__label">{{ 'Password attuale'|trans }}</span>
             <input type="password" name="current_password" autocomplete="current-password" required>
             {% if errors.current_password is defined %}<span class="field__error">{{ errors.current_password }}</span>{% endif %}
         </label>
         <label class="field {{ errors.new_password is defined ? 'has-error' }}">
-            <span class="field__label">Nuova password</span>
+            <span class="field__label">{{ 'Nuova password'|trans }}</span>
             <input type="password" name="new_password" autocomplete="new-password" minlength="8" required>
             {% if errors.new_password is defined %}<span class="field__error">{{ errors.new_password }}</span>{% endif %}
         </label>
         <label class="field {{ errors.confirm_password is defined ? 'has-error' }}">
-            <span class="field__label">Ripeti la nuova password</span>
+            <span class="field__label">{{ 'Ripeti la nuova password'|trans }}</span>
             <input type="password" name="confirm_password" autocomplete="new-password" minlength="8" required>
             {% if errors.confirm_password is defined %}<span class="field__error">{{ errors.confirm_password }}</span>{% endif %}
         </label>
-        <button type="submit" class="btn btn--sm btn--ghost">Cambia password</button>
+        <button type="submit" class="btn btn--sm btn--ghost">{{ 'Cambia password'|trans }}</button>
     </form>
 
     <form method="post" action="{{ path('app_logout') }}" data-turbo="false">
         <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('logout') }}">
-        <button type="submit" class="btn btn--ghost btn--block btn--sm">{{ icon('log-out', 18) }}Esci</button>
+        <button type="submit" class="btn btn--ghost btn--block btn--sm">{{ icon('log-out', 18) }}{{ 'Esci'|trans }}</button>
     </form>
 </div>
 {% endblock %}

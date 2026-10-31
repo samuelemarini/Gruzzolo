@@ -8,10 +8,22 @@ use App\Entity\OwnedInterface;
 use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /** Base dei controller dell'app: utente corrente e controllo di proprieta' dei dati. */
 abstract class AppController extends AbstractController
 {
+    public static function getSubscribedServices(): array
+    {
+        return parent::getSubscribedServices() + ['translator' => TranslatorInterface::class];
+    }
+
+    /** Testo nella lingua dell'utente: la frase italiana e' la chiave. */
+    protected function trans(string $id, array $params = []): string
+    {
+        return $this->container->get('translator')->trans($id, $params);
+    }
+
     protected function me(): User
     {
         $user = $this->getUser();

@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { separators } from '../i18n.js';
 
 /*
  * Tastierino numerico per l'importo, solo sui telefoni (vedi .keypad in app.css):
@@ -27,8 +28,8 @@ export default class extends Controller {
         };
         this.element.addEventListener('input', this.refresh);
         window.addEventListener('resize', this.refresh);
-        // I punti delle migliaia sono solo a video: al server va "249680,00" ("249.680" sarebbe 249,68)
-        this.unformat = (event) => event.formData.set(this.inputTarget.name, this.inputTarget.value.replace(/\./g, ''));
+        // Le migliaia sono solo a video: al server va "249680,00" ("249.680" sarebbe 249,68)
+        this.unformat = (event) => event.formData.set(this.inputTarget.name, this.inputTarget.value.replaceAll(separators().group, ''));
         this.element.addEventListener('formdata', this.unformat);
         this.refresh();
         document.fonts?.ready.then(() => this.inputTarget && this.refresh());
@@ -41,36 +42,41 @@ export default class extends Controller {
         window.removeEventListener('resize', this.refresh);
     }
 
-    // "249680,5" -> "249.680,5", tenendo il cursore dopo la stessa cifra
+    // "249680,5" -> "249.680,5" (separatori della lingua), tenendo il cursore dopo la stessa cifra
     format() {
+        const { decimal, group } = separators();
         const input = this.inputTarget;
         const value = input.value;
-        const clean = (text) => text.replace(/[^\d,]/g, '');
-        const [int, ...decimals] = clean(value).split(',');
-        let text = int.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-        if (decimals.length) text += `,${decimals.join('').slice(0, 2)}`;
+        const clean = (text) => [...text].filter((c) => /\d/.test(c) || c === decimal).join('');
+        const [int, ...decimals] = clean(value).split(decimal);
+        let text = int.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, group);
+        if (decimals.length) text += `${decimal}${decimals.join('').slice(0, 2)}`;
         if (text === value) return;
         const kept = clean(value.slice(0, input.selectionStart ?? value.length)).length;
         input.value = text;
         if (document.activeElement !== input) return;
         let caret = 0;
         for (let seen = 0; caret < text.length && seen < kept; caret++) {
-            if (text[caret] !== '.') seen++;
+            if (text[caret] !== group) seen++;
         }
         input.setSelectionRange(caret, caret);
     }
 
-    // Il punto separa le migliaia: scritto a mano vale come virgola dei decimali
+    // Le migliaia le mette l'app: il punto o la virgola scritti a mano valgono come separatore dei decimali
     typed(event) {
-        if (event.inputType !== 'insertText' || event.data !== '.') return;
+        if (event.inputType !== 'insertText' || !['.', ','].includes(event.data)) return;
+        const { decimal } = separators();
+        if (event.data === decimal && !this.inputTarget.value.includes(decimal)) return;
         event.preventDefault();
-        if (!this.inputTarget.value.includes(',')) this.insert(',');
+        if (!this.inputTarget.value.includes(decimal)) this.insert(decimal);
     }
 
     pasted(event) {
+        const { decimal } = separators();
         let text = (event.clipboardData?.getData('text') ?? '').replace(/[^\d.,]/g, '');
-        // "1247.80" copiato da altrove: li' il punto e' il decimale
-        if (!text.includes(',') && /^\d+\.\d{1,2}$/.test(text)) text = text.replace('.', ',');
+        // "1247.80" o "1.247,80" copiati da altrove: i decimali sono dopo l'ultimo separatore, se ne ha uno o due cifre
+        const match = text.match(/^(.*)[.,](\d{1,2})$/);
+        text = match ? match[1].replace(/[.,]/g, '') + decimal + match[2] : text.replace(/[.,]/g, '');
         event.preventDefault();
         this.insert(text);
     }
@@ -93,13 +99,14 @@ export default class extends Controller {
     }
 
     press(event) {
+        const { decimal } = separators();
         const key = event.currentTarget.dataset.key;
         let value = this.inputTarget.value;
         if (key === ',') {
-            if (value.includes(',')) return;
-            value = (value || '0') + ',';
+            if (value.includes(decimal)) return;
+            value = (value || '0') + decimal;
         } else {
-            if (value.includes(',') && value.split(',')[1].length >= 2) return;
+            if (value.includes(decimal) && value.split(decimal)[1].length >= 2) return;
             if (value.replace(/\D/g, '').length >= 9) return;
             value = (value === '0' ? '' : value) + key;
         }

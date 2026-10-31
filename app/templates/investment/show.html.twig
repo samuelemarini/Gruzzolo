@@ -4,10 +4,10 @@
 {% block body %}
 <div class="page page--wide">
     <div class="topbar">
-        <a href="{{ path('investment_index') }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
+        <a href="{{ path('investment_index') }}" class="icon-btn" aria-label="{{ 'Indietro'|trans }}">{{ icon('chevron-left') }}</a>
         <div class="topbar__actions">
-            <a href="{{ path('investment_edit', {id: holding.id}) }}" class="icon-btn" aria-label="Modifica titolo">{{ icon('pencil', 18) }}</a>
-            <a href="{{ path('investment_entry_new', {id: holding.id}) }}" class="btn btn--sm" style="border-radius: 999px">{{ icon('plus', 18) }}Aggiorna</a>
+            <a href="{{ path('investment_edit', {id: holding.id}) }}" class="icon-btn" aria-label="{{ 'Modifica titolo'|trans }}">{{ icon('pencil', 18) }}</a>
+            <a href="{{ path('investment_entry_new', {id: holding.id}) }}" class="btn btn--sm" style="border-radius: 999px">{{ icon('plus', 18) }}{{ 'Aggiorna'|trans }}</a>
         </div>
     </div>
 
@@ -15,7 +15,7 @@
         {{ ui.tile(holding.icon, holding.color, 'lg') }}
         <div class="stack-sm" style="gap: 3px">
             <h1 class="display" style="font-size: 28px; font-weight: 700; line-height: 1.1">{{ holding.name }}</h1>
-            <span class="small muted">{{ holding.kindLabel }}{{ holding.symbol ? ' · ' ~ holding.symbol }}{{ holding.archived ? ' · archiviato' }}{{ holding.excludedFromReturns ? ' · escluso dal rendimento' }}</span>
+            <span class="small muted">{{ holding.kindLabel|trans }}{{ holding.symbol ? ' · ' ~ holding.symbol }}{{ holding.archived ? ' · ' ~ 'archiviato'|trans }}{{ holding.excludedFromReturns ? ' · ' ~ 'escluso dal rendimento'|trans }}</span>
         </div>
     </div>
 
@@ -23,23 +23,23 @@
         <div class="col-main">
             <section class="card">
                 {% if live %}
-                    <span class="small muted">Valore stimato oggi</span>
+                    <span class="small muted">{{ 'Valore stimato oggi'|trans }}</span>
                     <div class="hero-amount"><span class="hero-amount__value" style="font-size: 42px">{{ live.value|money }}</span></div>
-                    <span class="small"><span class="strong {{ live.change >= 0 ? 'text-income' : 'text-expense' }}">{{ live.change|money(true) }} ({{ live.changePct|pct(2, true) }})</span> <span class="muted">dal {{ stats.lastDate|it_date('d MMMM') }}, quando valeva {{ stats.value|money }}</span></span>
-                    <span class="xsmall muted">Prezzo di mercato ({{ live.symbol }}) delle {{ live.time|date('H:i') }} del {{ live.time|it_date('d MMM') }}: è una stima, il valore ufficiale resta quello che registri.</span>
+                    <span class="small"><span class="strong {{ live.change >= 0 ? 'text-income' : 'text-expense' }}">{{ live.change|money(true) }} ({{ live.changePct|pct(2, true) }})</span> <span class="muted">{{ 'dal %date%, quando valeva %value%'|trans({'%date%': stats.lastDate|local_date('d MMMM'), '%value%': stats.value|money}) }}</span></span>
+                    <span class="xsmall muted">{{ 'Prezzo di mercato (%symbol%) delle %time% del %date%: è una stima, il valore ufficiale resta quello che registri.'|trans({'%symbol%': live.symbol, '%time%': live.time|date('H:i'), '%date%': live.time|local_date('d MMM')}) }}</span>
                 {% else %}
-                    <span class="small muted">Valore{{ stats.lastDate ? ' al ' ~ stats.lastDate|it_date('d MMMM yyyy') }}</span>
+                    <span class="small muted">{{ stats.lastDate ? 'Valore al %date%'|trans({'%date%': stats.lastDate|local_date('d MMMM yyyy')}) : 'Valore'|trans }}</span>
                     <div class="hero-amount"><span class="hero-amount__value" style="font-size: 42px">{{ stats.value|money }}</span></div>
                 {% endif %}
                 <div class="grid-2">
-                    <div class="stat stat--inner"><span class="stat__label">Versati in totale</span><span class="stat__value">{{ stats.invested|money }}</span></div>
-                    <div class="stat stat--inner"><span class="stat__label">Rendimento{{ live ? ' oggi' }}</span><span class="stat__value {{ (live ? live.gain : stats.gain) >= 0 ? 'text-income' : 'text-expense' }}">{{ (live ? live.gain : stats.gain)|money(true) }}</span><span class="stat__sub">{{ (live ? live.pct : stats.pct)|pct(2, true) }}</span></div>
+                    <div class="stat stat--inner"><span class="stat__label">{{ 'Versati in totale'|trans }}</span><span class="stat__value">{{ stats.invested|money }}</span></div>
+                    <div class="stat stat--inner"><span class="stat__label">{{ live ? 'Rendimento oggi'|trans : 'Rendimento'|trans }}</span><span class="stat__value {{ (live ? live.gain : stats.gain) >= 0 ? 'text-income' : 'text-expense' }}">{{ (live ? live.gain : stats.gain)|money(true) }}</span><span class="stat__sub">{{ (live ? live.pct : stats.pct)|pct(2, true) }}</span></div>
                 </div>
                 {% if chrono|length >= 2 %}
-                    {{ ui.line_chart(chart, {value: holding.color, invested: 'muted'}, 'Valore e versato nel tempo') }}
+                    {{ ui.line_chart(chart, {value: holding.color, invested: 'muted'}, 'Valore e versato nel tempo'|trans) }}
                     <div class="chart-legend">
-                        <span><i class="line" style="--c: {{ holding.color }}"></i>valore</span>
-                        <span><i class="dashed" style="--c: var(--muted)"></i>versato</span>
+                        <span><i class="line" style="--c: {{ holding.color }}"></i>{{ 'valore'|trans }}</span>
+                        <span><i class="dashed" style="--c: var(--muted)"></i>{{ 'versato'|trans }}</span>
                     </div>
                 {% endif %}
                 {% if holding.note %}<p class="small muted">{{ holding.note|nl2br }}</p>{% endif %}
@@ -47,9 +47,9 @@
         </div>
         <div class="col-side">
             <section>
-                <div class="section-head"><h2>Storico</h2><span class="small muted">{{ stats.entries|length }} aggiornamenti</span></div>
+                <div class="section-head"><h2>{{ 'Storico'|trans }}</h2><span class="small muted">{{ '%count% aggiornamento|%count% aggiornamenti'|trans({'%count%': stats.entries|length}) }}</span></div>
                 {% if stats.entries is empty %}
-                    {{ ui.empty('chart-line', 'Registra il primo versamento con il valore attuale.', path('investment_entry_new', {id: holding.id}), 'Primo aggiornamento') }}
+                    {{ ui.empty('chart-line', 'Registra il primo versamento con il valore attuale.'|trans, path('investment_entry_new', {id: holding.id}), 'Primo aggiornamento'|trans) }}
                 {% else %}
                 <div class="list list--lines">
                     {% for row in stats.entries %}
@@ -57,8 +57,8 @@
                         <a class="list-row" href="{{ path('investment_entry_edit', {id: e.id}) }}">
                             <span class="tile tile--sm" style="--c: {{ c > 0 ? '#9BE7A0' : (c < 0 ? '#FFB86B' : '#A3A59F') }}">{{ icon(c > 0 ? 'arrow-down-left' : (c < 0 ? 'arrow-up-right' : 'chart-line'), 18) }}</span>
                             <div class="list-row__body">
-                                <span class="list-row__title">{{ c > 0 ? 'Versati ' ~ c|money : (c < 0 ? 'Ritirati ' ~ (-c)|money : 'Aggiornamento valore') }}</span>
-                                <span class="list-row__meta">{{ e.date|it_date('d MMM yyyy') }}{{ row.delta is not null ? ' · andamento ' ~ row.delta|money(true) }}{{ e.movement ? ' · da ' ~ e.movement.account.name }}{{ e.note ? ' · ' ~ e.note }}</span>
+                                <span class="list-row__title">{{ c > 0 ? 'Versati %amount%'|trans({'%amount%': c|money}) : (c < 0 ? 'Ritirati %amount%'|trans({'%amount%': (-c)|money}) : 'Aggiornamento valore'|trans) }}</span>
+                                <span class="list-row__meta">{{ e.date|local_date('d MMM yyyy') }}{{ row.delta is not null ? ' · ' ~ 'andamento %amount%'|trans({'%amount%': row.delta|money(true)}) }}{{ e.movement ? ' · ' ~ 'da %account%'|trans({'%account%': e.movement.account.name}) }}{{ e.note ? ' · ' ~ e.note }}</span>
                             </div>
                             <span class="list-row__amount">{{ e.value|money }}<small class="{{ row.gain >= 0 ? 'text-income' : 'text-expense' }}">{{ row.gain|money(true) }}</small></span>
                         </a>

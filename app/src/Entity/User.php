@@ -46,6 +46,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 10, options: ['default' => 'lime'])]
     private string $accent = 'lime';
 
+    /** Lingua dell'interfaccia, chiave di Language::LANGUAGES; null = quella del browser. */
+    #[ORM\Column(length: 5, nullable: true)]
+    private ?string $locale = null;
+
     /** Forma dell'icona dell'app, chiave di Palette::APP_ICONS. */
     #[ORM\Column(length: 10, options: ['default' => 'anello'])]
     private string $iconShape = 'anello';
@@ -124,6 +128,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setTheme(string $theme): static
     {
         $this->theme = array_key_exists($theme, self::THEMES) ? $theme : 'system';
+
+        return $this;
+    }
+
+    public function getLocale(): ?string { return $this->locale; }
+    public function setLocale(?string $locale): static
+    {
+        $this->locale = isset(\App\Service\Language::LANGUAGES[$locale ?? '']) ? $locale : null;
 
         return $this;
     }

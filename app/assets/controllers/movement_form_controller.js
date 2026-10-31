@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { t } from '../i18n.js';
 
 /*
  * Form movimento: mostra solo cio' che serve al tipo scelto.
@@ -106,7 +107,7 @@ export default class extends Controller {
             el.hidden = kind !== 'transfer';
             el.querySelectorAll('select, input').forEach((input) => { input.disabled = kind !== 'transfer'; });
         });
-        this.accountLabelTarget.textContent = kind === 'transfer' ? 'Da conto' : 'Conto';
+        this.accountLabelTarget.textContent = kind === 'transfer' ? t('Da conto') : t('Conto');
 
         // Sottocategorie: si vedono al posto della griglia mentre si sceglie fra le figlie di una madre.
         this.element.querySelectorAll('[data-children-of]').forEach((row) => {

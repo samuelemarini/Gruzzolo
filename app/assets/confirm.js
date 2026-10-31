@@ -1,37 +1,38 @@
 /*
  * Conferme dei form (data-turbo-confirm) nel pannello dell'app al posto della finestra del browser.
  * "Eliminare il conto? I movimenti restano." diventa titolo (la domanda) e testo (il resto);
- * pulsante, icona e colore si ricavano dal verbo con cui comincia la domanda.
+ * pulsante, icona e colore vengono dal tipo dichiarato sul form (data-confirm-kind).
  */
 import { config } from '@hotwired/turbo';
+import { t } from './i18n.js';
 
-const VERBS = {
-    Eliminare: { ok: 'Elimina', icon: 'trash-2', danger: true },
-    Togliere: { ok: 'Togli', icon: 'users', danger: true },
-    Uscire: { ok: 'Esci', icon: 'log-out', danger: true },
+const KINDS = {
+    delete: { ok: 'Elimina', icon: 'trash-2', danger: true },
+    remove: { ok: 'Togli', icon: 'users', danger: true },
+    leave: { ok: 'Esci dal conto', icon: 'log-out', danger: true },
     // "Annulla" e' gia' il pulsante per tornare indietro
-    Annullare: { ok: 'Sì, annulla', cancel: 'No', icon: 'undo-2', danger: true },
-    Riordinare: { ok: 'Riordina', icon: 'arrow-down-up' },
-    Copiare: { ok: 'Copia', icon: 'layout-grid' },
+    undo: { ok: 'Sì, annulla', cancel: 'No', icon: 'undo-2', danger: true },
+    sort: { ok: 'Riordina', icon: 'arrow-down-up' },
+    copy: { ok: 'Copia', icon: 'layout-grid' },
 };
 
-config.forms.confirm = (message) => new Promise((resolve) => {
+config.forms.confirm = (message, form, submitter) => new Promise((resolve) => {
     const dialog = document.getElementById('confirm-dialog');
     if (!dialog) {
         resolve(window.confirm(message));
         return;
     }
     const [, title, text] = message.match(/^(.*?\?)\s*(.*)$/s) ?? [null, message, ''];
-    const verb = VERBS[message.split(' ')[0]] ?? { ok: 'Conferma', icon: 'info' };
+    const kind = KINDS[submitter?.dataset.confirmKind ?? form?.dataset.confirmKind] ?? { ok: 'Conferma', icon: 'info' };
 
-    dialog.dataset.tone = verb.danger ? 'danger' : '';
+    dialog.dataset.tone = kind.danger ? 'danger' : '';
     dialog.querySelector('.confirm__title').textContent = title;
     dialog.querySelector('.confirm__text').textContent = text;
     dialog.querySelector('.confirm__text').hidden = !text;
-    dialog.querySelector('.confirm__ok').textContent = verb.ok;
-    dialog.querySelector('.confirm__cancel').textContent = verb.cancel ?? 'Annulla';
+    dialog.querySelector('.confirm__ok').textContent = t(kind.ok);
+    dialog.querySelector('.confirm__cancel').textContent = t(kind.cancel ?? 'Annulla');
     dialog.querySelectorAll('.confirm__icon [data-icon]').forEach((icon) => {
-        icon.hidden = icon.dataset.icon !== verb.icon;
+        icon.hidden = icon.dataset.icon !== kind.icon;
     });
 
     const backdrop = (event) => {

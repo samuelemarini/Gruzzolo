@@ -4,25 +4,25 @@
 {% block body %}
 <div class="page">
     <div class="topbar">
-        <a href="{{ path('tag_index') }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
-        <a href="{{ path('tag_edit', {id: tag.id}) }}" class="icon-btn" aria-label="Modifica etichetta">{{ icon('pencil', 18) }}</a>
+        <a href="{{ path('tag_index') }}" class="icon-btn" aria-label="{{ 'Indietro'|trans }}">{{ icon('chevron-left') }}</a>
+        <a href="{{ path('tag_edit', {id: tag.id}) }}" class="icon-btn" aria-label="{{ 'Modifica etichetta'|trans }}">{{ icon('pencil', 18) }}</a>
     </div>
 
     <div class="stack-sm">
         <span class="tag-pill tag-pill--lg" style="--c: {{ tag.color }}; align-self: flex-start">{{ icon('tag', 14) }}{{ tag.name }}</span>
         <h1 class="display" style="font-size: 32px; font-weight: 700; line-height: 1.1">{{ tag.title ?: '#' ~ tag.name }}</h1>
-        <span class="small muted">{% if first %}{{ first|it_date('d MMM yyyy') }}{% if last != first %} – {{ last|it_date('d MMM yyyy') }}{% endif %} · {% endif %}{{ movements|length }} moviment{{ movements|length == 1 ? 'o' : 'i' }}</span>
+        <span class="small muted">{% if first %}{{ first|local_date('d MMM yyyy') }}{% if last != first %} – {{ last|local_date('d MMM yyyy') }}{% endif %} · {% endif %}{{ '%count% movimento|%count% movimenti'|trans({'%count%': movements|length}) }}</span>
     </div>
 
     <section class="card">
         <div class="row row--between" style="align-items: baseline">
             <span class="hero-amount__value" style="font-size: 42px">{{ expense|money }}</span>
-            <span class="small muted">speso in totale</span>
+            <span class="small muted">{{ 'speso in totale'|trans }}</span>
         </div>
-        {% if income > 0 %}<span class="small muted">Entrate collegate: <span class="strong text-income">+{{ income|money }}</span> · netto {{ (income - expense)|money(true) }}</span>{% endif %}
+        {% if income > 0 %}<span class="small muted">{{ 'Entrate collegate:'|trans }} <span class="strong text-income">+{{ income|money }}</span> · {{ 'netto %amount%'|trans({'%amount%': (income - expense)|money(true)}) }}</span>{% endif %}
         {% if byCategory|length %}
             <hr class="divider">
-            <div class="split" role="img" aria-label="Spese per categoria">
+            <div class="split" role="img" aria-label="{{ 'Spese per categoria'|trans }}">
                 {% for c in byCategory %}<span style="--c: {{ c.color }}; flex: {{ c.total }} 1 0"></span>{% endfor %}
             </div>
             <div class="legend">
@@ -34,7 +34,7 @@
     </section>
 
     <section>
-        <div class="section-head"><h2>Movimenti</h2><span class="small muted">dal più vecchio</span></div>
+        <div class="section-head"><h2>{{ 'Movimenti'|trans }}</h2><span class="small muted">{{ 'dal più vecchio'|trans }}</span></div>
         <div class="list">
             {% for m in movements %}{{ ui.movement_row(m, {date: true}) }}{% endfor %}
         </div>

@@ -109,7 +109,7 @@ final class MovementFilter
 
     private static function number(mixed $value): ?float
     {
-        $value = Money::parse($value);
+        $value = Money::parseLocal($value);
 
         return $value !== null ? (float) $value : null;
     }

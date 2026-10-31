@@ -5,6 +5,7 @@ namespace App\Service;
 use App\Entity\Refuel;
 use App\Entity\Vehicle;
 use App\Repository\RefuelRepository;
+use App\Util\Trans;
 use Doctrine\DBAL\Connection;
 
 /**
@@ -246,14 +247,14 @@ final class VehicleStats
     private function otherItems(Vehicle $vehicle, ?\DateTimeImmutable $from, ?\DateTimeImmutable $to): array
     {
         $sql = <<<'SQL'
-            SELECT COALESCE(NULLIF(TRIM(m.description), ''), c.name, 'Altro') AS label, COALESCE(c.name, 'Altro') AS category,
+            SELECT COALESCE(NULLIF(TRIM(m.description), ''), c.name, :other) AS label, COALESCE(c.name, :other) AS category,
                    COALESCE(c.color, '#A3A59F') AS color, SUM(m.amount) AS total, COUNT(*) AS n
             FROM movement m
             LEFT JOIN category c ON c.id = m.category_id
             LEFT JOIN refuel r ON r.movement_id = m.id
             WHERE m.vehicle_id = :v AND m.kind = 'expense' AND r.id IS NULL
             SQL;
-        $params = ['v' => $vehicle->getId()];
+        $params = ['v' => $vehicle->getId(), 'other' => Trans::label('Altro')];
         if ($from) {
             $sql .= ' AND m.date >= :from';
             $params['from'] = $from->format('Y-m-d');
@@ -272,13 +273,13 @@ final class VehicleStats
     private function otherCosts(Vehicle $vehicle, ?\DateTimeImmutable $from, ?\DateTimeImmutable $to): array
     {
         $sql = <<<'SQL'
-            SELECT COALESCE(c.name, 'Altro') AS name, COALESCE(c.color, '#A3A59F') AS color, SUM(m.amount) AS total
+            SELECT COALESCE(c.name, :other) AS name, COALESCE(c.color, '#A3A59F') AS color, SUM(m.amount) AS total
             FROM movement m
             LEFT JOIN category c ON c.id = m.category_id
             LEFT JOIN refuel r ON r.movement_id = m.id
             WHERE m.vehicle_id = :v AND m.kind = 'expense' AND r.id IS NULL
             SQL;
-        $params = ['v' => $vehicle->getId()];
+        $params = ['v' => $vehicle->getId(), 'other' => Trans::label('Altro')];
         if ($from) {
             $sql .= ' AND m.date >= :from';
             $params['from'] = $from->format('Y-m-d');

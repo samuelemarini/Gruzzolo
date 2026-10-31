@@ -2,35 +2,35 @@
 {% import '_ui.html.twig' as ui %}
 {% set hide_tabbar = true %}
 {% set isNew = tag.id is null %}
-{% block title %}{{ isNew ? 'Nuova etichetta' : 'Modifica #' ~ tag.name }}{% endblock %}
+{% block title %}{{ isNew ? 'Nuova etichetta'|trans : 'Modifica #%name%'|trans({'%name%': tag.name}) }}{% endblock %}
 {% block body %}
 <form method="post" class="page page--plain form">
     <input type="hidden" name="_token" value="{{ csrf_token('tag') }}">
     <div class="topbar">
-        <a href="{{ isNew ? path('tag_index') : path('tag_show', {id: tag.id}) }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
-        <span class="topbar__center">{{ isNew ? 'Nuova etichetta' : 'Modifica etichetta' }}</span>
+        <a href="{{ isNew ? path('tag_index') : path('tag_show', {id: tag.id}) }}" class="icon-btn" aria-label="{{ 'Indietro'|trans }}">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">{{ isNew ? 'Nuova etichetta'|trans : 'Modifica etichetta'|trans }}</span>
         <span style="width: 44px"></span>
     </div>
     <label class="field {{ errors.name is defined ? 'has-error' }}">
-        <span class="field__label">Etichetta</span>
-        <input type="text" name="name" value="{{ tag.name }}" maxlength="60" required autocapitalize="none" autocomplete="off" placeholder="es. vacanze-2026" {{ isNew ? 'autofocus' }}>
+        <span class="field__label">{{ 'Etichetta'|trans }}</span>
+        <input type="text" name="name" value="{{ tag.name }}" maxlength="60" required autocapitalize="none" autocomplete="off" placeholder="{{ 'es. vacanze-2026'|trans }}" {{ isNew ? 'autofocus' }}>
         {% if errors.name is defined %}<span class="field__error">{{ errors.name }}</span>{% endif %}
     </label>
-    <p class="hint">Si scrive come un hashtag: minuscole, spazi e simboli diventano trattini («Festa Giulia» → #festa-giulia).</p>
+    <p class="hint">{{ 'Si scrive come un hashtag: minuscole, spazi e simboli diventano trattini («Festa Giulia» → #festa-giulia).'|trans }}</p>
     <label class="field">
-        <span class="field__label">Titolo (facoltativo)</span>
-        <input type="text" name="title" value="{{ tag.title }}" maxlength="120" placeholder="es. Viaggio a Lisbona">
+        <span class="field__label">{{ 'Titolo (facoltativo)'|trans }}</span>
+        <input type="text" name="title" value="{{ tag.title }}" maxlength="120" placeholder="{{ 'es. Viaggio a Lisbona'|trans }}">
     </label>
     <section class="card card--tight">
-        <span class="label-caps">Colore</span>
+        <span class="label-caps">{{ 'Colore'|trans }}</span>
         {{ ui.color_picker('color', tag.color) }}
     </section>
-    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}{{ isNew ? 'Crea etichetta' : 'Salva' }}</button>
+    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}{{ isNew ? 'Crea etichetta'|trans : 'Salva'|trans }}</button>
 </form>
 {% if not isNew %}
-<form method="post" action="{{ path('tag_delete', {id: tag.id}) }}" class="page page--plain" style="padding-top: 0" data-turbo-confirm="Eliminare l'etichetta? I movimenti restano, perdono solo l'etichetta.">
+<form method="post" action="{{ path('tag_delete', {id: tag.id}) }}" class="page page--plain" style="padding-top: 0" data-confirm-kind="delete" data-turbo-confirm="{{ 'Eliminare l\'etichetta? I movimenti restano, perdono solo l\'etichetta.'|trans }}">
     <input type="hidden" name="_token" value="{{ csrf_token('delete-tag-' ~ tag.id) }}">
-    <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}Elimina etichetta</button>
+    <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}{{ 'Elimina etichetta'|trans }}</button>
 </form>
 {% endif %}
 {% endblock %}

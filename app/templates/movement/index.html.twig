@@ -1,16 +1,16 @@
 {% extends 'base.html.twig' %}
 {% import '_ui.html.twig' as ui %}
-{% block title %}Movimenti{% endblock %}
+{% block title %}{{ 'Movimenti'|trans }}{% endblock %}
 {% set q = app.request.query %}
-{% set periodLabels = {month: month ? month|month_label : 'Mese', 'last-month': 'Mese scorso', year: 'Quest’anno', all: 'Sempre', custom: 'Intervallo'} %}
+{% set periodLabels = {month: month ? month|month_label : 'Mese'|trans, 'last-month': 'Mese scorso'|trans, year: 'Quest’anno'|trans, all: 'Sempre'|trans, custom: 'Intervallo'|trans} %}
 {% block body %}
 <div class="page" data-controller="sheet">
     <div class="topbar">
-        <h1 class="topbar__title">Movimenti</h1>
+        <h1 class="topbar__title">{{ 'Movimenti'|trans }}</h1>
         <div class="topbar__actions">
             {{ ui.privacy_toggle() }}
-            <a href="{{ path('movement_export', q.all) }}" class="icon-btn" aria-label="Esporta CSV" data-turbo="false">{{ icon('download', 19) }}</a>
-            <button type="button" class="icon-btn" data-action="sheet#open" aria-label="Filtri{{ filter.countAdvanced ? ', ' ~ filter.countAdvanced ~ ' attivi' }}">
+            <a href="{{ path('movement_export', q.all) }}" class="icon-btn" aria-label="{{ 'Esporta CSV'|trans }}" data-turbo="false">{{ icon('download', 19) }}</a>
+            <button type="button" class="icon-btn" data-action="sheet#open" aria-label="{{ filter.countAdvanced ? 'Filtri, %count% attivo|Filtri, %count% attivi'|trans({'%count%': filter.countAdvanced}) : 'Filtri'|trans }}">
                 {{ icon('sliders-horizontal') }}
                 {% if filter.countAdvanced %}<span class="icon-btn__badge">{{ filter.countAdvanced }}</span>{% endif %}
             </button>
@@ -23,15 +23,15 @@
         {% endfor %}
         <label class="field field--on-bg" style="flex-direction: row; align-items: center; gap: 10px; padding: 0 14px; height: 46px">
             {{ icon('search', 20, 'muted') }}
-            <input type="search" name="q" value="{{ filter.q }}" placeholder="Cerca descrizione, nota, #etichetta, importo…" aria-label="Cerca movimenti" enterkeyhint="search">
+            <input type="search" name="q" value="{{ filter.q }}" placeholder="{{ 'Cerca descrizione, nota, #etichetta, importo…'|trans }}" aria-label="{{ 'Cerca movimenti'|trans }}" enterkeyhint="search">
         </label>
     </form>
 
     {# Conti: un tocco mostra solo quel conto, tenendo premuto lo aggiunge o lo toglie; "Tutti i conti" li mostra tutti #}
     {% if accounts|length > 1 %}
         {% set selected = filter.accounts %}
-        <div class="chips chips--scroll chips--hold" aria-label="Conti" data-controller="chip-hold">
-            <a class="chip {{ selected is empty ? 'is-active' }}" href="{{ path('movement_index', q.all|merge({account: 'all', page: null})) }}">Tutti i conti</a>
+        <div class="chips chips--scroll chips--hold" aria-label="{{ 'Conti'|trans }}" data-controller="chip-hold">
+            <a class="chip {{ selected is empty ? 'is-active' }}" href="{{ path('movement_index', q.all|merge({account: 'all', page: null})) }}">{{ 'Tutti i conti'|trans }}</a>
             {% for a in accounts|filter(a => not a.archived or a.id in selected) %}
                 {% set toggled = a.id in selected ? selected|filter(x => x != a.id) : selected|merge([a.id]) %}
                 <a class="chip {{ a.id in selected ? 'is-active' }}" href="{{ path('movement_index', q.all|merge({account: [a.id], page: null})) }}"
@@ -44,50 +44,50 @@
     <div class="chips chips--scroll">
         {% if filter.period == 'month' %}
             {% set prev = month|date_modify('-1 month') %}{% set next = month|date_modify('+1 month') %}
-            <a class="chip" href="{{ path('movement_index', q.all|merge({month: prev|date('Y-m'), page: null})) }}" aria-label="Mese precedente" style="padding: 0 8px">{{ icon('chevron-left', 16) }}</a>
+            <a class="chip" href="{{ path('movement_index', q.all|merge({month: prev|date('Y-m'), page: null})) }}" aria-label="{{ 'Mese precedente'|trans }}" style="padding: 0 8px">{{ icon('chevron-left', 16) }}</a>
             <span class="chip is-active">{{ month|month_label }}</span>
-            <a class="chip" href="{{ path('movement_index', q.all|merge({month: next|date('Y-m'), page: null})) }}" aria-label="Mese successivo" style="padding: 0 8px">{{ icon('chevron-right', 16) }}</a>
+            <a class="chip" href="{{ path('movement_index', q.all|merge({month: next|date('Y-m'), page: null})) }}" aria-label="{{ 'Mese successivo'|trans }}" style="padding: 0 8px">{{ icon('chevron-right', 16) }}</a>
         {% else %}
-            <button type="button" class="chip is-active" data-action="sheet#open">{{ periodLabels[filter.period] }}{% if filter.period == 'custom' %} · {{ filter.from ? filter.from|it_date('d MMM') }}–{{ filter.to ? filter.to|it_date('d MMM yy') }}{% endif %}</button>
+            <button type="button" class="chip is-active" data-action="sheet#open">{{ periodLabels[filter.period] }}{% if filter.period == 'custom' %} · {{ filter.from ? filter.from|local_date('d MMM') }}–{{ filter.to ? filter.to|local_date('d MMM yy') }}{% endif %}</button>
         {% endif %}
-        {% for kind, label in {expense: 'Uscite', income: 'Entrate', transfer: 'Giroconti'} %}
+        {% for kind, label in {expense: 'Uscite'|trans, income: 'Entrate'|trans, transfer: 'Giroconti'|trans} %}
             <a class="chip {{ filter.kind == kind ? 'is-active' }}" href="{{ path('movement_index', q.all|merge({kind: filter.kind == kind ? null : kind, page: null})) }}">{{ label }}</a>
         {% endfor %}
         {% if filter.categories or filter.tags or filter.vehicle or filter.min is not null or filter.max is not null %}
-            <button type="button" class="chip is-active" data-action="sheet#open">{{ icon('sliders-horizontal', 15) }}Altri filtri</button>
+            <button type="button" class="chip is-active" data-action="sheet#open">{{ icon('sliders-horizontal', 15) }}{{ 'Altri filtri'|trans }}</button>
         {% endif %}
         {% if filter.countAdvanced or filter.q %}
-            <a class="chip chip--dashed" href="{{ path('movement_index') }}">{{ icon('x', 15) }}Azzera</a>
+            <a class="chip chip--dashed" href="{{ path('movement_index') }}">{{ icon('x', 15) }}{{ 'Azzera'|trans }}</a>
         {% endif %}
     </div>
 
     {# Riepilogo a colonne fisse: niente a capo anche con importi lunghi #}
     {% set net = totals.income - totals.expense %}
-    <section class="summary-grid" aria-label="Riepilogo">
-        <span class="summary-grid__count">{{ totals.count }} moviment{{ totals.count == 1 ? 'o' : 'i' }}</span>
+    <section class="summary-grid" aria-label="{{ 'Riepilogo'|trans }}">
+        <span class="summary-grid__count">{{ '%count% movimento|%count% movimenti'|trans({'%count%': totals.count}) }}</span>
         <div class="summary-grid__cell">
-            <span class="summary-grid__label"><span class="dot" style="--c: var(--income)"></span>Entrate</span>
+            <span class="summary-grid__label"><span class="dot" style="--c: var(--income)"></span>{{ 'Entrate'|trans }}</span>
             <span class="summary-grid__value">+{{ totals.income|money }}</span>
         </div>
         <div class="summary-grid__cell">
-            <span class="summary-grid__label"><span class="dot" style="--c: #FF8A80"></span>Uscite</span>
+            <span class="summary-grid__label"><span class="dot" style="--c: #FF8A80"></span>{{ 'Uscite'|trans }}</span>
             <span class="summary-grid__value">−{{ totals.expense|money }}</span>
         </div>
         <div class="summary-grid__cell summary-grid__cell--net">
-            <span class="summary-grid__label">Saldo</span>
+            <span class="summary-grid__label">{{ 'Saldo'|trans }}</span>
             <span class="summary-grid__value {{ net < 0 ? 'text-expense' : (net > 0 ? 'text-income') }}">{{ net|money(true) }}</span>
         </div>
         {# Saldo ad oggi dei conti scelti: non dipende da periodo e altri filtri #}
         {% set chosen = filter.accounts ?: accounts|filter(a => not a.archived)|map(a => a.id) %}
         {% set names = accounts|filter(a => a.id in chosen)|map(a => a.name) %}
         <div class="summary-grid__balance">
-            <span class="summary-grid__label">Saldo attuale{% if names|length == 1 %} · {{ names|first }}{% elseif filter.accounts is empty %} · tutti i conti{% elseif names is not empty %} · {{ names|length }} conti{% endif %}</span>
+            <span class="summary-grid__label">{{ 'Saldo attuale'|trans }}{% if names|length == 1 %} · {{ names|first }}{% elseif filter.accounts is empty %} · {{ 'tutti i conti'|trans }}{% elseif names is not empty %} · {{ '%count% conto|%count% conti'|trans({'%count%': names|length}) }}{% endif %}</span>
             <span class="summary-grid__value {{ balance < 0 ? 'text-expense' }}">{{ balance|money }}</span>
         </div>
     </section>
 
     {% if groups is empty %}
-        {{ ui.empty('search', filter.q ? 'Nessun movimento trovato per “' ~ filter.q ~ '”.' : 'Nessun movimento in questo periodo.', path('movement_new'), 'Nuovo movimento') }}
+        {{ ui.empty('search', filter.q ? 'Nessun movimento trovato per “%q%”.'|trans({'%q%': filter.q}) : 'Nessun movimento in questo periodo.'|trans, path('movement_new'), 'Nuovo movimento'|trans) }}
     {% else %}
         <div class="list">
             {% for group in groups %}
@@ -99,41 +99,41 @@
             {% endfor %}
         </div>
         {% if hasMore %}
-            <a class="btn btn--ghost btn--sm" href="{{ path('movement_index', q.all|merge({page: page + 1})) }}" data-turbo-action="replace">Mostra altri</a>
+            <a class="btn btn--ghost btn--sm" href="{{ path('movement_index', q.all|merge({page: page + 1})) }}" data-turbo-action="replace">{{ 'Mostra altri'|trans }}</a>
         {% endif %}
     {% endif %}
 
     {# ---------- Filtri avanzati ---------- #}
-    <dialog class="sheet" data-sheet-target="dialog" data-action="click->sheet#backdrop" aria-label="Filtri">
+    <dialog class="sheet" data-sheet-target="dialog" data-action="click->sheet#backdrop" aria-label="{{ 'Filtri'|trans }}">
         <form method="get" action="{{ path('movement_index') }}" class="sheet__inner">
             <div class="sheet__grabber"></div>
             <div class="sheet__head">
-                <span class="sheet__title">Filtri</span>
+                <span class="sheet__title">{{ 'Filtri'|trans }}</span>
                 <div class="row" style="gap: 4px">
-                    <a href="{{ path('movement_index') }}" class="link" style="padding: 8px">Azzera</a>
-                    <button type="button" class="icon-btn icon-btn--plain" data-action="sheet#close" aria-label="Chiudi">{{ icon('x') }}</button>
+                    <a href="{{ path('movement_index') }}" class="link" style="padding: 8px">{{ 'Azzera'|trans }}</a>
+                    <button type="button" class="icon-btn icon-btn--plain" data-action="sheet#close" aria-label="{{ 'Chiudi'|trans }}">{{ icon('x') }}</button>
                 </div>
             </div>
             {% if filter.q %}<input type="hidden" name="q" value="{{ filter.q }}">{% endif %}
 
             <div class="stack-sm">
-                <span class="label-caps">Periodo</span>
+                <span class="label-caps">{{ 'Periodo'|trans }}</span>
                 <div class="chips">
-                    {% for value, label in {month: 'Mese', 'last-month': 'Mese scorso', year: 'Quest’anno', all: 'Sempre', custom: 'Intervallo'} %}
+                    {% for value, label in {month: 'Mese'|trans, 'last-month': 'Mese scorso'|trans, year: 'Quest’anno'|trans, all: 'Sempre'|trans, custom: 'Intervallo'|trans} %}
                         <label class="chip"><input type="radio" name="period" value="{{ value }}" {{ filter.period == value ? 'checked' }}>{{ label }}</label>
                     {% endfor %}
                 </div>
                 {% if month %}<input type="hidden" name="month" value="{{ month|date('Y-m') }}">{% endif %}
                 <div class="grid-2">
-                    <label class="field"><span class="field__label">Dal (intervallo)</span><input type="date" name="from" value="{{ filter.period == 'custom' and filter.from ? filter.from|date('Y-m-d') }}"></label>
-                    <label class="field"><span class="field__label">Al (intervallo)</span><input type="date" name="to" value="{{ filter.period == 'custom' and filter.to ? filter.to|date('Y-m-d') }}"></label>
+                    <label class="field"><span class="field__label">{{ 'Dal (intervallo)'|trans }}</span><input type="date" name="from" value="{{ filter.period == 'custom' and filter.from ? filter.from|date('Y-m-d') }}"></label>
+                    <label class="field"><span class="field__label">{{ 'Al (intervallo)'|trans }}</span><input type="date" name="to" value="{{ filter.period == 'custom' and filter.to ? filter.to|date('Y-m-d') }}"></label>
                 </div>
             </div>
 
             <div class="stack-sm">
-                <span class="label-caps">Tipo</span>
+                <span class="label-caps">{{ 'Tipo'|trans }}</span>
                 <div class="seg seg--inset">
-                    {% for value, label in {'': 'Tutti', expense: 'Uscite', income: 'Entrate', transfer: 'Giroconti'} %}
+                    {% for value, label in {'': 'Tutti'|trans, expense: 'Uscite'|trans, income: 'Entrate'|trans, transfer: 'Giroconti'|trans} %}
                         <label><input type="radio" name="kind" value="{{ value }}" {{ (filter.kind ?? '') == value ? 'checked' }}>{{ label }}</label>
                     {% endfor %}
                 </div>
@@ -143,7 +143,7 @@
             {% set trees = categoryTrees|filter(t => t.tree is not empty) %}
             {% if trees is not empty %}
             <div class="stack-sm">
-                <span class="label-caps">Categorie</span>
+                <span class="label-caps">{{ 'Categorie'|trans }}</span>
                 {% for t in trees %}
                     {% set ids = [] %}
                     {% for parent in t.tree %}{% set ids = ids|merge([parent.id]|merge(parent.children|map(c => c.id))) %}{% endfor %}
@@ -151,8 +151,8 @@
                     <details class="filter-group" {{ chosen ? 'open' }}>
                         <summary class="filter-group__head">
                             <span class="chip__dot" style="--c: {{ t.account.color }}"></span>
-                            <span class="grow ellipsis">{{ trees|length > 1 ? t.account.name : 'Tutte le categorie' }}</span>
-                            <span class="filter-group__badge">attive</span>
+                            <span class="grow ellipsis">{{ trees|length > 1 ? t.account.name : 'Tutte le categorie'|trans }}</span>
+                            <span class="filter-group__badge">{{ 'attive'|trans }}</span>
                             {{ icon('chevron-down', 18, 'filter-group__chev') }}
                         </summary>
                         <div class="chips filter-group__body">
@@ -170,7 +170,7 @@
 
             {% if tags is not empty %}
             <div class="stack-sm">
-                <span class="label-caps">Etichette</span>
+                <span class="label-caps">{{ 'Etichette'|trans }}</span>
                 <div class="chips">
                     {% for tag in tags %}
                         <label class="chip"><input type="checkbox" name="tag[]" value="{{ tag.id }}" {{ tag.id in filter.tags ? 'checked' }}>#{{ tag.name }}</label>
@@ -181,11 +181,11 @@
 
             {% if accounts|length > 1 %}
             <div class="stack-sm">
-                <span class="label-caps">Conti</span>
+                <span class="label-caps">{{ 'Conti'|trans }}</span>
                 {# Nessun conto spuntato = tutti (senza parametro si tornerebbe al solo predefinito) #}
                 <input type="hidden" name="account[]" value="all">
                 <div class="chips" data-controller="account-chips">
-                    <label class="chip"><input type="checkbox" data-account-chips-target="all" data-action="account-chips#all" {{ filter.accounts is empty ? 'checked' }}>Tutti</label>
+                    <label class="chip"><input type="checkbox" data-account-chips-target="all" data-action="account-chips#all" {{ filter.accounts is empty ? 'checked' }}>{{ 'Tutti'|trans }}</label>
                     {% for a in accounts %}
                         <label class="chip"><input type="checkbox" name="account[]" value="{{ a.id }}" data-account-chips-target="one" data-action="account-chips#one" {{ a.id in filter.accounts ? 'checked' }}><span class="chip__dot" style="--c: {{ a.color }}"></span>{{ a.name }}</label>
                     {% endfor %}
@@ -195,9 +195,9 @@
 
             {% if vehicles is not empty %}
             <div class="stack-sm">
-                <span class="label-caps">Veicolo</span>
+                <span class="label-caps">{{ 'Veicolo'|trans }}</span>
                 <div class="chips">
-                    <label class="chip"><input type="radio" name="vehicle" value="" {{ not filter.vehicle ? 'checked' }}>Tutti</label>
+                    <label class="chip"><input type="radio" name="vehicle" value="" {{ not filter.vehicle ? 'checked' }}>{{ 'Tutti'|trans }}</label>
                     {% for v in vehicles %}
                         <label class="chip"><input type="radio" name="vehicle" value="{{ v.id }}" {{ filter.vehicle == v.id ? 'checked' }}>{{ v.name }}</label>
                     {% endfor %}
@@ -206,14 +206,14 @@
             {% endif %}
 
             <div class="stack-sm">
-                <span class="label-caps">Importo</span>
+                <span class="label-caps">{{ 'Importo'|trans }}</span>
                 <div class="grid-2">
-                    <label class="field"><span class="field__label">Minimo €</span><input type="text" inputmode="decimal" name="min" value="{{ filter.min is not null ? filter.min|input_num }}" placeholder="0"></label>
-                    <label class="field"><span class="field__label">Massimo €</span><input type="text" inputmode="decimal" name="max" value="{{ filter.max is not null ? filter.max|input_num }}" placeholder="nessuno"></label>
+                    <label class="field"><span class="field__label">{{ 'Minimo €'|trans }}</span><input type="text" inputmode="decimal" name="min" value="{{ filter.min is not null ? filter.min|input_num }}" placeholder="0"></label>
+                    <label class="field"><span class="field__label">{{ 'Massimo €'|trans }}</span><input type="text" inputmode="decimal" name="max" value="{{ filter.max is not null ? filter.max|input_num }}" placeholder="{{ 'nessuno'|trans }}"></label>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn--block">Mostra risultati</button>
+            <button type="submit" class="btn btn--block">{{ 'Mostra risultati'|trans }}</button>
         </form>
     </dialog>
 </div>

@@ -1,49 +1,49 @@
 {% extends 'base.html.twig' %}
 {% set hide_tabbar = true %}
-{% block title %}{{ isNew ? 'Nuovo utente' : user.displayName }}{% endblock %}
+{% block title %}{{ isNew ? 'Nuovo utente'|trans : user.displayName }}{% endblock %}
 {% block body %}
 <form method="post" class="page page--plain form">
     <input type="hidden" name="_token" value="{{ csrf_token('admin-user') }}">
     <div class="topbar">
-        <a href="{{ path('admin_user_index') }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
-        <span class="topbar__center">{{ isNew ? 'Nuovo utente' : 'Modifica utente' }}</span>
+        <a href="{{ path('admin_user_index') }}" class="icon-btn" aria-label="{{ 'Indietro'|trans }}">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">{{ isNew ? 'Nuovo utente'|trans : 'Modifica utente'|trans }}</span>
         <span style="width: 44px"></span>
     </div>
     <label class="field {{ errors.username is defined ? 'has-error' }}">
-        <span class="field__label">Nome utente (per l'accesso)</span>
+        <span class="field__label">{{ "Nome utente (per l'accesso)"|trans }}</span>
         <input type="text" name="username" value="{{ user.username }}" {{ not isNew ? 'disabled' }} required autocapitalize="none" autocomplete="off" pattern="[a-zA-Z0-9._\-]{3,40}">
         {% if errors.username is defined %}<span class="field__error">{{ errors.username }}</span>{% endif %}
     </label>
     <label class="field">
-        <span class="field__label">Nome visualizzato</span>
-        <input type="text" name="display_name" value="{{ user.displayName != user.username ? user.displayName }}" maxlength="100" placeholder="es. Giulia">
+        <span class="field__label">{{ 'Nome visualizzato'|trans }}</span>
+        <input type="text" name="display_name" value="{{ user.displayName != user.username ? user.displayName }}" maxlength="100" placeholder="{{ 'es. Giulia'|trans }}">
     </label>
     <label class="field {{ errors.password is defined ? 'has-error' }}">
-        <span class="field__label">{{ isNew ? 'Password' : 'Nuova password (vuoto = invariata)' }}</span>
+        <span class="field__label">{{ isNew ? 'Password'|trans : 'Nuova password (vuoto = invariata)'|trans }}</span>
         <input type="password" name="password" autocomplete="new-password" {{ isNew ? 'required' }} minlength="8">
         {% if errors.password is defined %}<span class="field__error">{{ errors.password }}</span>{% endif %}
     </label>
     {% if user != app.user %}
         <div class="card card--tight" style="gap: 0">
             <label class="switch">
-                <span class="switch__text"><span>Amministratore</span><small>può creare e gestire gli utenti</small></span>
+                <span class="switch__text"><span>{{ 'Amministratore'|trans }}</span><small>{{ 'può creare e gestire gli utenti'|trans }}</small></span>
                 <input type="checkbox" name="admin" value="1" {{ user.admin ? 'checked' }}>
             </label>
             <label class="switch">
-                <span class="switch__text"><span>Attivo</span><small>se lo spegni non può più accedere</small></span>
+                <span class="switch__text"><span>{{ 'Attivo'|trans }}</span><small>{{ 'se lo spegni non può più accedere'|trans }}</small></span>
                 <input type="checkbox" name="active" value="1" {{ user.active ? 'checked' }}>
             </label>
         </div>
     {% endif %}
-    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}{{ isNew ? 'Crea utente' : 'Salva' }}</button>
+    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}{{ isNew ? 'Crea utente'|trans : 'Salva'|trans }}</button>
 </form>
 {% if not isNew and user != app.user %}
     <form method="post" action="{{ path('admin_user_delete', {id: user.id}) }}" class="page page--plain form" style="padding-top: 0">
         <input type="hidden" name="_token" value="{{ csrf_token('delete-user-' ~ user.id) }}">
         <div class="card card--warn card--tight">
-            <span class="strong">Elimina utente e tutti i suoi dati</span>
-            <label class="field field--on-bg"><span class="field__label">Scrivi "{{ user.username }}" per confermare</span><input type="text" name="confirm" autocomplete="off" autocapitalize="none"></label>
-            <button type="submit" class="btn btn--danger btn--sm">{{ icon('trash-2', 18) }}Elimina definitivamente</button>
+            <span class="strong">{{ 'Elimina utente e tutti i suoi dati'|trans }}</span>
+            <label class="field field--on-bg"><span class="field__label">{{ 'Scrivi "%word%" per confermare'|trans({'%word%': user.username}) }}</span><input type="text" name="confirm" autocomplete="off" autocapitalize="none"></label>
+            <button type="submit" class="btn btn--danger btn--sm">{{ icon('trash-2', 18) }}{{ 'Elimina definitivamente'|trans }}</button>
         </div>
     </form>
 {% endif %}

@@ -2,53 +2,53 @@
 {% import '_ui.html.twig' as ui %}
 {% set hide_tabbar = true %}
 {% set isNew = vehicle.id is null %}
-{% block title %}{{ isNew ? 'Nuovo veicolo' : vehicle.name }}{% endblock %}
+{% block title %}{{ isNew ? 'Nuovo veicolo'|trans : vehicle.name }}{% endblock %}
 {% block body %}
 <form method="post" class="page page--plain form">
     <input type="hidden" name="_token" value="{{ csrf_token('vehicle') }}">
     <input type="hidden" name="_back" value="{{ back }}">
     <div class="topbar">
-        <a href="{{ back ?: (isNew ? path('vehicle_index') : path('vehicle_show', {id: vehicle.id})) }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
-        <span class="topbar__center">{{ isNew ? 'Nuovo veicolo' : 'Modifica veicolo' }}</span>
+        <a href="{{ back ?: (isNew ? path('vehicle_index') : path('vehicle_show', {id: vehicle.id})) }}" class="icon-btn" aria-label="{{ 'Indietro'|trans }}">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">{{ isNew ? 'Nuovo veicolo'|trans : 'Modifica veicolo'|trans }}</span>
         <span style="width: 44px"></span>
     </div>
     <label class="field {{ errors.name is defined ? 'has-error' }}">
-        <span class="field__label">Nome</span>
-        <input type="text" name="name" value="{{ vehicle.name }}" maxlength="80" required placeholder="es. Fiat Panda" {{ isNew ? 'autofocus' }}>
+        <span class="field__label">{{ 'Nome'|trans }}</span>
+        <input type="text" name="name" value="{{ vehicle.name }}" maxlength="80" required placeholder="{{ 'es. Fiat Panda'|trans }}" {{ isNew ? 'autofocus' }}>
         {% if errors.name is defined %}<span class="field__error">{{ errors.name }}</span>{% endif %}
     </label>
     <div class="grid-2">
-        <label class="field"><span class="field__label">Tipo</span>
-            <select name="kind">{% for k, label in kinds %}<option value="{{ k }}" {{ vehicle.kind == k ? 'selected' }}>{{ label }}</option>{% endfor %}</select>
+        <label class="field"><span class="field__label">{{ 'Tipo'|trans }}</span>
+            <select name="kind">{% for k, label in kinds %}<option value="{{ k }}" {{ vehicle.kind == k ? 'selected' }}>{{ label|trans }}</option>{% endfor %}</select>
         </label>
-        <label class="field"><span class="field__label">Alimentazione</span>
-            <select name="fuel_type">{% for k, label in fuels %}<option value="{{ k }}" {{ vehicle.fuelType == k ? 'selected' }}>{{ label }}</option>{% endfor %}</select>
+        <label class="field"><span class="field__label">{{ 'Alimentazione'|trans }}</span>
+            <select name="fuel_type">{% for k, label in fuels %}<option value="{{ k }}" {{ vehicle.fuelType == k ? 'selected' }}>{{ label|trans }}</option>{% endfor %}</select>
         </label>
     </div>
     <div class="grid-2">
-        <label class="field"><span class="field__label">Targa</span><input type="text" name="plate" value="{{ vehicle.plate }}" maxlength="20" autocapitalize="characters" placeholder="facoltativa"></label>
-        <label class="field"><span class="field__label">Km iniziali</span><input type="text" inputmode="numeric" name="initial_odometer" value="{{ vehicle.initialOdometer }}" placeholder="facoltativi"></label>
+        <label class="field"><span class="field__label">{{ 'Targa'|trans }}</span><input type="text" name="plate" value="{{ vehicle.plate }}" maxlength="20" autocapitalize="characters" placeholder="{{ 'facoltativa'|trans }}"></label>
+        <label class="field"><span class="field__label">{{ 'Km iniziali'|trans }}</span><input type="text" inputmode="numeric" name="initial_odometer" value="{{ vehicle.initialOdometer }}" placeholder="{{ 'facoltativi'|trans }}"></label>
     </div>
-    <label class="field"><span class="field__label">Serbatoio ({{ vehicle.electric ? 'kWh' : 'litri' }})</span><input type="text" inputmode="decimal" name="tank_capacity" value="{{ vehicle.tankCapacity ? vehicle.tankCapacity|input_num(1) : '' }}" placeholder="es. 54, facoltativo"></label>
-    <p class="hint">I km iniziali servono a contare i chilometri fatti prima del primo rifornimento registrato; la capacità del serbatoio a stimare l'autonomia con il consumo medio.</p>
+    <label class="field"><span class="field__label">{{ 'Serbatoio (%unit%)'|trans({'%unit%': vehicle.electric ? 'kWh' : 'litri'|trans}) }}</span><input type="text" inputmode="decimal" name="tank_capacity" value="{{ vehicle.tankCapacity ? vehicle.tankCapacity|input_num(1) : '' }}" placeholder="{{ 'es. 54, facoltativo'|trans }}"></label>
+    <p class="hint">{{ 'I km iniziali servono a contare i chilometri fatti prima del primo rifornimento registrato; la capacità del serbatoio a stimare l\'autonomia con il consumo medio.'|trans }}</p>
     <section class="card card--tight">
-        <span class="label-caps">Colore</span>
+        <span class="label-caps">{{ 'Colore'|trans }}</span>
         {{ ui.color_picker('color', vehicle.color) }}
     </section>
     {% if not isNew %}
         <div class="card card--tight" style="gap: 0">
             <label class="switch">
-                <span class="switch__text"><span>Archiviato</span><small>venduto o non più in uso: lo storico resta</small></span>
+                <span class="switch__text"><span>{{ 'Archiviato'|trans }}</span><small>{{ 'venduto o non più in uso: lo storico resta'|trans }}</small></span>
                 <input type="checkbox" name="archived" value="1" {{ vehicle.archived ? 'checked' }}>
             </label>
         </div>
     {% endif %}
-    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}Salva</button>
+    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}{{ 'Salva'|trans }}</button>
 </form>
 {% if not isNew %}
-    <form method="post" action="{{ path('vehicle_delete', {id: vehicle.id}) }}" class="page page--plain" style="padding-top: 0" data-turbo-confirm="Eliminare il veicolo?">
+    <form method="post" action="{{ path('vehicle_delete', {id: vehicle.id}) }}" class="page page--plain" style="padding-top: 0" data-confirm-kind="delete" data-turbo-confirm="{{ 'Eliminare il veicolo?'|trans }}">
         <input type="hidden" name="_token" value="{{ csrf_token('delete-vehicle-' ~ vehicle.id) }}">
-        <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}Elimina veicolo</button>
+        <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}{{ 'Elimina veicolo'|trans }}</button>
     </form>
 {% endif %}
 {% endblock %}

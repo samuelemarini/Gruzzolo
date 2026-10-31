@@ -2,7 +2,9 @@
 
 namespace App\Twig;
 
+use App\Service\Language;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Attribute\AsTwigFilter;
 use Twig\Attribute\AsTwigFunction;
 
@@ -16,6 +18,7 @@ final class AppExtension
     public function __construct(
         #[Autowire('%kernel.project_dir%/resources/icons')]
         private readonly string $iconDir,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -27,6 +30,20 @@ final class AppExtension
     }
 
     /** @return array<string, array{string, string, string}> */
+    /** [decimali, migliaia] della lingua attiva, per <html data-decimal data-group> e il tastierino. */
+    #[AsTwigFunction('number_separators')]
+    public function numberSeparators(): array
+    {
+        return Language::separators();
+    }
+
+    /** @return array<string, string> codice => nome nella lingua stessa */
+    #[AsTwigFunction('languages')]
+    public function languages(): array
+    {
+        return Language::LANGUAGES;
+    }
+
     #[AsTwigFunction('palette_accents')]
     public function paletteAccents(): array
     {
@@ -59,12 +76,20 @@ final class AppExtension
         return preg_replace('/^<svg/', sprintf('<svg width="%d" height="%d" class="icon %s" %s', $size, $size, htmlspecialchars($class), $a11y), $this->icons[$name]) ?? '';
     }
 
+    /** Numero coi separatori della lingua attiva: "1.247,80" in italiano, "1,247.80" in inglese. */
+    private static function format(float $value, int $decimals, bool $grouping = true): string
+    {
+        [$decimal, $group] = Language::separators();
+
+        return number_format($value, $decimals, $decimal, $grouping ? $group : '');
+    }
+
     /** 1247.8 → "1.247,80 €"; con $signed "+1.247,80 €" / "−1.247,80 €". */
     #[AsTwigFilter('money')]
     public function money(float|int|string|null $value, bool $signed = false, int $decimals = 2): string
     {
         $value = (float) $value;
-        $text = number_format(abs($value), $decimals, ',', '.')."\u{00A0}€";
+        $text = self::format(abs($value), $decimals)."\u{00A0}€";
         if ($value < 0 && round($value, $decimals) != 0) {
             return self::MINUS.$text;
         }
@@ -86,14 +111,14 @@ final class AppExtension
     #[AsTwigFilter('num')]
     public function num(float|int|string|null $value, int $decimals = 0): string
     {
-        return number_format((float) $value, $decimals, ',', '.');
+        return self::format((float) $value, $decimals);
     }
 
-    /** Valore per un <input> modificabile: "1247,80" (virgola, niente migliaia). */
+    /** Valore per un <input> modificabile: "1247,80" (decimali della lingua, niente migliaia). */
     #[AsTwigFilter('input_num')]
     public function inputNum(float|int|string|null $value, int $decimals = 2): string
     {
-        return $value === null || $value === '' ? '' : number_format((float) $value, $decimals, ',', '');
+        return $value === null || $value === '' ? '' : self::format((float) $value, $decimals, false);
     }
 
     #[AsTwigFilter('pct')]
@@ -102,7 +127,7 @@ final class AppExtension
         if ($value === null) {
             return '—';
         }
-        $text = number_format(abs($value), $decimals, ',', '.').'%';
+        $text = self::format(abs($value), $decimals).'%';
         if ($value < 0 && round($value, $decimals) != 0) {
             return self::MINUS.$text;
         }
@@ -110,14 +135,14 @@ final class AppExtension
         return $signed && round($value, $decimals) != 0 ? '+'.$text : $text;
     }
 
-    /** Date in italiano con i pattern ICU: "EEEE d MMMM", "MMM yyyy"... */
-    #[AsTwigFilter('it_date')]
-    public function itDate(?\DateTimeInterface $date, string $pattern = 'd MMM yyyy'): string
+    /** Date nella lingua attiva con i pattern ICU: "EEEE d MMMM", "MMM yyyy"... */
+    #[AsTwigFilter('local_date')]
+    public function localDate(?\DateTimeInterface $date, string $pattern = 'd MMM yyyy'): string
     {
         if ($date === null) {
             return '';
         }
-        $formatter = new \IntlDateFormatter('it_IT', \IntlDateFormatter::NONE, \IntlDateFormatter::NONE, 'Europe/Rome', null, $pattern);
+        $formatter = new \IntlDateFormatter(Language::current(), \IntlDateFormatter::NONE, \IntlDateFormatter::NONE, 'Europe/Rome', null, $pattern);
 
         return (string) $formatter->format($date);
     }
@@ -126,7 +151,7 @@ final class AppExtension
     #[AsTwigFilter('month_label')]
     public function monthLabel(\DateTimeInterface $date): string
     {
-        return mb_convert_case($this->itDate($date, 'LLLL yyyy'), MB_CASE_TITLE);
+        return mb_convert_case($this->localDate($date, 'LLLL yyyy'), MB_CASE_TITLE);
     }
 
     /** Intestazione dei gruppi per giorno: "Oggi · venerdì 16 ott", "Ieri · ...", "Mercoledì 14 ott". */
@@ -136,11 +161,11 @@ final class AppExtension
         $today = new \DateTimeImmutable('today');
         $day = \DateTimeImmutable::createFromInterface($date)->setTime(0, 0);
         $withYear = $day->format('Y') !== $today->format('Y');
-        $text = $this->itDate($day, $withYear ? 'EEEE d MMM yyyy' : 'EEEE d MMM');
+        $text = $this->localDate($day, $withYear ? 'EEEE d MMM yyyy' : 'EEEE d MMM');
 
         return match ((int) $today->diff($day)->format('%r%a')) {
-            0 => 'Oggi · '.$text,
-            -1 => 'Ieri · '.$text,
+            0 => $this->translator->trans('Oggi').' · '.$text,
+            -1 => $this->translator->trans('Ieri').' · '.$text,
             default => mb_strtoupper(mb_substr($text, 0, 1)).mb_substr($text, 1),
         };
     }
@@ -153,9 +178,9 @@ final class AppExtension
         $day = \DateTimeImmutable::createFromInterface($date)->setTime(0, 0);
 
         return match ((int) $today->diff($day)->format('%r%a')) {
-            0 => 'Oggi',
-            -1 => 'Ieri',
-            default => $this->itDate($day, $day->format('Y') === $today->format('Y') ? 'd MMM' : 'd MMM yyyy'),
+            0 => $this->translator->trans('Oggi'),
+            -1 => $this->translator->trans('Ieri'),
+            default => $this->localDate($day, $day->format('Y') === $today->format('Y') ? 'd MMM' : 'd MMM yyyy'),
         };
     }
 }

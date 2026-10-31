@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { t, separators, parseNumber, formatNumber } from '../i18n.js';
 
 /*
  * Rifornimento: dei tre valori prezzo/litri/totale si calcola quello che non e' fra gli ultimi due
@@ -20,7 +21,7 @@ export default class extends Controller {
         // In modifica i tre valori ci sono gia': si considerano "scelti" prezzo e totale.
         if (this.priceTarget.value && this.totalTarget.value) this.order = ['total', 'price'];
         this.onAmount = () => {
-            this.totalTarget.value = this.amount.value.replace(/\./g, '');
+            this.totalTarget.value = this.amount.value.replaceAll(separators().group, '');
             this.touch('total');
             this.compute();
         };
@@ -37,7 +38,7 @@ export default class extends Controller {
         const field = event.currentTarget.dataset.field;
         this.touch(field);
         if (field === 'total') {
-            // L'importo vuole la virgola: un "1.5" scritto qui e' 1,50, non 15
+            // L'importo vuole i decimali della lingua: un "1.5" scritto qui in italiano e' 1,50, non 15
             const total = this.num(this.totalTarget.value);
             this.amount.value = total ? this.fmt(total, 2) : '';
         }
@@ -83,8 +84,8 @@ export default class extends Controller {
 
     vehicleChanged() {
         const electric = this.selectedVehicle?.dataset.electric === '1';
-        this.priceLabelTarget.textContent = electric ? '€ / kWh' : '€ / litro';
-        this.litersLabelTarget.textContent = electric ? 'kWh' : 'Litri';
+        this.priceLabelTarget.textContent = electric ? '€ / kWh' : t('€ / litro');
+        this.litersLabelTarget.textContent = electric ? 'kWh' : t('Litri');
         this.effUnitTarget.textContent = electric ? 'km/kWh' : 'km/l';
         this.per100UnitTarget.textContent = electric ? 'kWh/100 km' : 'l/100 km';
         this.update();
@@ -98,7 +99,7 @@ export default class extends Controller {
         if (!this.hasOdometerTarget) return;
         const vehicle = this.selectedVehicle;
         const last = vehicle ? this.odometersValue[vehicle.value] : null;
-        this.lastKmTarget.textContent = last ? `ultimo: ${this.int(last)} km` : '';
+        this.lastKmTarget.textContent = last ? t('ultimo: %km% km', { km: this.int(last) }) : '';
         const odometer = parseInt(this.odometerTarget.value.replace(/\D/g, ''), 10) || null;
         const km = last && odometer && odometer > last ? odometer - last : null;
         this.deltaTarget.textContent = km ? `+${this.int(km)} km` : '';
@@ -121,7 +122,7 @@ export default class extends Controller {
             this.averageValueTarget.textContent = `${this.fmt(average.value, 1)} ${unit}`;
             this.averageLabelTarget.textContent = average.label;
             const diff = show ? ((km / liters) / average.value - 1) * 100 : null;
-            this.averageCompareTarget.textContent = diff !== null ? `Questo pieno: ${diff >= 0 ? '+' : '−'}${this.fmt(Math.abs(diff), 0)}% rispetto alla media` : '';
+            this.averageCompareTarget.textContent = diff !== null ? t('Questo pieno: %diff%% rispetto alla media', { diff: (diff >= 0 ? '+' : '−') + this.fmt(Math.abs(diff), 0) }) : '';
             this.averageCompareTarget.hidden = diff === null;
             this.averageCompareTarget.classList.toggle('text-income', diff !== null && diff >= 0);
             this.averageCompareTarget.classList.toggle('text-expense', diff !== null && diff < 0);
@@ -129,17 +130,15 @@ export default class extends Controller {
     }
 
     num(text) {
-        let value = String(text || '').trim().replace(/[\s€]/g, '');
-        if (value.includes(',')) value = value.replace(/\./g, '').replace(',', '.');
-        const n = parseFloat(value);
-        return Number.isFinite(n) && n > 0 ? n : null;
+        const n = parseNumber(text);
+        return n !== null && n > 0 ? n : null;
     }
 
     fmt(n, decimals) {
-        return n.toLocaleString('it-IT', { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: false });
+        return formatNumber(n, decimals, false);
     }
 
     int(n) {
-        return Math.round(n).toLocaleString('it-IT');
+        return formatNumber(Math.round(n), 0);
     }
 }

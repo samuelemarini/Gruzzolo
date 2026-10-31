@@ -6,8 +6,12 @@ use App\Entity\Account;
 use App\Entity\Category;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
-/** Cio' che ogni nuovo utente trova gia' pronto: un conto e un set di categorie da personalizzare. */
+/**
+ * Cio' che ogni nuovo utente trova gia' pronto: un conto e un set di categorie da personalizzare, coi nomi
+ * nella lingua di chi li crea (da console l'italiano: app:demo cerca le categorie per nome italiano).
+ */
 final class UserSeeder
 {
     private const EXPENSE = [
@@ -31,13 +35,15 @@ final class UserSeeder
         ['Altre entrate', 'hand-coins', '#A3A59F'],
     ];
 
-    public function __construct(private readonly EntityManagerInterface $em)
-    {
+    public function __construct(
+        private readonly EntityManagerInterface $em,
+        private readonly TranslatorInterface $translator,
+    ) {
     }
 
     public function seed(User $user): void
     {
-        $account = (new Account($user))->setName('Conto principale')->setKind('checking')->setColor('#8AB4FF')->setIsDefault(true);
+        $account = (new Account($user))->setName($this->translator->trans('Conto principale'))->setKind('checking')->setColor('#8AB4FF')->setIsDefault(true);
         $this->em->persist($account);
         $this->seedCategories($account);
     }
@@ -46,10 +52,10 @@ final class UserSeeder
     public function seedCategories(Account $account): void
     {
         foreach (self::EXPENSE as $pos => [$name, $icon, $color, $children]) {
-            $parent = (new Category($account))->setName($name)->setIcon($icon)->setColor($color)->setKind(Category::EXPENSE)->setPosition($pos);
+            $parent = (new Category($account))->setName($this->translator->trans($name))->setIcon($icon)->setColor($color)->setKind(Category::EXPENSE)->setPosition($pos);
             $this->em->persist($parent);
             foreach ($children as $childPos => $child) {
-                $sub = (new Category($account))->setParent($parent)->setName($child[0])->setIcon($child[1])
+                $sub = (new Category($account))->setParent($parent)->setName($this->translator->trans($child[0]))->setIcon($child[1])
                     ->setColor($color)->setKind(Category::EXPENSE)->setFuel($child[2] ?? false)->setPosition($childPos);
                 // Anche nella collezione del padre: chi copia le categorie subito dopo (app:demo) le deve vedere
                 $parent->getChildren()->add($sub);
@@ -57,7 +63,7 @@ final class UserSeeder
             }
         }
         foreach (self::INCOME as $pos => [$name, $icon, $color]) {
-            $this->em->persist((new Category($account))->setName($name)->setIcon($icon)->setColor($color)->setKind(Category::INCOME)->setPosition($pos));
+            $this->em->persist((new Category($account))->setName($this->translator->trans($name))->setIcon($icon)->setColor($color)->setKind(Category::INCOME)->setPosition($pos));
         }
     }
 }

@@ -9,6 +9,7 @@ use App\Service\ChartBuilder;
 use App\Service\Palette;
 use App\Util\Money;
 use App\Util\Param;
+use App\Util\Trans;
 use App\Service\VehicleStats;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -84,24 +85,24 @@ final class VehicleController extends AppController
 
         // Costi del veicolo: carburante e le categorie delle altre spese (per la ciambella).
         $palette = ['#8AB4FF', '#FFB86B', '#C3A6FF', '#F3E06A', '#FF9EC7', '#9BE7A0', '#D9B48F'];
-        $costs = [['name' => 'Carburante', 'color' => $vehicle->getColor(), 'total' => $stats['fuelCost']]];
+        $costs = [['name' => $this->trans('Carburante'), 'color' => $vehicle->getColor(), 'total' => $stats['fuelCost'], 'fuel' => true]];
         foreach ($stats['otherCosts'] as $i => $c) {
-            $costs[] = ['name' => $c['name'], 'color' => $palette[$i % count($palette)], 'total' => $c['total']];
+            $costs[] = ['name' => $c['name'], 'color' => $palette[$i % count($palette)], 'total' => $c['total'], 'fuel' => false];
         }
         $costs = array_values(array_filter($costs, fn ($c) => $c['total'] > 0));
-        $others = array_slice($costs, $costs && $costs[0]['name'] === 'Carburante' ? 1 : 0);
+        $others = array_slice($costs, $costs && $costs[0]['fuel'] ? 1 : 0);
 
         return $this->render('vehicle/show.html.twig', [
             'vehicle' => $vehicle,
             'stats' => $stats,
             'period' => $period,
-            'periods' => self::PERIODS,
+            'periods' => Trans::labels(self::PERIODS),
             'from' => $from,
             'to' => $to,
             // Parametri del periodo da tenere nei link (schede comprese).
             'range' => $period === 'custom' ? ['period' => 'custom', 'from' => $from->format('Y-m-d'), 'to' => $to->format('Y-m-d')] : ['period' => $period],
             'tab' => $tab,
-            'tabs' => self::TABS,
+            'tabs' => Trans::labels(self::TABS),
             'refuelsPage' => $refuelsPage,
             'refuelsShown' => self::REFUELS_PAGE * $refuelsPage,
             'series' => $series,
@@ -158,13 +159,13 @@ final class VehicleController extends AppController
         $vehicle = $this->own($this->vehicles->find($id));
         $this->checkCsrf($request, 'delete-vehicle-'.$id);
         if ($this->em->getRepository(Movement::class)->count(['vehicle' => $vehicle]) > 0) {
-            $this->addFlash('error', 'Il veicolo ha dei movimenti: archivialo per conservare lo storico');
+            $this->addFlash('error', $this->trans('Il veicolo ha dei movimenti: archivialo per conservare lo storico'));
 
             return $this->redirectToRoute('vehicle_edit', ['id' => $id], 303);
         }
         $this->em->remove($vehicle);
         $this->em->flush();
-        $this->addFlash('success', 'Veicolo eliminato');
+        $this->addFlash('success', $this->trans('Veicolo eliminato'));
 
         return $this->redirectToRoute('vehicle_index', [], 303);
     }
@@ -180,24 +181,24 @@ final class VehicleController extends AppController
                 ->setArchived($data->getBoolean('archived'));
             $odometer = preg_replace('/\D/', '', (string) $data->get('initial_odometer'));
             $vehicle->setInitialOdometer($odometer !== '' ? (int) $odometer : null);
-            $tank = Money::parse((string) $data->get('tank_capacity'));
+            $tank = Money::parseLocal((string) $data->get('tank_capacity'));
             $vehicle->setTankCapacity($tank !== null ? (float) $tank : null);
             $color = (string) $data->get('color');
             $vehicle->setColor(array_key_exists($color, Palette::COLORS) ? $color : '#6FDCCB');
             if ($vehicle->getName() === '') {
-                $errors['name'] = 'Dai un nome al veicolo';
+                $errors['name'] = $this->trans('Dai un nome al veicolo');
             }
             if (!$errors) {
                 $this->em->persist($vehicle);
                 $this->em->flush();
-                $this->addFlash('success', 'Veicolo salvato');
+                $this->addFlash('success', $this->trans('Veicolo salvato'));
 
                 return $this->back($request, 'vehicle_show', ['id' => $vehicle->getId()]);
             }
         }
 
         return $this->render('vehicle/form.html.twig', [
-            'vehicle' => $vehicle, 'errors' => $errors, 'kinds' => Vehicle::KINDS, 'fuels' => Vehicle::FUELS,
+            'vehicle' => $vehicle, 'errors' => $errors, 'kinds' => Trans::labels(Vehicle::KINDS), 'fuels' => Trans::labels(Vehicle::FUELS),
             'back' => (string) ($request->request->get('_back') ?: $request->query->get('back', '')),
         ], new Response(status: $errors ? 422 : 200));
     }

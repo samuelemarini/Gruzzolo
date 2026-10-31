@@ -16,7 +16,8 @@
 {%- set userAccent = palette_accents()[app.user ? app.user.accent : 'lime'] -%}
 {%- set iconShape = app.user ? app.user.iconShape : 'anello' -%}
 {%- set iconColor = app.user ? app.user.iconAccent : 'indaco' -%}
-<html lang="it" data-theme="{{ app.user ? app.user.theme : 'system' }}" data-style="{{ app.user ? app.user.style : 'classic' }}" style="--user-accent: {{ userAccent[1] }}; --user-accent-text: {{ userAccent[2] }}">
+{%- set separators = number_separators() -%}
+<html lang="{{ app.request.locale }}" data-decimal="{{ separators[0] }}" data-group="{{ separators[1] }}" data-theme="{{ app.user ? app.user.theme : 'system' }}" data-style="{{ app.user ? app.user.style : 'classic' }}" style="--user-accent: {{ userAccent[1] }}; --user-accent-text: {{ userAccent[2] }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -37,33 +38,41 @@
     {% block importmap %}{{ importmap('app') }}{% endblock %}
 </head>
 <body>
+{# Testi degli script (assets/i18n.js): la frase italiana e' la chiave, come nei template #}
+{%- set js_strings = {} -%}
+{%- for key in ['Elimina', 'Togli', 'Esci dal conto', 'Sì, annulla', 'No', 'Riordina', 'Copia', 'Conferma', 'Annulla', 'Salvo…', 'Salvato', 'Errore',
+    'Ritirati €', 'Versati €', 'Aggiornamento', 'nessuna', '€ / litro', 'Litri', 'ultimo: %km% km', 'Questo pieno: %diff%% rispetto alla media',
+    'Da conto', 'Conto'] -%}
+    {%- set js_strings = js_strings|merge({(key): key|trans}) -%}
+{%- endfor %}
+<script type="application/json" id="i18n">{{ js_strings|json_encode(constant('JSON_UNESCAPED_UNICODE'))|raw }}</script>
 {% if app.user %}
-    <aside class="sidebar" aria-label="Menu">
+    <aside class="sidebar" aria-label="{{ 'Menu'|trans }}">
         <a href="{{ path('app_home') }}" class="brand"><img class="brand__mark" src="{{ path('pwa_icon', {shape: iconShape, color: iconColor, file: 'icon.svg'}) }}" alt="" width="34" height="34"><span class="brand__name">Gruzzolo</span></a>
-        <a href="{{ path('movement_new') }}" class="btn btn--sm">{{ icon('plus', 18) }}Nuovo movimento</a>
+        <a href="{{ path('movement_new') }}" class="btn btn--sm">{{ icon('plus', 18) }}{{ 'Nuovo movimento'|trans }}</a>
         <nav>
             {% for item in [
-                ['app_home', 'home', 'house', 'Home'],
-                ['movement_index', 'movements', 'list', 'Movimenti'],
-                ['report_index', 'report', 'chart-pie', 'Report'],
-                ['account_index', 'accounts', 'landmark', 'Conti'],
-                ['investment_index', 'investments', 'trending-up', 'Investimenti'],
-                ['vehicle_index', 'vehicles', 'car', 'Veicoli'],
-                ['category_index', 'categories', 'layout-grid', 'Categorie'],
-                ['tag_index', 'tags', 'tag', 'Etichette'],
+                ['app_home', 'home', 'house', 'Home'|trans],
+                ['movement_index', 'movements', 'list', 'Movimenti'|trans],
+                ['report_index', 'report', 'chart-pie', 'Report'|trans],
+                ['account_index', 'accounts', 'landmark', 'Conti'|trans],
+                ['investment_index', 'investments', 'trending-up', 'Investimenti'|trans],
+                ['vehicle_index', 'vehicles', 'car', 'Veicoli'|trans],
+                ['category_index', 'categories', 'layout-grid', 'Categorie'|trans],
+                ['tag_index', 'tags', 'tag', 'Etichette'|trans],
             ] %}
                 <a href="{{ path(item[0]) }}" class="{{ section == item[1] ? 'is-active' }}"{% if section == item[1] %} aria-current="page"{% endif %}>{{ icon(item[2]) }}{{ item[3] }}</a>
             {% endfor %}
         </nav>
         <div class="sidebar__foot">
             <nav>
-                <a href="#" class="privacy-toggle" data-controller="privacy" data-action="privacy#toggle">{{ icon('eye', 20, 'privacy-toggle__show') }}{{ icon('eye-off', 20, 'privacy-toggle__hide') }}<span class="privacy-toggle__show">Nascondi importi</span><span class="privacy-toggle__hide">Mostra importi</span></a>
+                <a href="#" class="privacy-toggle" data-controller="privacy" data-action="privacy#toggle">{{ icon('eye', 20, 'privacy-toggle__show') }}{{ icon('eye-off', 20, 'privacy-toggle__hide') }}<span class="privacy-toggle__show">{{ 'Nascondi importi'|trans }}</span><span class="privacy-toggle__hide">{{ 'Mostra importi'|trans }}</span></a>
                 {% if is_granted('ROLE_ADMIN') %}
-                    <a href="{{ path('admin_user_index') }}" class="{{ section == 'admin' ? 'is-active' }}">{{ icon('users') }}Utenti</a>
-                    <a href="{{ path('admin_backup') }}" class="{{ section == 'backup' ? 'is-active' }}">{{ icon('archive') }}Backup</a>
+                    <a href="{{ path('admin_user_index') }}" class="{{ section == 'admin' ? 'is-active' }}">{{ icon('users') }}{{ 'Utenti'|trans }}</a>
+                    <a href="{{ path('admin_backup') }}" class="{{ section == 'backup' ? 'is-active' }}">{{ icon('archive') }}{{ 'Backup'|trans }}</a>
                 {% endif %}
-                <a href="{{ path('import_index') }}" class="{{ section == 'import' ? 'is-active' }}">{{ icon('file-up') }}Importa</a>
-                <a href="{{ path('settings_index') }}" class="{{ section == 'settings' ? 'is-active' }}">{{ icon('settings') }}Impostazioni</a>
+                <a href="{{ path('import_index') }}" class="{{ section == 'import' ? 'is-active' }}">{{ icon('file-up') }}{{ 'Importa'|trans }}</a>
+                <a href="{{ path('settings_index') }}" class="{{ section == 'settings' ? 'is-active' }}">{{ icon('settings') }}{{ 'Impostazioni'|trans }}</a>
             </nav>
             <span class="sidebar__user">{{ app.user.displayName }}</span>
         </div>
@@ -76,12 +85,12 @@
 
 {% if app.user and not (hide_tabbar ?? false) %}
     <div class="fade-bottom" aria-hidden="true"></div>
-    <nav class="tabbar" aria-label="Navigazione principale">
-        <a href="{{ path('app_home') }}" class="{{ section == 'home' ? 'is-active' }}">{{ icon('house', 22) }}Home</a>
-        <a href="{{ path('movement_index') }}" class="{{ section == 'movements' ? 'is-active' }}">{{ icon('list', 22) }}Storico</a>
-        <a href="{{ path('movement_new') }}" class="fab" aria-label="Nuovo movimento">{{ icon('plus', 26) }}</a>
-        <a href="{{ path('report_index') }}" class="{{ section == 'report' ? 'is-active' }}">{{ icon('chart-pie', 22) }}Report</a>
-        <a href="{{ path('more_index') }}" class="{{ section not in ['home', 'movements', 'report'] ? 'is-active' }}">{{ icon('layout-grid', 22) }}Altro</a>
+    <nav class="tabbar" aria-label="{{ 'Navigazione principale'|trans }}">
+        <a href="{{ path('app_home') }}" class="{{ section == 'home' ? 'is-active' }}">{{ icon('house', 22) }}{{ 'Home'|trans }}</a>
+        <a href="{{ path('movement_index') }}" class="{{ section == 'movements' ? 'is-active' }}">{{ icon('list', 22) }}{{ 'Storico'|trans }}</a>
+        <a href="{{ path('movement_new') }}" class="fab" aria-label="{{ 'Nuovo movimento'|trans }}">{{ icon('plus', 26) }}</a>
+        <a href="{{ path('report_index') }}" class="{{ section == 'report' ? 'is-active' }}">{{ icon('chart-pie', 22) }}{{ 'Report'|trans }}</a>
+        <a href="{{ path('more_index') }}" class="{{ section not in ['home', 'movements', 'report'] ? 'is-active' }}">{{ icon('layout-grid', 22) }}{{ 'Altro'|trans }}</a>
     </nav>
 {% endif %}
 
@@ -100,8 +109,8 @@
                 <p class="confirm__text"></p>
             </div>
             <div class="confirm__actions">
-                <button type="submit" value="cancel" class="btn btn--ghost confirm__cancel">Annulla</button>
-                <button type="submit" value="ok" class="btn confirm__ok">Conferma</button>
+                <button type="submit" value="cancel" class="btn btn--ghost confirm__cancel">{{ 'Annulla'|trans }}</button>
+                <button type="submit" value="ok" class="btn confirm__ok">{{ 'Conferma'|trans }}</button>
             </div>
         </form>
     </dialog>

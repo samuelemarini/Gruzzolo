@@ -155,7 +155,7 @@ class MovementRepository extends ServiceEntityRepository
             $or = ['m.description LIKE :q', 'm.note LIKE :q',
                 'm.category IN (SELECT qc.id FROM App\Entity\Category qc WHERE qc.name LIKE :q)',
                 'm.id IN (SELECT qt_m.id FROM App\Entity\Movement qt_m JOIN qt_m.tags qt WHERE qt.name LIKE :q)'];
-            $amount = Money::parse($f->q);
+            $amount = Money::parseLocal($f->q);
             if ($amount !== null && preg_match('/^[\d.,€\s]+$/u', $f->q)) {
                 $or[] = 'm.amount = :qamount';
                 $qb->setParameter('qamount', $amount);

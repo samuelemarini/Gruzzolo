@@ -1,5 +1,5 @@
 {% extends 'base.html.twig' %}
-{% block title %}Accesso{% endblock %}
+{% block title %}{{ 'Accesso'|trans }}{% endblock %}
 {% block body %}
 <div class="login">
     <div class="login__tiles" aria-hidden="true">
@@ -10,24 +10,24 @@
         <span class="tile" style="--c: #C3A6FF">{{ icon('trending-up', 24) }}</span>
     </div>
     <h1>Gruzzolo</h1>
-    <p class="lead">Entrate, uscite, rifornimenti e investimenti.<br>Tutto in un posto, solo tuo.</p>
+    <p class="lead">{{ 'Entrate, uscite, rifornimenti e investimenti'|trans }}.<br>{{ 'Tutto in un posto, solo tuo.'|trans }}</p>
 
     <form method="post" action="{{ path('app_login') }}" class="form" data-turbo="false">
         {% if error %}
             <div class="form-error">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
         {% endif %}
         <label class="field">
-            <span class="field__label">Nome utente</span>
+            <span class="field__label">{{ 'Nome utente'|trans }}</span>
             <input type="text" name="_username" value="{{ last_username }}" autocomplete="username" autocapitalize="none" required autofocus>
         </label>
         <label class="field">
-            <span class="field__label">Password</span>
+            <span class="field__label">{{ 'Password'|trans }}</span>
             <input type="password" name="_password" autocomplete="current-password" required>
         </label>
         <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
-        <button type="submit" class="btn btn--block" style="margin-top: 8px">Accedi</button>
+        <button type="submit" class="btn btn--block" style="margin-top: 8px">{{ 'Accedi'|trans }}</button>
     </form>
 
-    <p class="login__foot">Gli account li crea l'amministratore.</p>
+    <p class="login__foot">{{ "Gli account li crea l'amministratore."|trans }}</p>
 </div>
 {% endblock %}

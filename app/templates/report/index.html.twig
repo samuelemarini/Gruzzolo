@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 {% import '_ui.html.twig' as ui %}
-{% block title %}Report{% endblock %}
+{% block title %}{{ 'Report'|trans }}{% endblock %}
 {% set q = app.request.query %}
 {# Scelta dei conti da mantenere in tutti i link (senza parametro = solo il conto principale) #}
 {% set acc = accountParam is not null ? {account: accountParam} : {} %}
@@ -8,24 +8,24 @@
 {% block body %}
 <div class="page page--wide" data-controller="sheet">
     <div class="topbar">
-        <h1 class="topbar__title">Report</h1>
+        <h1 class="topbar__title">{{ 'Report'|trans }}</h1>
         <div class="topbar__actions">
             {{ ui.privacy_toggle() }}
-            <a href="{{ path('movement_export', listPeriod) }}" class="icon-btn" aria-label="Esporta CSV del periodo" data-turbo="false">{{ icon('download', 19) }}</a>
+            <a href="{{ path('movement_export', listPeriod) }}" class="icon-btn" aria-label="{{ 'Esporta CSV del periodo'|trans }}" data-turbo="false">{{ icon('download', 19) }}</a>
         </div>
     </div>
 
     <div class="cols">
     <div class="col-main">
-        <div class="seg" role="tablist" aria-label="Periodo">
-            <a href="{{ path('report_index', {period: 'month', kind: kind}|merge(acc)) }}" class="{{ period == 'month' ? 'is-active' }}">Mese</a>
-            <a href="{{ path('report_index', {period: 'year', kind: kind}|merge(acc)) }}" class="{{ period == 'year' ? 'is-active' }}">Anno</a>
-            <button type="button" class="{{ period == 'custom' ? 'is-active' }}" data-action="sheet#open">Intervallo</button>
+        <div class="seg" role="tablist" aria-label="{{ 'Periodo'|trans }}">
+            <a href="{{ path('report_index', {period: 'month', kind: kind}|merge(acc)) }}" class="{{ period == 'month' ? 'is-active' }}">{{ 'Mese'|trans }}</a>
+            <a href="{{ path('report_index', {period: 'year', kind: kind}|merge(acc)) }}" class="{{ period == 'year' ? 'is-active' }}">{{ 'Anno'|trans }}</a>
+            <button type="button" class="{{ period == 'custom' ? 'is-active' }}" data-action="sheet#open">{{ 'Intervallo'|trans }}</button>
         </div>
 
         {% if chips|length > 2 %}
             {# Come nei Movimenti: un tocco guarda solo quel conto, tenendo premuto lo aggiunge o lo toglie #}
-            <div class="chips chips--scroll chips--hold" aria-label="Conti" data-controller="chip-hold">
+            <div class="chips chips--scroll chips--hold" aria-label="{{ 'Conti'|trans }}" data-controller="chip-hold">
                 {% for c in chips %}
                     {% if c.only %}
                         <a class="chip {{ c.active ? 'is-active' }}" href="{{ path('report_index', q.all|merge({account: c.only})) }}"
@@ -41,26 +41,26 @@
         {% if period == 'month' %}
             {% set prev = from|date_modify('-1 month') %}{% set next = from|date_modify('+1 month') %}
             <div class="month-nav month-nav--plain">
-                <a href="{{ path('report_index', {month: prev|date('Y-m'), kind: kind}|merge(acc)) }}" aria-label="Mese precedente">{{ icon('chevron-left', 20) }}</a>
+                <a href="{{ path('report_index', {month: prev|date('Y-m'), kind: kind}|merge(acc)) }}" aria-label="{{ 'Mese precedente'|trans }}">{{ icon('chevron-left', 20) }}</a>
                 <span>{{ from|month_label }}</span>
-                <a href="{{ path('report_index', {month: next|date('Y-m'), kind: kind}|merge(acc)) }}" aria-label="Mese successivo">{{ icon('chevron-right', 20) }}</a>
+                <a href="{{ path('report_index', {month: next|date('Y-m'), kind: kind}|merge(acc)) }}" aria-label="{{ 'Mese successivo'|trans }}">{{ icon('chevron-right', 20) }}</a>
             </div>
         {% elseif period == 'year' %}
             {% set y = from|date('Y') %}
             <div class="month-nav month-nav--plain">
-                <a href="{{ path('report_index', {period: 'year', year: y - 1, kind: kind}|merge(acc)) }}" aria-label="Anno precedente">{{ icon('chevron-left', 20) }}</a>
+                <a href="{{ path('report_index', {period: 'year', year: y - 1, kind: kind}|merge(acc)) }}" aria-label="{{ 'Anno precedente'|trans }}">{{ icon('chevron-left', 20) }}</a>
                 <span>{{ y }}</span>
-                <a href="{{ path('report_index', {period: 'year', year: y + 1, kind: kind}|merge(acc)) }}" aria-label="Anno successivo">{{ icon('chevron-right', 20) }}</a>
+                <a href="{{ path('report_index', {period: 'year', year: y + 1, kind: kind}|merge(acc)) }}" aria-label="{{ 'Anno successivo'|trans }}">{{ icon('chevron-right', 20) }}</a>
             </div>
         {% else %}
             <div class="month-nav month-nav--plain" style="justify-content: center">
-                <span>{{ from|it_date('d MMM yyyy') }} – {{ to|it_date('d MMM yyyy') }}</span>
+                <span>{{ from|local_date('d MMM yyyy') }} – {{ to|local_date('d MMM yyyy') }}</span>
             </div>
         {% endif %}
 
-        <section class="card" aria-label="Saldo del periodo">
+        <section class="card" aria-label="{{ 'Saldo del periodo'|trans }}">
             <div class="stack-sm" style="gap: 4px">
-                <span class="small muted">Saldo {{ period == 'month' ? 'di ' ~ from|it_date('LLLL') : (period == 'year' ? 'del ' ~ from|date('Y') : 'del periodo') }}</span>
+                <span class="small muted">{{ period == 'month' ? 'Saldo di %month%'|trans({'%month%': from|local_date('LLLL')}) : (period == 'year' ? 'Saldo del %year%'|trans({'%year%': from|date('Y')}) : 'Saldo del periodo'|trans) }}</span>
                 {% set net = summary.net %}
                 <div class="hero-amount">
                     <span class="hero-amount__value {{ net < 0 ? 'text-expense' }}">{{ net > 0 ? '+' }}{{ net < 0 ? '−' }}{{ net|abs|num(2) }}</span>
@@ -69,11 +69,11 @@
             </div>
             <div class="grid-2">
                 <div class="stat stat--inner">
-                    <span class="stat__label"><span class="tile tile--xs" style="--c: var(--income)">{{ icon('arrow-down-left', 15) }}</span>Entrate</span>
+                    <span class="stat__label"><span class="tile tile--xs" style="--c: var(--income)">{{ icon('arrow-down-left', 15) }}</span>{{ 'Entrate'|trans }}</span>
                     <span class="stat__value">{{ summary.income|money }}</span>
                 </div>
                 <div class="stat stat--inner">
-                    <span class="stat__label"><span class="tile tile--xs" style="--c: #FF8A80">{{ icon('arrow-up-right', 15) }}</span>Uscite</span>
+                    <span class="stat__label"><span class="tile tile--xs" style="--c: #FF8A80">{{ icon('arrow-up-right', 15) }}</span>{{ 'Uscite'|trans }}</span>
                     <span class="stat__value">{{ summary.expense|money }}</span>
                 </div>
             </div>
@@ -81,17 +81,17 @@
 
         <section class="card">
             <div class="row row--between">
-                <h2 class="h2">Per categoria</h2>
+                <h2 class="h2">{{ 'Per categoria'|trans }}</h2>
                 <div class="seg seg--inset seg--sm" style="width: 170px">
-                    <a href="{{ path('report_index', q.all|merge({kind: 'expense'})) }}" class="{{ kind == 'expense' ? 'is-active' }}">Uscite</a>
-                    <a href="{{ path('report_index', q.all|merge({kind: 'income'})) }}" class="{{ kind == 'income' ? 'is-active' }}">Entrate</a>
+                    <a href="{{ path('report_index', q.all|merge({kind: 'expense'})) }}" class="{{ kind == 'expense' ? 'is-active' }}">{{ 'Uscite'|trans }}</a>
+                    <a href="{{ path('report_index', q.all|merge({kind: 'income'})) }}" class="{{ kind == 'income' ? 'is-active' }}">{{ 'Entrate'|trans }}</a>
                 </div>
             </div>
             {% set total = kind == 'income' ? summary.income : summary.expense %}
-            {{ ui.donut(donut, total|money, kind == 'income' ? 'entrate totali' : 'uscite totali', (kind == 'income' ? 'Entrate' : 'Uscite') ~ ' per categoria: ' ~ byCategory|map(g => g.name ~ ' ' ~ g.pct|pct)|join(', ')) }}
+            {{ ui.donut(donut, total|money, kind == 'income' ? 'entrate totali'|trans : 'uscite totali'|trans, (kind == 'income' ? 'Entrate per categoria: %list%' : 'Uscite per categoria: %list%')|trans({'%list%': byCategory|map(g => g.name ~ ' ' ~ g.pct|pct)|join(', ')})) }}
 
             {% if byCategory is empty %}
-                <p class="muted small" style="text-align: center">Nessun{{ kind == 'income' ? 'a entrata' : 'a uscita' }} nel periodo.</p>
+                <p class="muted small" style="text-align: center">{{ kind == 'income' ? 'Nessuna entrata nel periodo.'|trans : 'Nessuna uscita nel periodo.'|trans }}</p>
             {% else %}
                 {% set maxTotal = byCategory|first.total %}
                 <div class="list">
@@ -117,9 +117,9 @@
 
     <div class="col-side">
         {% if investments %}
-            <a class="card" href="{{ path('investment_index') }}" aria-label="Investimenti nel periodo">
+            <a class="card" href="{{ path('investment_index') }}" aria-label="{{ 'Investimenti nel periodo'|trans }}">
                 <div class="row row--between">
-                    <span class="row" style="gap: 10px">{{ ui.tile('trending-up', '#7FD6FF', 'sm') }}<span class="strong">Rendimento del periodo</span></span>
+                    <span class="row" style="gap: 10px">{{ ui.tile('trending-up', '#7FD6FF', 'sm') }}<span class="strong">{{ 'Rendimento del periodo'|trans }}</span></span>
                     {{ icon('chevron-right', 18, 'faint') }}
                 </div>
                 <div class="row row--between" style="align-items: baseline">
@@ -127,20 +127,20 @@
                     {% if investments.pct is not null %}<span class="strong {{ investments.gain >= 0 ? 'text-income' : 'text-expense' }}">{{ investments.pct|pct(1, true) }}</span>{% endif %}
                 </div>
                 <div class="grid-3 small">
-                    <div class="stack-sm" style="gap: 2px"><span class="xsmall muted">Valore a inizio</span><span class="strong">{{ investments.start|money(false, 0) }}</span></div>
-                    <div class="stack-sm" style="gap: 2px"><span class="xsmall muted">Versato</span><span class="strong">{{ investments.contributions|money(true, 0) }}</span></div>
-                    <div class="stack-sm" style="gap: 2px"><span class="xsmall muted">Valore a fine</span><span class="strong">{{ investments.end|money(false, 0) }}</span></div>
+                    <div class="stack-sm" style="gap: 2px"><span class="xsmall muted">{{ 'Valore a inizio'|trans }}</span><span class="strong">{{ investments.start|money(false, 0) }}</span></div>
+                    <div class="stack-sm" style="gap: 2px"><span class="xsmall muted">{{ 'Versato'|trans }}</span><span class="strong">{{ investments.contributions|money(true, 0) }}</span></div>
+                    <div class="stack-sm" style="gap: 2px"><span class="xsmall muted">{{ 'Valore a fine'|trans }}</span><span class="strong">{{ investments.end|money(false, 0) }}</span></div>
                 </div>
             </a>
         {% endif %}
         <div class="grid-2">
             <div class="stat">
-                <span class="stat__label">Media al giorno</span>
+                <span class="stat__label">{{ 'Media al giorno'|trans }}</span>
                 <span class="stat__value" style="font-size: 22px">{{ dailyAverage is not null ? dailyAverage|money : '—' }}</span>
-                <span class="stat__sub">uscite su {{ days }} giorn{{ days == 1 ? 'o' : 'i' }}</span>
+                <span class="stat__sub">{{ 'uscite su %count% giorno|uscite su %count% giorni'|trans({'%count%': days}) }}</span>
             </div>
             <div class="stat">
-                <span class="stat__label">Spesa più alta</span>
+                <span class="stat__label">{{ 'Spesa più alta'|trans }}</span>
                 <span class="stat__value" style="font-size: 22px">{{ biggest ? biggest.amount|money : '—' }}</span>
                 <span class="stat__sub ellipsis">{{ biggest ? (biggest.description ?: biggest.category) }}</span>
             </div>
@@ -148,36 +148,36 @@
 
         <section class="card">
             <div class="stack-sm" style="gap: 4px">
-                <h2 class="h2">Entrate e uscite</h2>
-                <span class="small muted">{{ bars.rows|length }} mesi · {{ savedTrend >= 0 ? 'risparmiati' : 'spesi più del guadagnato' }} <span class="strong {{ savedTrend >= 0 ? 'text-income' : 'text-expense' }}">{{ savedTrend|money(true) }}</span></span>
+                <h2 class="h2">{{ 'Entrate e uscite'|trans }}</h2>
+                <span class="small muted">{{ '%count% mese|%count% mesi'|trans({'%count%': bars.rows|length}) }} · {{ savedTrend >= 0 ? 'risparmiati'|trans : 'spesi più del guadagnato'|trans }} <span class="strong {{ savedTrend >= 0 ? 'text-income' : 'text-expense' }}">{{ savedTrend|money(true) }}</span></span>
             </div>
-            <div class="bars" role="img" aria-label="Entrate e uscite per mese">
+            <div class="bars" role="img" aria-label="{{ 'Entrate e uscite per mese'|trans }}">
                 {% for r in bars.rows %}
-                    <div class="bars__group" title="{{ r.month|month_label }}: entrate {{ r.income|money }}, uscite {{ r.expense|money }}">
+                    <div class="bars__group" title="{{ '%month%: entrate %income%, uscite %expense%'|trans({'%month%': r.month|month_label, '%income%': r.income|money, '%expense%': r.expense|money}) }}">
                         <span class="bars__bar {{ r.partial ? 'is-partial' }}" style="--c: var(--income); height: {{ r.incomePct }}%"></span>
                         <span class="bars__bar {{ r.partial ? 'is-partial' }}" style="--c: #FF8A80; height: {{ r.expensePct }}%"></span>
                     </div>
                 {% endfor %}
             </div>
             <div class="bars__labels">
-                {% for r in bars.rows %}<span>{{ r.month|it_date(bars.rows|length > 8 ? 'LLLLL' : 'LLL')|capitalize }}</span>{% endfor %}
+                {% for r in bars.rows %}<span>{{ r.month|local_date(bars.rows|length > 8 ? 'LLLLL' : 'LLL')|capitalize }}</span>{% endfor %}
             </div>
             <div class="chart-legend">
-                <span><i style="--c: var(--income)"></i>Entrate</span>
-                <span><i style="--c: #FF8A80"></i>Uscite</span>
-                {% if bars.rows|filter(r => r.partial)|length %}<span style="margin-left: auto">mese in corso più chiaro</span>{% endif %}
+                <span><i style="--c: var(--income)"></i>{{ 'Entrate'|trans }}</span>
+                <span><i style="--c: #FF8A80"></i>{{ 'Uscite'|trans }}</span>
+                {% if bars.rows|filter(r => r.partial)|length %}<span style="margin-left: auto">{{ 'mese in corso più chiaro'|trans }}</span>{% endif %}
             </div>
         </section>
 
         {% if tags is not empty %}
         <section class="card card--list" style="padding-top: 16px">
-            <h2 class="h2" style="padding-bottom: 6px">Per etichetta</h2>
+            <h2 class="h2" style="padding-bottom: 6px">{{ 'Per etichetta'|trans }}</h2>
             {% for t in tags %}
                 <a class="list-row" href="{{ path('tag_show', {id: t.id}) }}">
                     {{ ui.tile('tag', t.color, 'sm') }}
                     <div class="list-row__body">
                         <span class="list-row__title">#{{ t.name }}</span>
-                        <span class="list-row__meta">{{ t.title ?: (t.count ~ ' moviment' ~ (t.count == 1 ? 'o' : 'i') ~ ' nel periodo') }}</span>
+                        <span class="list-row__meta">{{ t.title ?: '%count% movimento nel periodo|%count% movimenti nel periodo'|trans({'%count%': t.count}) }}</span>
                     </div>
                     <span class="list-row__amount">{{ t.expense|money }}</span>
                     {{ icon('chevron-right', 18, 'list-row__chev') }}
@@ -188,21 +188,21 @@
     </div>
     </div>
 
-    <dialog class="sheet" data-sheet-target="dialog" data-action="click->sheet#backdrop" aria-label="Intervallo">
+    <dialog class="sheet" data-sheet-target="dialog" data-action="click->sheet#backdrop" aria-label="{{ 'Intervallo'|trans }}">
         <form method="get" action="{{ path('report_index') }}" class="sheet__inner">
             <div class="sheet__grabber"></div>
             <div class="sheet__head">
-                <span class="sheet__title">Intervallo</span>
-                <button type="button" class="icon-btn icon-btn--plain" data-action="sheet#close" aria-label="Chiudi">{{ icon('x') }}</button>
+                <span class="sheet__title">{{ 'Intervallo'|trans }}</span>
+                <button type="button" class="icon-btn icon-btn--plain" data-action="sheet#close" aria-label="{{ 'Chiudi'|trans }}">{{ icon('x') }}</button>
             </div>
             <input type="hidden" name="period" value="custom">
             <input type="hidden" name="kind" value="{{ kind }}">
             {% for token in accountParam ?? [] %}<input type="hidden" name="account[]" value="{{ token }}">{% endfor %}
             <div class="grid-2">
-                <label class="field"><span class="field__label">Dal</span><input type="date" name="from" value="{{ from|date('Y-m-d') }}" required></label>
-                <label class="field"><span class="field__label">Al</span><input type="date" name="to" value="{{ to|date('Y-m-d') }}" required></label>
+                <label class="field"><span class="field__label">{{ 'Dal'|trans }}</span><input type="date" name="from" value="{{ from|date('Y-m-d') }}" required></label>
+                <label class="field"><span class="field__label">{{ 'Al'|trans }}</span><input type="date" name="to" value="{{ to|date('Y-m-d') }}" required></label>
             </div>
-            <button type="submit" class="btn btn--block">Mostra</button>
+            <button type="submit" class="btn btn--block">{{ 'Mostra'|trans }}</button>
         </form>
     </dialog>
 </div>

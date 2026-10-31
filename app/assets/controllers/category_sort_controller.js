@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { t } from '../i18n.js';
 import Sortable from 'sortablejs';
 
 /*
@@ -52,19 +53,19 @@ export default class extends Controller {
     async save(list) {
         const body = new URLSearchParams({ _token: this.tokenValue });
         [...list.children].forEach((li) => body.append('ids[]', li.dataset.id));
-        this.status('Salvo…');
+        this.status(t('Salvo…'));
         try {
             const response = await fetch(this.urlValue, { method: 'POST', body, headers: { 'X-Requested-With': 'fetch' } });
-            this.status(response.ok ? 'Salvato' : 'Errore');
+            this.status(response.ok ? t('Salvato') : t('Errore'), response.ok);
         } catch (e) {
-            this.status('Errore');
+            this.status(t('Errore'));
         }
     }
 
-    status(text) {
+    status(text, saved = false) {
         if (!this.hasStatusTarget) return;
         this.statusTarget.textContent = text;
         clearTimeout(this.statusTimer);
-        if (text === 'Salvato') this.statusTimer = setTimeout(() => { this.statusTarget.textContent = ''; }, 1500);
+        if (saved) this.statusTimer = setTimeout(() => { this.statusTarget.textContent = ''; }, 1500);
     }
 }

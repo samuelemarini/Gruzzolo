@@ -4,9 +4,9 @@
 {% block body %}
 <div class="page">
     <div class="topbar">
-        <a href="{{ path('account_index') }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
+        <a href="{{ path('account_index') }}" class="icon-btn" aria-label="{{ 'Indietro'|trans }}">{{ icon('chevron-left') }}</a>
         {% if account.user == app.user %}
-            <a href="{{ path('account_edit', {id: account.id}) }}" class="icon-btn" aria-label="Modifica conto">{{ icon('pencil', 18) }}</a>
+            <a href="{{ path('account_edit', {id: account.id}) }}" class="icon-btn" aria-label="{{ 'Modifica conto'|trans }}">{{ icon('pencil', 18) }}</a>
         {% endif %}
     </div>
 
@@ -14,44 +14,44 @@
         {{ ui.tile(account.icon, account.color, 'lg') }}
         <div class="stack-sm" style="gap: 2px">
             <h1 class="display" style="font-size: 28px; font-weight: 700; line-height: 1.1">{{ account.name }}</h1>
-            <span class="small muted">{{ account.kindLabel }}{{ account.archived ? ' · archiviato' }}{% if account.user != app.user %} · di {{ account.user.displayName }}{% elseif account.shared %} · con {{ account.members|map(u => u.displayName)|join(', ') }}{% endif %}</span>
+            <span class="small muted">{{ account.kindLabel }}{{ account.archived ? ' · ' ~ 'archiviato'|trans }}{% if account.user != app.user %} · {{ 'di %name%'|trans({'%name%': account.user.displayName}) }}{% elseif account.shared %} · {{ 'con %names%'|trans({'%names%': account.members|map(u => u.displayName)|join(', ')}) }}{% endif %}</span>
         </div>
     </div>
 
     <section class="card">
-        <span class="small muted">Saldo attuale</span>
+        <span class="small muted">{{ 'Saldo attuale'|trans }}</span>
         <div class="hero-amount"><span class="hero-amount__value" style="font-size: 42px">{{ balance|money }}</span></div>
-        {{ ui.line_chart(chart, {balance: account.color}, 'Saldo negli ultimi 12 mesi') }}
-        <div class="row row--between xsmall muted"><span>{{ labels|first|it_date('MMM yyyy') }}</span><span>oggi</span></div>
+        {{ ui.line_chart(chart, {balance: account.color}, 'Saldo negli ultimi 12 mesi'|trans) }}
+        <div class="row row--between xsmall muted"><span>{{ labels|first|local_date('MMM yyyy') }}</span><span>{{ 'oggi'|trans }}</span></div>
         <div class="grid-2">
-            <a href="{{ path('movement_new', {kind: 'transfer', account: account.id}) }}" class="btn btn--ghost btn--sm">{{ icon('arrow-left-right', 18) }}Giroconto</a>
-            <a href="{{ path('movement_new', {account: account.id}) }}" class="btn btn--ghost btn--sm">{{ icon('plus', 18) }}Movimento</a>
+            <a href="{{ path('movement_new', {kind: 'transfer', account: account.id}) }}" class="btn btn--ghost btn--sm">{{ icon('arrow-left-right', 18) }}{{ 'Giroconto'|trans }}</a>
+            <a href="{{ path('movement_new', {account: account.id}) }}" class="btn btn--ghost btn--sm">{{ icon('plus', 18) }}{{ 'Movimento'|trans }}</a>
         </div>
     </section>
 
     {% if account.user != app.user %}
         <div class="card card--outline card--tight">
-            <div class="row">{{ icon('users', 20, 'muted') }}<span class="small grow">{{ account.user.displayName }} ha condiviso questo conto con te: vedi tutti i movimenti e puoi aggiungerne.</span></div>
+            <div class="row">{{ icon('users', 20, 'muted') }}<span class="small grow">{{ '%name% ha condiviso questo conto con te: vedi tutti i movimenti e puoi aggiungerne.'|trans({'%name%': account.user.displayName}) }}</span></div>
             {% set onHome = account.onHomeFor(app.user) %}
             <form method="post" action="{{ path('account_home', {id: account.id}) }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('account-home-' ~ account.id) }}">
                 <input type="hidden" name="show" value="{{ onHome ? 0 : 1 }}">
-                <button type="submit" class="btn btn--ghost btn--sm btn--block">{{ icon(onHome ? 'eye-off' : 'eye', 18) }}{{ onHome ? 'Escludi dai totali della home' : 'Includi nei totali della home' }}</button>
+                <button type="submit" class="btn btn--ghost btn--sm btn--block">{{ icon(onHome ? 'eye-off' : 'eye', 18) }}{{ onHome ? 'Escludi dai totali della home'|trans : 'Includi nei totali della home'|trans }}</button>
             </form>
-            <form method="post" action="{{ path('account_leave', {id: account.id}) }}" data-turbo-confirm="Uscire dal conto condiviso? I movimenti che hai inserito restano sul conto.">
+            <form method="post" action="{{ path('account_leave', {id: account.id}) }}" data-confirm-kind="leave" data-turbo-confirm="{{ 'Uscire dal conto condiviso? I movimenti che hai inserito restano sul conto.'|trans }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('account-leave-' ~ account.id) }}">
-                <button type="submit" class="btn btn--ghost btn--sm btn--block">{{ icon('log-out', 18) }}Esci dal conto</button>
+                <button type="submit" class="btn btn--ghost btn--sm btn--block">{{ icon('log-out', 18) }}{{ 'Esci dal conto'|trans }}</button>
             </form>
         </div>
     {% endif %}
 
     <section>
         <div class="section-head">
-            <h2>Movimenti</h2>
-            <a href="{{ path('movement_index', {account: [account.id], period: 'all'}) }}">Tutti ({{ totals.count }})</a>
+            <h2>{{ 'Movimenti'|trans }}</h2>
+            <a href="{{ path('movement_index', {account: [account.id], period: 'all'}) }}">{{ 'Tutti (%n%)'|trans({'%n%': totals.count}) }}</a>
         </div>
         {% if movements is empty %}
-            {{ ui.empty('receipt', 'Nessun movimento su questo conto.') }}
+            {{ ui.empty('receipt', 'Nessun movimento su questo conto.'|trans) }}
         {% else %}
             <div class="list">{% for m in movements %}{{ ui.movement_row(m, {date: true, scope: [account.id]}) }}{% endfor %}</div>
         {% endif %}

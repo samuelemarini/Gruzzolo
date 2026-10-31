@@ -3,6 +3,7 @@
 namespace App\Import;
 
 use App\Util\Money;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Export CSV di Money Manager (Realbyte), in italiano o in inglese:
@@ -22,6 +23,10 @@ final class MoneyManagerFormat implements ImportFormat
     /** Lettere accentate perse in qualche export (diventate U+FFFD). */
     private const MOJIBAKE = ["Caff\u{FFFD}" => 'Caffè', "caff\u{FFFD}" => 'caffè', "Pap\u{FFFD}" => 'Papà', "pap\u{FFFD}" => 'papà',
         "Mos\u{FFFD}" => 'Mosè', "brul\u{FFFD}" => 'brulé', "d\u{FFFD}orsay" => 'd’Orsay', "Sant\u{FFFD}" => 'Sant’', "\u{FFFD}" => '’'];
+
+    public function __construct(private readonly TranslatorInterface $translator)
+    {
+    }
 
     public function name(): string
     {
@@ -55,23 +60,23 @@ final class MoneyManagerFormat implements ImportFormat
             }
         }
         if (!$date) {
-            throw new \InvalidArgumentException(sprintf('data non valida "%s"', $rawDate));
+            throw new \InvalidArgumentException($this->translator->trans('data non valida "%value%"', ['%value%' => $rawDate]));
         }
 
         $type = mb_strtolower($get(self::TYPE));
         if (str_contains($type, 'saldo') || str_contains($type, 'balance')) {
-            throw new \InvalidArgumentException('rettifica del saldo, non è un movimento');
+            throw new \InvalidArgumentException($this->translator->trans('rettifica del saldo, non è un movimento'));
         }
 
         $raw = $get(self::AMOUNT);
         // "1.234,56" all'italiana, oppure "1234.56" negli export in inglese.
         $number = str_contains($raw, ',') ? str_replace(['.', ','], ['', '.'], $raw) : str_replace(' ', '', $raw);
         if (!is_numeric($number)) {
-            throw new \InvalidArgumentException(sprintf('importo non valido "%s"', $raw));
+            throw new \InvalidArgumentException($this->translator->trans('importo non valido "%value%"', ['%value%' => $raw]));
         }
         $amount = Money::parse(ltrim($number, '-+'));
         if ((float) $amount == 0) {
-            throw new \InvalidArgumentException('importo zero');
+            throw new \InvalidArgumentException($this->translator->trans('importo zero'));
         }
         $kind = match (true) {
             in_array($type, self::EXPENSE, true) => 'expense',

@@ -2,71 +2,71 @@
 {% import '_ui.html.twig' as ui %}
 {% set hide_tabbar = true %}
 {% set isNew = category.id is null %}
-{% block title %}{{ isNew ? 'Nuova categoria' : category.name }}{% endblock %}
+{% block title %}{{ isNew ? 'Nuova categoria'|trans : category.name }}{% endblock %}
 {% block body %}
 <form method="post" class="page page--plain form">
     <input type="hidden" name="_token" value="{{ csrf_token('category') }}">
     <div class="topbar">
-        <a href="{{ path('category_index', {account: category.account.id, kind: category.kind}) }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
-        <span class="topbar__center">{{ isNew ? 'Nuova categoria' : 'Modifica categoria' }}<span class="xsmall muted" style="display: block; font-family: var(--font-ui); font-weight: 400">conto «{{ category.account.name }}»</span></span>
+        <a href="{{ path('category_index', {account: category.account.id, kind: category.kind}) }}" class="icon-btn" aria-label="{{ 'Indietro'|trans }}">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">{{ isNew ? 'Nuova categoria'|trans : 'Modifica categoria'|trans }}<span class="xsmall muted" style="display: block; font-family: var(--font-ui); font-weight: 400">{{ 'conto «%name%»'|trans({'%name%': category.account.name}) }}</span></span>
         <span style="width: 44px"></span>
     </div>
 
     {% if isNew and category.parent is null %}
         <div class="seg">
-            <label><input type="radio" name="kind" value="expense" {{ category.kind == 'expense' ? 'checked' }}>Uscita</label>
-            <label><input type="radio" name="kind" value="income" {{ category.kind == 'income' ? 'checked' }}>Entrata</label>
+            <label><input type="radio" name="kind" value="expense" {{ category.kind == 'expense' ? 'checked' }}>{{ 'Uscita'|trans }}</label>
+            <label><input type="radio" name="kind" value="income" {{ category.kind == 'income' ? 'checked' }}>{{ 'Entrata'|trans }}</label>
         </div>
     {% endif %}
 
     <label class="field {{ errors.name is defined ? 'has-error' }}">
-        <span class="field__label">Nome</span>
-        <input type="text" name="name" value="{{ category.name }}" maxlength="60" required {{ isNew ? 'autofocus' }} placeholder="es. Palestra">
+        <span class="field__label">{{ 'Nome'|trans }}</span>
+        <input type="text" name="name" value="{{ category.name }}" maxlength="60" required {{ isNew ? 'autofocus' }} placeholder="{{ 'es. Palestra'|trans }}">
         {% if errors.name is defined %}<span class="field__error">{{ errors.name }}</span>{% endif %}
     </label>
 
     <label class="field {{ errors.parent is defined ? 'has-error' }}">
-        <span class="field__label">Sottocategoria di</span>
+        <span class="field__label">{{ 'Sottocategoria di'|trans }}</span>
         <select name="parent" {{ category.children|length ? 'disabled' }}>
-            <option value="">— nessuna, è una categoria principale —</option>
+            <option value="">{{ '— nessuna, è una categoria principale —'|trans }}</option>
             {% for p in parents %}<option value="{{ p.id }}" {{ category.parent == p ? 'selected' }}>{{ p.name }}</option>{% endfor %}
         </select>
-        {% if category.children|length %}<span class="hint" style="padding: 0">Ha delle sottocategorie, quindi resta principale.</span>{% endif %}
+        {% if category.children|length %}<span class="hint" style="padding: 0">{{ 'Ha delle sottocategorie, quindi resta principale.'|trans }}</span>{% endif %}
         {% if errors.parent is defined %}<span class="field__error">{{ errors.parent }}</span>{% endif %}
     </label>
 
     <section class="card card--tight">
-        <span class="label-caps">Colore</span>
+        <span class="label-caps">{{ 'Colore'|trans }}</span>
         {{ ui.color_picker('color', category.color) }}
-        <span class="label-caps" style="margin-top: 6px">Icona</span>
+        <span class="label-caps" style="margin-top: 6px">{{ 'Icona'|trans }}</span>
         {{ ui.icon_picker('icon', category.icon, icons) }}
     </section>
 
     <div class="card card--tight" style="gap: 0">
         {% if category.kind == 'expense' %}
             <label class="switch">
-                <span class="switch__text"><span>Carburante / ricarica</span><small>chiede veicolo, km, litri e prezzo e calcola i consumi</small></span>
+                <span class="switch__text"><span>{{ 'Carburante / ricarica'|trans }}</span><small>{{ 'chiede veicolo, km, litri e prezzo e calcola i consumi'|trans }}</small></span>
                 <input type="checkbox" name="fuel" value="1" {{ category.fuel ? 'checked' }}>
             </label>
         {% endif %}
         {% if not isNew %}
             <label class="switch">
-                <span class="switch__text"><span>Archiviata</span><small>non compare più quando inserisci un movimento</small></span>
+                <span class="switch__text"><span>{{ 'Archiviata'|trans }}</span><small>{{ 'non compare più quando inserisci un movimento'|trans }}</small></span>
                 <input type="checkbox" name="archived" value="1" {{ category.archived ? 'checked' }}>
             </label>
         {% endif %}
     </div>
 
-    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}Salva</button>
+    <button type="submit" class="btn btn--block">{{ icon('check', 20) }}{{ 'Salva'|trans }}</button>
 
     {% if not isNew and category.parent is null %}
-        <a href="{{ path('category_new', {parent: category.id}) }}" class="btn btn--ghost btn--block btn--sm">{{ icon('plus', 18) }}Aggiungi sottocategoria</a>
+        <a href="{{ path('category_new', {parent: category.id}) }}" class="btn btn--ghost btn--block btn--sm">{{ icon('plus', 18) }}{{ 'Aggiungi sottocategoria'|trans }}</a>
         {% if category.children|length %}
             <div class="card card--list">
                 {% for child in category.children %}
                     <a class="list-row" href="{{ path('category_edit', {id: child.id}) }}" style="{{ child.archived ? 'opacity: .6' }}">
                         {{ ui.tile(child.icon, child.color, 'sm') }}
-                        <div class="list-row__body"><span class="list-row__title">{{ child.name }}{{ child.archived ? ' (archiviata)' }}</span></div>
+                        <div class="list-row__body"><span class="list-row__title">{{ child.name }}{{ child.archived ? ' (' ~ 'archiviata'|trans ~ ')' }}</span></div>
                         {{ icon('chevron-right', 18, 'list-row__chev') }}
                     </a>
                 {% endfor %}
@@ -75,9 +75,9 @@
     {% endif %}
 </form>
 {% if not isNew %}
-    <form method="post" action="{{ path('category_delete', {id: category.id}) }}" class="page page--plain" style="padding-top: 0" data-turbo-confirm="Eliminare la categoria? Se ha dei movimenti verrà solo archiviata.">
+    <form method="post" action="{{ path('category_delete', {id: category.id}) }}" class="page page--plain" style="padding-top: 0" data-confirm-kind="delete" data-turbo-confirm="{{ 'Eliminare la categoria? Se ha dei movimenti verrà solo archiviata.'|trans }}">
         <input type="hidden" name="_token" value="{{ csrf_token('delete-category-' ~ category.id) }}">
-        <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}Elimina</button>
+        <button type="submit" class="btn btn--danger btn--block btn--sm">{{ icon('trash-2', 18) }}{{ 'Elimina'|trans }}</button>
     </form>
 {% endif %}
 {% endblock %}

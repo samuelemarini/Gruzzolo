@@ -93,7 +93,7 @@ final class ReportController extends AppController
             'dailyAverage' => $days > 0 ? $summary['expense'] / $days : null,
             'biggest' => $reports->biggestExpense($user, $from, $to, $accounts),
             'tags' => $reports->byTag($user, $from, $to, $accounts),
-            'chips' => self::chips($accountRepository->findForUser($user, true), $holdingRepository->findForUser($user) !== [], $ids, $all, $investments),
+            'chips' => $this->chips($accountRepository->findForUser($user, true), $holdingRepository->findForUser($user) !== [], $ids, $all, $investments),
             'accountParam' => $chosen ? self::tokens($ids, $all, $investments) : null,
             // I link alla lista movimenti portano gli stessi conti (la lista non ha gli investimenti).
             'movementAccounts' => $all || !$ids ? 'all' : $ids,
@@ -109,9 +109,9 @@ final class ReportController extends AppController
      *
      * @return list<array{label: string, color: ?string, icon: ?string, active: bool, param: list<string>, only: ?list<string>}>
      */
-    private static function chips(array $accounts, bool $hasHoldings, array $ids, bool $all, bool $investments): array
+    private function chips(array $accounts, bool $hasHoldings, array $ids, bool $all, bool $investments): array
     {
-        $chips = [['label' => 'Tutti i conti', 'color' => null, 'icon' => null, 'active' => $all, 'param' => self::tokens([], true, $investments), 'only' => null]];
+        $chips = [['label' => $this->trans('Tutti i conti'), 'color' => null, 'icon' => null, 'active' => $all, 'param' => self::tokens([], true, $investments), 'only' => null]];
         foreach ($accounts as $account) {
             $id = $account->getId();
             if ($account->isArchived() && !in_array($id, $ids, true)) {
@@ -123,7 +123,7 @@ final class ReportController extends AppController
                 'param' => self::tokens($next, !$next && !$investments, $investments), 'only' => self::tokens([$id], false, false)];
         }
         if ($hasHoldings) {
-            $chips[] = ['label' => 'Investimenti', 'color' => null, 'icon' => 'trending-up', 'active' => $investments,
+            $chips[] = ['label' => $this->trans('Investimenti'), 'color' => null, 'icon' => 'trending-up', 'active' => $investments,
                 'param' => self::tokens($ids, $all || (!$ids && $investments), !$investments), 'only' => self::tokens([], false, true)];
         }
 

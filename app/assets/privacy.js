@@ -6,7 +6,8 @@
  * data-privacy-text e torna quando si rimostrano gli importi.
  * La scelta vale per questo dispositivo (localStorage), letta in <head> prima del disegno.
  */
-const MONEY = /[−+-]?\d{1,3}(?:\.\d{3})*(?:,\d+)?\s?€(?:\/[a-zA-Z]+)?/g;
+// Separatori di qualsiasi lingua: "1.247,80 €", "1,247.80 €", "1 247,80 €"
+const MONEY = /[−+-]?\d{1,3}(?:[.,\u202F\u00A0]\d{3})*(?:[.,]\d+)?\s?€(?:\/[a-zA-Z]+)?/g;
 const SKIP = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'SELECT', 'OPTION', 'TITLE']);
 const KEY = 'gruzzolo-privacy';
 const SCRAMBLE = '.money, .hero-amount__value, .donut__value, .lc__ticks span';

@@ -9,6 +9,7 @@ use App\Repository\AccountRepository;
 use App\Repository\CategoryRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Aggregati per Home e Report, visti dai conti considerati (tutti quelli accessibili o quelli scelti).
@@ -39,6 +40,7 @@ final class ReportService
     public function __construct(
         private readonly Connection $db,
         private readonly CategoryRepository $categories,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -111,7 +113,7 @@ final class ReportService
             if (!isset($groups[$key])) {
                 $groups[$key] = [
                     'category' => $top, 'ids' => [], 'transfer' => $transfer, 'holding' => null,
-                    'name' => $transfer ? 'Giroconti' : ($top?->getName() ?? 'Senza categoria'),
+                    'name' => $transfer ? $this->translator->trans('Giroconti') : ($top?->getName() ?? $this->translator->trans('Senza categoria')),
                     'icon' => $transfer ? 'arrow-left-right' : ($top?->getIcon() ?? 'circle-ellipsis'),
                     'color' => $transfer ? '#D9B48F' : ($top?->getColor() ?? '#A3A59F'),
                     'total' => 0.0, 'count' => 0, 'pct' => 0.0, 'children' => [],

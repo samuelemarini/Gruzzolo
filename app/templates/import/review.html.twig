@@ -1,18 +1,18 @@
 {% extends 'base.html.twig' %}
 {% import '_ui.html.twig' as ui %}
 {% set hide_tabbar = true %}
-{% block title %}Anteprima importazione{% endblock %}
+{% block title %}{{ 'Anteprima importazione'|trans }}{% endblock %}
 
 {% macro category_select(index, c, suggestion, groups) %}
-    <select name="cat_to[{{ index }}]" aria-label="Destinazione per {{ c.name }}">
-        <optgroup label="Dal file">
-            <option value="new" {{ suggestion == 'new' ? 'selected' }}>Crea categoria «{{ c.name }}»</option>
-            <option value="skip">Non importare</option>
+    <select name="cat_to[{{ index }}]" aria-label="{{ 'Destinazione per %name%'|trans({'%name%': c.name}) }}">
+        <optgroup label="{{ 'Dal file'|trans }}">
+            <option value="new" {{ suggestion == 'new' ? 'selected' }}>{{ 'Crea categoria «%name%»'|trans({'%name%': c.name}) }}</option>
+            <option value="skip">{{ 'Non importare'|trans }}</option>
         </optgroup>
         {% for g in groups %}
             {% set list = c.kind == 'income' ? g.income : g.expense %}
             {% if list is not empty %}
-            <optgroup label="Categorie di «{{ g.account.name }}»">
+            <optgroup label="{{ 'Categorie di «%name%»'|trans({'%name%': g.account.name}) }}">
                 {% for cat in list %}
                     <option value="{{ cat.id }}" {{ suggestion == cat.id ~ '' ? 'selected' }}>{{ cat.parent ? '— ' }}{{ cat.name }}</option>
                 {% endfor %}
@@ -26,8 +26,8 @@
 <form method="post" class="page form">
     <input type="hidden" name="_token" value="{{ csrf_token('import-run') }}">
     <div class="topbar">
-        <a href="{{ path('import_index') }}" class="icon-btn" aria-label="Indietro">{{ icon('chevron-left') }}</a>
-        <span class="topbar__center">Anteprima importazione</span>
+        <a href="{{ path('import_index') }}" class="icon-btn" aria-label="{{ 'Indietro'|trans }}">{{ icon('chevron-left') }}</a>
+        <span class="topbar__center">{{ 'Anteprima importazione'|trans }}</span>
         <span style="width: 44px"></span>
     </div>
 
@@ -36,41 +36,41 @@
             {{ ui.tile('file-spreadsheet', '#9BE7A0') }}
             <div class="grow stack-sm" style="gap: 2px">
                 <span class="strong ellipsis">{{ a.filename }}</span>
-                <span class="small muted">Formato {{ a.format.label }}{% if a.first %} · dal {{ a.first|it_date('d MMM yyyy') }} al {{ a.last|it_date('d MMM yyyy') }}{% endif %}</span>
+                <span class="small muted">{{ 'Formato %format%'|trans({'%format%': a.format.label}) }}{% if a.first %} · {{ 'dal %from% al %to%'|trans({'%from%': a.first|local_date('d MMM yyyy'), '%to%': a.last|local_date('d MMM yyyy')}) }}{% endif %}</span>
             </div>
         </div>
         <div class="grid-2">
-            <div class="stat stat--inner"><span class="stat__label">Da importare</span><span class="stat__value">{{ a.new|num }}</span><span class="stat__sub">{{ a.transfers ? a.transfers ~ ' giroconti' : 'movimenti' }}</span></div>
-            <div class="stat stat--inner"><span class="stat__label">Già importati</span><span class="stat__value">{{ a.duplicates|num }}</span><span class="stat__sub">saltati</span></div>
-            <div class="stat stat--inner"><span class="stat__label">Entrate</span><span class="stat__value text-income">+{{ a.income|money }}</span></div>
-            <div class="stat stat--inner"><span class="stat__label">Uscite</span><span class="stat__value">−{{ a.expense|money }}</span></div>
+            <div class="stat stat--inner"><span class="stat__label">{{ 'Da importare'|trans }}</span><span class="stat__value">{{ a.new|num }}</span><span class="stat__sub">{{ a.transfers ? '%count% giroconto|%count% giroconti'|trans({'%count%': a.transfers}) : 'movimenti'|trans }}</span></div>
+            <div class="stat stat--inner"><span class="stat__label">{{ 'Già importati'|trans }}</span><span class="stat__value">{{ a.duplicates|num }}</span><span class="stat__sub">{{ 'saltati'|trans }}</span></div>
+            <div class="stat stat--inner"><span class="stat__label">{{ 'Entrate'|trans }}</span><span class="stat__value text-income">+{{ a.income|money }}</span></div>
+            <div class="stat stat--inner"><span class="stat__label">{{ 'Uscite'|trans }}</span><span class="stat__value">−{{ a.expense|money }}</span></div>
         </div>
         {% if a.errors|length %}
             <details class="card--warn" style="border-radius: 16px; padding: 12px 14px">
-                <summary class="small strong" style="cursor: pointer">{{ a.errors|length }} righe non leggibili, verranno saltate</summary>
+                <summary class="small strong" style="cursor: pointer">{{ '%count% riga non leggibile, verrà saltata|%count% righe non leggibili, verranno saltate'|trans({'%count%': a.errors|length}) }}</summary>
                 <ul class="small muted" style="margin: 8px 0 0; padding-left: 18px">
-                    {% for e in a.errors|slice(0, 30) %}<li>Riga {{ e.line }}: {{ e.message }}</li>{% endfor %}
-                    {% if a.errors|length > 30 %}<li>… e altre {{ a.errors|length - 30 }}</li>{% endif %}
+                    {% for e in a.errors|slice(0, 30) %}<li>{{ 'Riga %line%: %message%'|trans({'%line%': e.line, '%message%': e.message}) }}</li>{% endfor %}
+                    {% if a.errors|length > 30 %}<li>{{ "… e un'altra|… e altre %count%"|trans({'%count%': a.errors|length - 30}) }}</li>{% endif %}
                 </ul>
             </details>
         {% endif %}
     </section>
 
     {% if a.new == 0 %}
-        {{ ui.empty('check', 'Niente di nuovo: tutte le righe di questo file sono già state importate.') }}
+        {{ ui.empty('check', 'Niente di nuovo: tutte le righe di questo file sono già state importate.'|trans) }}
     {% else %}
         <section class="stack-sm">
-            <div class="section-head"><h2>Conti</h2></div>
-            <p class="small muted">Su quale conto finiscono i movimenti di ogni wallet del file.</p>
+            <div class="section-head"><h2>{{ 'Conti'|trans }}</h2></div>
+            <p class="small muted">{{ 'Su quale conto finiscono i movimenti di ogni wallet del file.'|trans }}</p>
             <div class="card card--list">
                 {% for wallet, count in a.wallets %}
                     <div class="map-row">
-                        <div class="map-row__from">{{ ui.tile('wallet', '#8AB4FF', 'sm') }}<div class="stack-sm" style="gap: 1px; min-width: 0"><span class="strong ellipsis">{{ wallet }}</span><span class="xsmall muted">{{ count }} movimenti</span></div></div>
+                        <div class="map-row__from">{{ ui.tile('wallet', '#8AB4FF', 'sm') }}<div class="stack-sm" style="gap: 1px; min-width: 0"><span class="strong ellipsis">{{ wallet }}</span><span class="xsmall muted">{{ '%count% movimento|%count% movimenti'|trans({'%count%': count}) }}</span></div></div>
                         <input type="hidden" name="wallet_key[{{ loop.index0 }}]" value="{{ wallet }}">
-                        <label class="field map-row__to"><span class="sr-only">Conto per {{ wallet }}</span>
+                        <label class="field map-row__to"><span class="sr-only">{{ 'Conto per %name%'|trans({'%name%': wallet}) }}</span>
                             <select name="wallet_to[{{ loop.index0 }}]">
                                 {% for acc in accounts %}<option value="{{ acc.id }}" {{ a.suggestions.accounts[wallet] == acc.id ~ '' ? 'selected' }}>{{ acc.name }}</option>{% endfor %}
-                                <option value="new" {{ a.suggestions.accounts[wallet] == 'new' ? 'selected' }}>Crea conto «{{ wallet }}»</option>
+                                <option value="new" {{ a.suggestions.accounts[wallet] == 'new' ? 'selected' }}>{{ 'Crea conto «%name%»'|trans({'%name%': wallet}) }}</option>
                             </select>
                         </label>
                     </div>
@@ -78,7 +78,7 @@
             </div>
         </section>
 
-        {% for kind, label in {expense: 'Categorie di uscita', income: 'Categorie di entrata'} %}
+        {% for kind, label in {expense: 'Categorie di uscita'|trans, income: 'Categorie di entrata'|trans} %}
             {% set list = a.categories|filter(c => c.kind == kind) %}
             {% if list|length %}
             <section class="stack-sm">
@@ -90,29 +90,29 @@
                         <div class="map-row">
                             <div class="map-row__from">
                                 {{ ui.tile(suggestion == 'new' ? 'circle-plus' : 'check', suggestion == 'new' ? '#A3A59F' : '#9BE7A0', 'sm') }}
-                                <div class="stack-sm" style="gap: 1px; min-width: 0"><span class="strong ellipsis">{{ c.name }}</span><span class="xsmall muted">{{ c.count }} movimenti · {{ c.total|money }}</span></div>
+                                <div class="stack-sm" style="gap: 1px; min-width: 0"><span class="strong ellipsis">{{ c.name }}</span><span class="xsmall muted">{{ '%count% movimento|%count% movimenti'|trans({'%count%': c.count}) }} · {{ c.total|money }}</span></div>
                             </div>
                             <input type="hidden" name="cat_key[{{ idx }}]" value="{{ c.key }}">
-                            <label class="field map-row__to"><span class="sr-only">Categoria per {{ c.name }}</span>
+                            <label class="field map-row__to"><span class="sr-only">{{ 'Categoria per %name%'|trans({'%name%': c.name}) }}</span>
                                 {{ _self.category_select(idx, c, suggestion, categoryGroups) }}
                             </label>
                         </div>
                     {% endfor %}
                 </div>
-                <p class="hint">Le categorie nuove nascono nel conto in cui finiscono i movimenti, come principali: poi in Categorie puoi spostarle sotto un'altra, cambiarne icona e colore.</p>
+                <p class="hint">{{ "Le categorie nuove nascono nel conto in cui finiscono i movimenti, come principali: poi in Categorie puoi spostarle sotto un'altra, cambiarne icona e colore."|trans }}</p>
             </section>
             {% endif %}
         {% endfor %}
 
         {% if a.tags|length %}
             <section class="stack-sm">
-                <div class="section-head"><h2>Etichette</h2></div>
+                <div class="section-head"><h2>{{ 'Etichette'|trans }}</h2></div>
                 <div class="chips">{% for t in a.tags|slice(0, 40) %}<span class="tag-pill" style="font-size: 13px; padding: 4px 10px">#{{ t }}</span>{% endfor %}</div>
             </section>
         {% endif %}
 
         <section class="stack-sm">
-            <div class="section-head"><h2>Anteprima</h2><span class="small muted">prime righe</span></div>
+            <div class="section-head"><h2>{{ 'Anteprima'|trans }}</h2><span class="small muted">{{ 'prime righe'|trans }}</span></div>
             <div class="card card--list">
                 {% set shown = 0 %}
                 {% for i, row in a.rows %}
@@ -120,8 +120,8 @@
                         {% set shown = shown + 1 %}
                         <div class="list-row" style="min-height: 54px">
                             <div class="list-row__body">
-                                <span class="list-row__title">{{ row.description ?: (row.kind == 'transfer' ? 'Giroconto' : row.category) }}</span>
-                                <span class="list-row__meta">{{ row.date|it_date('d MMM yyyy') }} · {{ row.kind == 'transfer' ? row.wallet ~ ' → ' ~ row.toWallet : row.category }}{% for t in row.tags %} <span class="tag-pill">#{{ t|lower|replace({' ': '-'}) }}</span>{% endfor %}</span>
+                                <span class="list-row__title">{{ row.description ?: (row.kind == 'transfer' ? 'Giroconto'|trans : row.category) }}</span>
+                                <span class="list-row__meta">{{ row.date|local_date('d MMM yyyy') }} · {{ row.kind == 'transfer' ? row.wallet ~ ' → ' ~ row.toWallet : row.category }}{% for t in row.tags %} <span class="tag-pill">#{{ t|lower|replace({' ': '-'}) }}</span>{% endfor %}</span>
                             </div>
                             <span class="list-row__amount {{ row.kind == 'income' ? 'is-income' }}">{{ row.kind == 'income' ? '+' : (row.kind == 'expense' ? '−') }}{{ row.amount|money }}</span>
                         </div>
@@ -130,8 +130,8 @@
             </div>
         </section>
 
-        <button type="submit" class="btn btn--block">{{ icon('check', 20) }}Importa {{ a.new|num }} movimenti</button>
+        <button type="submit" class="btn btn--block">{{ icon('check', 20) }}{{ 'Importa %n% movimento|Importa %n% movimenti'|trans({'%count%': a.new, '%n%': a.new|num}) }}</button>
     {% endif %}
-    <button type="submit" name="_discard" value="1" class="btn btn--ghost btn--block btn--sm" formnovalidate>Annulla e scarta il file</button>
+    <button type="submit" name="_discard" value="1" class="btn btn--ghost btn--block btn--sm" formnovalidate>{{ 'Annulla e scarta il file'|trans }}</button>
 </form>
 {% endblock %}

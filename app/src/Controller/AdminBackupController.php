@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Service\BackupService;
+use App\Service\Language;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,7 +31,7 @@ final class AdminBackupController extends AppController
             $this->checkCsrf($request, 'backup-upload');
             $file = $request->files->get('file');
             if (!$file || !$file->isValid()) {
-                $error = 'Scegli il file di backup da caricare.';
+                $error = $this->trans('Scegli il file di backup da caricare.');
             } else {
                 try {
                     return $this->redirectToRoute('admin_backup_review', ['key' => $this->backups->store($file->getPathname())], 303);
@@ -68,7 +69,7 @@ final class AdminBackupController extends AppController
     public function review(Request $request, string $key, Security $security): Response
     {
         if (!$this->backups->exists($key)) {
-            $this->addFlash('error', 'File non più disponibile: caricalo di nuovo');
+            $this->addFlash('error', $this->trans('File non più disponibile: caricalo di nuovo'));
 
             return $this->redirectToRoute('admin_backup');
         }
@@ -83,7 +84,7 @@ final class AdminBackupController extends AppController
                 return $this->redirectToRoute('admin_backup', [], 303);
             }
             if (trim((string) $request->request->get('confirm')) !== self::CONFIRM) {
-                $error = sprintf('Per ripristinare scrivi %s', self::CONFIRM);
+                $error = $this->trans('Per ripristinare scrivi %word%', ['%word%' => self::CONFIRM]);
             } else {
                 try {
                     $rows = $this->backups->restore($data);
@@ -91,7 +92,7 @@ final class AdminBackupController extends AppController
                     // Utenti e password ora sono quelli del backup: logout vero (anche il cookie "ricordami")
                     // e si rientra con quelle credenziali.
                     $response = $security->logout(false);
-                    $request->getSession()->getFlashBag()->add('success', sprintf('Backup ripristinato (%s righe): accedi con le credenziali del backup', number_format($rows, 0, ',', '.')));
+                    $request->getSession()->getFlashBag()->add('success', $this->trans('Backup ripristinato (%rows% righe): accedi con le credenziali del backup', ['%rows%' => number_format($rows, 0, ...Language::separators())]));
 
                     return $response ?? $this->redirectToRoute('app_login', [], 303);
                 } catch (\InvalidArgumentException|\RuntimeException $e) {

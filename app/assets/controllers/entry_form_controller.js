@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { t } from '../i18n.js';
 
 /* Aggiornamento di un investimento: l'importo e il conto servono solo per versamenti e prelievi. */
 export default class extends Controller {
@@ -12,7 +13,7 @@ export default class extends Controller {
         const mode = this.element.querySelector('input[name="mode"]:checked')?.value || 'deposit';
         this.amountTarget.hidden = mode === 'value';
         this.amountTarget.querySelector('input').disabled = mode === 'value';
-        this.amountLabelTarget.textContent = mode === 'withdraw' ? 'Ritirati €' : 'Versati €';
+        this.amountLabelTarget.textContent = mode === 'withdraw' ? t('Ritirati €') : t('Versati €');
         const showAccount = mode === 'deposit';
         this.accountTarget.hidden = !showAccount;
         this.accountHintTarget.hidden = !showAccount;

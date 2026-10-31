@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\MovementRepository;
+use App\Util\Trans;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -134,17 +135,17 @@ class Movement implements OwnedInterface
     public function getDescription(): string { return $this->description; }
     public function setDescription(string $description): static { $this->description = mb_substr(trim($description), 0, 160); return $this; }
 
-    /** Descrizione se c'e', altrimenti il nome della categoria. */
+    /** Descrizione se c'e', altrimenti il nome della categoria (o un testo nella lingua dell'utente). */
     public function getTitle(): string
     {
         if ($this->description !== '') {
             return $this->description;
         }
         if ($this->kind === self::TRANSFER) {
-            return $this->toAccount ? 'Giroconto verso '.$this->toAccount->getName() : 'Versamento investimento';
+            return $this->toAccount ? Trans::t('Giroconto verso %name%', ['%name%' => $this->toAccount->getName()]) : Trans::t('Versamento investimento');
         }
 
-        return $this->category?->getName() ?? self::KINDS[$this->kind];
+        return $this->category?->getName() ?? Trans::label(self::KINDS[$this->kind]);
     }
 
     public function getNote(): ?string { return $this->note; }

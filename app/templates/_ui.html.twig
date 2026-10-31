@@ -22,9 +22,9 @@
             <span class="list-row__title">{{ m.title }}</span>
             <span class="list-row__meta">
                 {%- if m.transfer -%}
-                    <span>{{ m.account.name }} → {{ m.toAccount ? m.toAccount.name : (m.investmentEntry ? m.investmentEntry.holding.name : 'Investimenti') }}</span>
+                    <span>{{ m.account.name }} → {{ m.toAccount ? m.toAccount.name : (m.investmentEntry ? m.investmentEntry.holding.name : 'Investimenti'|trans) }}</span>
                 {%- else -%}
-                    <span>{{ m.category ? m.category.fullName : 'Senza categoria' }}{% if opts.date ?? false %} · {{ m.date|short_day }}{% endif %}{% if opts.account ?? false %} · {{ m.account.name }}{% endif %}{% if m.user != app.user %} · di {{ m.user.displayName }}{% endif %}</span>
+                    <span>{{ m.category ? m.category.fullName : 'Senza categoria'|trans }}{% if opts.date ?? false %} · {{ m.date|short_day }}{% endif %}{% if opts.account ?? false %} · {{ m.account.name }}{% endif %}{% if m.user != app.user %} · {{ 'di %name%'|trans({'%name%': m.user.displayName}) }}{% endif %}</span>
                 {%- endif -%}
                 {%- if m.refuel -%}<span class="tag-pill">{{ icon('fuel', 12) }}{{ m.refuel.liters|num(2) }} {{ m.vehicle and m.vehicle.electric ? 'kWh' : 'l' }}</span>{%- elseif m.vehicle and not (opts.hideVehicle ?? false) -%}<span class="tag-pill">{{ icon(m.vehicle.icon, 12) }}{{ m.vehicle.name }}</span>{%- endif -%}
                 {%- for tag in m.tags -%}<span class="tag-pill">#{{ tag.name }}</span>{%- endfor -%}
@@ -113,22 +113,23 @@
     {%- set prev = month|date_modify('-1 month') -%}
     {%- set next = month|date_modify('+1 month') -%}
     <div class="month-nav">
-        <a href="{{ path(route, params|merge({month: prev|date('Y-m')})) }}" aria-label="Mese precedente">{{ icon('chevron-left', 18) }}</a>
+        <a href="{{ path(route, params|merge({month: prev|date('Y-m')})) }}" aria-label="{{ 'Mese precedente'|trans }}">{{ icon('chevron-left', 18) }}</a>
         <span>{{ month|month_label }}</span>
-        <a href="{{ path(route, params|merge({month: next|date('Y-m')})) }}" aria-label="Mese successivo">{{ icon('chevron-right', 18) }}</a>
+        <a href="{{ path(route, params|merge({month: next|date('Y-m')})) }}" aria-label="{{ 'Mese successivo'|trans }}">{{ icon('chevron-right', 18) }}</a>
     </div>
 {% endmacro %}
 
 {% macro color_picker(name, current) %}
-    <div class="swatches" role="radiogroup" aria-label="Colore">
+    {# I nomi dei colori (Palette::COLORS) sono chiavi di traduzione #}
+    <div class="swatches" role="radiogroup" aria-label="{{ 'Colore'|trans }}">
         {% for hex, label in palette_colors() %}
-            <label class="swatch" style="--c: {{ hex }}" title="{{ label }}"><input type="radio" name="{{ name }}" value="{{ hex }}" {{ hex == current ? 'checked' }} aria-label="{{ label }}"></label>
+            <label class="swatch" style="--c: {{ hex }}" title="{{ label|trans }}"><input type="radio" name="{{ name }}" value="{{ hex }}" {{ hex == current ? 'checked' }} aria-label="{{ label|trans }}"></label>
         {% endfor %}
     </div>
 {% endmacro %}
 
 {% macro icon_picker(name, current, icons) %}
-    <div class="icon-grid" role="radiogroup" aria-label="Icona">
+    <div class="icon-grid" role="radiogroup" aria-label="{{ 'Icona'|trans }}">
         {% for i in icons %}
             <label title="{{ i }}"><input type="radio" name="{{ name }}" value="{{ i }}" {{ i == current ? 'checked' }} aria-label="{{ i }}">{{ icon(i, 20) }}</label>
         {% endfor %}
@@ -137,5 +138,5 @@
 
 {# Occhio: nasconde/mostra gli importi su questo dispositivo (assets/privacy.js). #}
 {% macro privacy_toggle() %}
-    <button type="button" class="icon-btn privacy-toggle" data-controller="privacy" data-action="privacy#toggle" aria-label="Nascondi gli importi" aria-pressed="false">{{ icon('eye', 20, 'privacy-toggle__show') }}{{ icon('eye-off', 20, 'privacy-toggle__hide') }}</button>
+    <button type="button" class="icon-btn privacy-toggle" data-controller="privacy" data-action="privacy#toggle" aria-label="{{ 'Nascondi gli importi'|trans }}" aria-pressed="false">{{ icon('eye', 20, 'privacy-toggle__show') }}{{ icon('eye-off', 20, 'privacy-toggle__hide') }}</button>
 {% endmacro %}

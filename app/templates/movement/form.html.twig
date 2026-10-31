@@ -3,16 +3,16 @@
 {% set hide_tabbar = true %}
 {% set isNew = movement.id is null %}
 {% set refuel = movement.refuel %}
-{% block title %}{{ isNew ? 'Nuovo movimento' : 'Modifica movimento' }}{% endblock %}
+{% block title %}{{ isNew ? 'Nuovo movimento'|trans : 'Modifica movimento'|trans }}{% endblock %}
 
 {% macro category_picker(tree, movement, kind, account) %}
     {% import '_ui.html.twig' as ui %}
     {% set active = movement.kind == kind and movement.account == account %}
     <div class="cat-groups" data-movement-form-target="categories" data-kind="{{ kind }}" data-account="{{ account.id }}" {{ not active ? 'hidden' }}>
         {% if tree is empty %}
-            <p class="small muted">Il conto «{{ account.name }}» non ha categorie di {{ kind == 'income' ? 'entrata' : 'uscita' }}. <a class="link" href="{{ path('category_index', {account: account.id, kind: kind}) }}">Aggiungile</a></p>
+            <p class="small muted">{{ kind == 'income' ? 'Il conto «%name%» non ha categorie di entrata.'|trans({'%name%': account.name}) : 'Il conto «%name%» non ha categorie di uscita.'|trans({'%name%': account.name}) }} <a class="link" href="{{ path('category_index', {account: account.id, kind: kind}) }}">{{ 'Aggiungile'|trans }}</a></p>
         {% endif %}
-        <div class="cat-picker" role="radiogroup" aria-label="Categoria">
+        <div class="cat-picker" role="radiogroup" aria-label="{{ 'Categoria'|trans }}">
             {% for parent in tree %}
                 <label class="cat-pick" data-fuel="{{ parent.fuel ? 1 : 0 }}">
                     <input type="radio" name="category" value="{{ parent.id }}" {{ movement.category == parent ? 'checked' }} {{ not active ? 'disabled' }}
@@ -26,12 +26,12 @@
         {% for parent in tree|filter(p => p.children|filter(c => not c.archived)|length > 0) %}
             <div class="cat-children" data-children-of="{{ parent.id }}" hidden>
                 <div class="row" style="gap: 10px">
-                    <button type="button" class="icon-btn icon-btn--plain" data-action="movement-form#backToGrid" aria-label="Tutte le categorie">{{ icon('chevron-left') }}</button>
+                    <button type="button" class="icon-btn icon-btn--plain" data-action="movement-form#backToGrid" aria-label="{{ 'Tutte le categorie'|trans }}">{{ icon('chevron-left') }}</button>
                     {{ ui.tile(parent.icon, parent.color, 'sm') }}
                     <span class="strong grow">{{ parent.name }}</span>
                 </div>
                 <div class="chips">
-                <button type="button" class="chip chip--dashed" data-action="movement-form#confirmParent">Solo «{{ parent.name }}»</button>
+                <button type="button" class="chip chip--dashed" data-action="movement-form#confirmParent">{{ 'Solo «%name%»'|trans({'%name%': parent.name}) }}</button>
                 {% for child in parent.children|filter(c => not c.archived) %}
                     <label class="chip">
                         <input type="radio" name="category" value="{{ child.id }}" {{ movement.category == child ? 'checked' }} {{ not active ? 'disabled' }}
@@ -54,17 +54,17 @@
     <input type="hidden" name="_back" value="{{ back }}">
 
     <div class="topbar">
-        <a href="{{ back ?: path('movement_index') }}" class="icon-btn" aria-label="Chiudi">{{ icon('x') }}</a>
-        <span class="topbar__center">{{ isNew ? 'Nuovo movimento' : 'Modifica movimento' }}</span>
+        <a href="{{ back ?: path('movement_index') }}" class="icon-btn" aria-label="{{ 'Chiudi'|trans }}">{{ icon('x') }}</a>
+        <span class="topbar__center">{{ isNew ? 'Nuovo movimento'|trans : 'Modifica movimento'|trans }}</span>
         {% if not isNew %}
-            <a href="{{ path('movement_duplicate', {id: movement.id, back: back}) }}" class="icon-btn" aria-label="Duplica">{{ icon('repeat', 18) }}</a>
+            <a href="{{ path('movement_duplicate', {id: movement.id, back: back}) }}" class="icon-btn" aria-label="{{ 'Duplica'|trans }}">{{ icon('repeat', 18) }}</a>
         {% else %}
             <span style="width: 44px"></span>
         {% endif %}
     </div>
 
-    <div class="seg" role="radiogroup" aria-label="Tipo di movimento">
-        {% for value, label in {expense: 'Uscita', income: 'Entrata', transfer: 'Giroconto'} %}
+    <div class="seg" role="radiogroup" aria-label="{{ 'Tipo di movimento'|trans }}">
+        {% for value, label in {expense: 'Uscita'|trans, income: 'Entrata'|trans, transfer: 'Giroconto'|trans} %}
             <label><input type="radio" name="kind" value="{{ value }}" {{ movement.kind == value ? 'checked' }} data-action="movement-form#kindChanged">{{ label }}</label>
         {% endfor %}
     </div>
@@ -72,7 +72,7 @@
     <div class="stack-sm" style="gap: 2px">
         <div class="amount-input">
             <span class="amount-input__sign" data-movement-form-target="sign">{{ movement.income ? '+' : (movement.expense ? '−' : '') }}</span>
-            <input type="text" name="amount" inputmode="decimal" autocomplete="off" placeholder="0,00" aria-label="Importo"
+            <input type="text" name="amount" inputmode="decimal" autocomplete="off" placeholder="{{ 0|input_num }}" aria-label="{{ 'Importo'|trans }}"
                    value="{{ movement.amount > 0 ? movement.amount|input_num : '' }}"
                    data-keypad-target="input" data-movement-form-target="amount" data-action="beforeinput->keypad#typed paste->keypad#pasted" {{ isNew ? 'autofocus' }}>
             <span class="amount-input__cur">€</span>
@@ -84,14 +84,14 @@
     <button type="button" class="cat-current fields-only" data-movement-form-target="current" data-action="movement-form#openGrid" hidden>
         <span class="cat-current__tile" data-movement-form-target="currentTile"></span>
         <span class="cat-current__name grow ellipsis" data-movement-form-target="currentName"></span>
-        <span class="cat-current__change">Cambia {{ icon('chevron-down', 16) }}</span>
+        <span class="cat-current__change">{{ 'Cambia'|trans }} {{ icon('chevron-down', 16) }}</span>
     </button>
 
-    <section class="cat-sheet grid-only" aria-label="Scegli la categoria">
+    <section class="cat-sheet grid-only" aria-label="{{ 'Scegli la categoria'|trans }}">
         {# Conto prima della categoria: ogni conto ha le sue categorie #}
         {% if accounts|length > 1 %}
-            <span class="label-caps">Conto</span>
-            <div class="chips chips--scroll" role="radiogroup" aria-label="Conto">
+            <span class="label-caps">{{ 'Conto'|trans }}</span>
+            <div class="chips chips--scroll" role="radiogroup" aria-label="{{ 'Conto'|trans }}">
                 {% for a in accounts %}
                     <button type="button" class="chip {{ movement.account == a ? 'is-active' }}" role="radio" aria-checked="{{ movement.account == a ? 'true' : 'false' }}"
                             data-movement-form-target="accountChip" data-account="{{ a.id }}" data-action="movement-form#pickAccount">
@@ -100,7 +100,7 @@
                 {% endfor %}
             </div>
         {% endif %}
-        <span class="label-caps">Categoria</span>
+        <span class="label-caps">{{ 'Categoria'|trans }}</span>
         {% for t in categoryTrees %}
             {{ _self.category_picker(t.expense, movement, 'expense', t.account) }}
             {{ _self.category_picker(t.income, movement, 'income', t.account) }}
@@ -111,27 +111,27 @@
     <div class="rows fields-only">
         <label class="rowf" data-movement-form-target="transferOnly" {{ not movement.transfer ? 'hidden' }}>
             <span class="rowf__icon">{{ icon('arrow-left-right') }}</span>
-            <span class="rowf__label">Verso</span>
+            <span class="rowf__label">{{ 'Verso'|trans }}</span>
             <select name="to_account">
-                <option value="">Scegli il conto…</option>
+                <option value="">{{ 'Scegli il conto…'|trans }}</option>
                 {% for a in accounts %}<option value="{{ a.id }}" {{ movement.toAccount == a ? 'selected' }}>{{ a.name }}</option>{% endfor %}
             </select>
         </label>
         <label class="rowf">
             <span class="rowf__icon">{{ icon('landmark') }}</span>
-            <span class="rowf__label" data-movement-form-target="accountLabel">{{ movement.transfer ? 'Da conto' : 'Conto' }}</span>
+            <span class="rowf__label" data-movement-form-target="accountLabel">{{ movement.transfer ? 'Da conto'|trans : 'Conto'|trans }}</span>
             <select name="account" data-movement-form-target="account" data-action="movement-form#accountChanged">
-                {% for a in accounts %}<option value="{{ a.id }}" {{ movement.account == a ? 'selected' }}>{{ a.name }}{{ a.shared or a.user != app.user ? ' (condiviso)' }}</option>{% endfor %}
+                {% for a in accounts %}<option value="{{ a.id }}" {{ movement.account == a ? 'selected' }}>{{ a.name }}{{ a.shared or a.user != app.user ? ' (' ~ 'condiviso'|trans ~ ')' }}</option>{% endfor %}
             </select>
         </label>
         <label class="rowf">
             <span class="rowf__icon">{{ icon('pencil') }}</span>
-            <span class="rowf__label">Descrizione</span>
-            <input type="text" name="description" value="{{ movement.description }}" list="descriptions" maxlength="160" placeholder="es. Esselunga" autocomplete="off">
+            <span class="rowf__label">{{ 'Descrizione'|trans }}</span>
+            <input type="text" name="description" value="{{ movement.description }}" list="descriptions" maxlength="160" placeholder="{{ 'es. Esselunga'|trans }}" autocomplete="off">
         </label>
         <label class="rowf">
             <span class="rowf__icon">{{ icon('calendar') }}</span>
-            <span class="rowf__label">Data</span>
+            <span class="rowf__label">{{ 'Data'|trans }}</span>
             <input type="date" name="date" value="{{ movement.date|date('Y-m-d') }}" required>
         </label>
         {# Etichette: tendina a scelta multipla fra quelle esistenti (si creano dalla sezione Etichette) #}
@@ -141,9 +141,9 @@
         <div class="rowf-wrap" data-controller="tag-select" data-action="click@window->tag-select#outside keydown.esc@window->tag-select#close">
             <div class="rowf">
                 <span class="rowf__icon">{{ icon('tag') }}</span>
-                <span class="rowf__label">Etichette</span>
+                <span class="rowf__label">{{ 'Etichette'|trans }}</span>
                 <button type="button" class="tag-select__toggle" data-tag-select-target="toggle" data-action="tag-select#toggle" aria-expanded="false" aria-controls="tag-menu">
-                    <span class="ellipsis" data-tag-select-target="summary">{{ chosen ? chosen|map(n => '#' ~ n)|join(', ') : 'nessuna' }}</span>
+                    <span class="ellipsis" data-tag-select-target="summary">{{ chosen ? chosen|map(n => '#' ~ n)|join(', ') : 'nessuna'|trans }}</span>
                     {{ icon('chevron-down', 18, 'tag-select__chev') }}
                 </button>
             </div>
@@ -156,22 +156,22 @@
                         {{ icon('check', 18, 'tag-option__check') }}
                     </label>
                 {% else %}
-                    <p class="small muted" style="margin: 12px 0">Nessuna etichetta. <a class="link" href="{{ path('tag_new') }}">Creane una dalla sezione Etichette</a>.</p>
+                    <p class="small muted" style="margin: 12px 0">{{ 'Nessuna etichetta.'|trans }} <a class="link" href="{{ path('tag_new') }}">{{ 'Creane una dalla sezione Etichette'|trans }}</a>.</p>
                 {% endfor %}
             </div>
         </div>
         <label class="rowf" data-movement-form-target="vehicleRow" {{ not movement.expense or (movement.category and movement.category.fuel) or vehicles is empty ? 'hidden' }}>
             <span class="rowf__icon">{{ icon('car') }}</span>
-            <span class="rowf__label">Veicolo</span>
+            <span class="rowf__label">{{ 'Veicolo'|trans }}</span>
             <select name="vehicle" data-movement-form-target="vehicleSelect">
-                <option value="">Nessuno</option>
+                <option value="">{{ 'Nessuno'|trans }}</option>
                 {% for v in vehicles %}<option value="{{ v.id }}" {{ movement.vehicle == v ? 'selected' }}>{{ v.name }}</option>{% endfor %}
             </select>
         </label>
         <label class="rowf">
             <span class="rowf__icon">{{ icon('sticky-note') }}</span>
-            <span class="rowf__label">Nota</span>
-            <input type="text" name="note" value="{{ movement.note }}" placeholder="facoltativa">
+            <span class="rowf__label">{{ 'Nota'|trans }}</span>
+            <input type="text" name="note" value="{{ movement.note }}" placeholder="{{ 'facoltativa'|trans }}">
         </label>
     </div>
     {% for field in ['date', 'account', 'to_account'] %}
@@ -184,16 +184,16 @@
              data-fuel-averages-value="{{ averages|json_encode }}"
              {{ not (movement.category and movement.category.fuel and movement.expense) ? 'hidden' }}>
         <div class="row row--between">
-            <h2 class="h2" style="font-size: 17px">Rifornimento</h2>
-            <a href="{{ path('vehicle_index') }}" class="link small">Gestisci veicoli</a>
+            <h2 class="h2" style="font-size: 17px">{{ 'Rifornimento'|trans }}</h2>
+            <a href="{{ path('vehicle_index') }}" class="link small">{{ 'Gestisci veicoli'|trans }}</a>
         </div>
 
         {% if vehicles is empty %}
-            <p class="small muted">Per registrare i rifornimenti aggiungi prima un veicolo.</p>
-            <a href="{{ path('vehicle_new', {back: app.request.requestUri}) }}" class="btn btn--sm btn--ghost">{{ icon('plus', 18) }}Aggiungi veicolo</a>
+            <p class="small muted">{{ 'Per registrare i rifornimenti aggiungi prima un veicolo.'|trans }}</p>
+            <a href="{{ path('vehicle_new', {back: app.request.requestUri}) }}" class="btn btn--sm btn--ghost">{{ icon('plus', 18) }}{{ 'Aggiungi veicolo'|trans }}</a>
         {% else %}
             {% set currentVehicle = movement.vehicle ?? vehicles|first %}
-            <div class="grid-2" role="radiogroup" aria-label="Veicolo">
+            <div class="grid-2" role="radiogroup" aria-label="{{ 'Veicolo'|trans }}">
                 {% for v in vehicles %}
                     <label class="chip" style="height: auto; padding: 10px; border-radius: 16px; gap: 10px; white-space: normal">
                         <input type="radio" name="vehicle" value="{{ v.id }}" {{ currentVehicle == v ? 'checked' }} data-action="fuel#vehicleChanged" data-fuel-target="vehicle" data-electric="{{ v.electric ? 1 : 0 }}" {{ not (movement.category and movement.category.fuel) ? 'disabled' }}>
@@ -205,9 +205,9 @@
             {% if errors.vehicle is defined %}<p class="field__error">{{ errors.vehicle }}</p>{% endif %}
 
             <label class="field {{ errors.odometer is defined ? 'has-error' }}">
-                <span class="field__label"><span>Chilometri attuali</span><span data-fuel-target="lastKm"></span></span>
+                <span class="field__label"><span>{{ 'Chilometri attuali'|trans }}</span><span data-fuel-target="lastKm"></span></span>
                 <span class="row" style="gap: 10px">
-                    <input type="text" inputmode="numeric" name="refuel[odometer]" value="{{ refuel ? refuel.odometer : '' }}" placeholder="es. 48215" style="font-size: 20px; font-weight: 600; max-width: 140px" data-fuel-target="odometer" data-action="input->fuel#update" autocomplete="off">
+                    <input type="text" inputmode="numeric" name="refuel[odometer]" value="{{ refuel ? refuel.odometer : '' }}" placeholder="{{ 'es. %value%'|trans({'%value%': 48215}) }}" style="font-size: 20px; font-weight: 600; max-width: 140px" data-fuel-target="odometer" data-action="input->fuel#update" autocomplete="off">
                     <span class="small strong text-accent" data-fuel-target="delta"></span>
                 </span>
             </label>
@@ -215,29 +215,29 @@
             <div class="stack-sm" style="gap: 6px">
                 <div class="grid-3">
                     <label class="field" data-fuel-target="priceBox">
-                        <span class="field__label" data-fuel-target="priceLabel">€ / litro</span>
-                        <input type="text" inputmode="decimal" name="refuel[price]" value="{{ refuel ? refuel.pricePerLiter|input_num(3) : '' }}" placeholder="1,799" data-fuel-target="price" data-action="input->fuel#edited" data-field="price" autocomplete="off">
+                        <span class="field__label" data-fuel-target="priceLabel">{{ '€ / litro'|trans }}</span>
+                        <input type="text" inputmode="decimal" name="refuel[price]" value="{{ refuel ? refuel.pricePerLiter|input_num(3) : '' }}" placeholder="{{ 1.799|input_num(3) }}" data-fuel-target="price" data-action="input->fuel#edited" data-field="price" autocomplete="off">
                     </label>
                     <label class="field" data-fuel-target="litersBox">
-                        <span class="field__label" data-fuel-target="litersLabel">Litri</span>
-                        <input type="text" inputmode="decimal" name="refuel[liters]" value="{{ refuel ? refuel.liters|input_num(2) : '' }}" placeholder="34,46" data-fuel-target="liters" data-action="input->fuel#edited" data-field="liters" autocomplete="off">
+                        <span class="field__label" data-fuel-target="litersLabel">{{ 'Litri'|trans }}</span>
+                        <input type="text" inputmode="decimal" name="refuel[liters]" value="{{ refuel ? refuel.liters|input_num(2) : '' }}" placeholder="{{ 34.46|input_num(2) }}" data-fuel-target="liters" data-action="input->fuel#edited" data-field="liters" autocomplete="off">
                     </label>
                     <label class="field" data-fuel-target="totalBox">
-                        <span class="field__label">Totale €</span>
-                        <input type="text" inputmode="decimal" value="{{ movement.amount > 0 ? movement.amount|input_num : '' }}" placeholder="62,00" data-fuel-target="total" data-action="input->fuel#edited" data-field="total" autocomplete="off" aria-label="Totale (uguale all'importo)">
+                        <span class="field__label">{{ 'Totale €'|trans }}</span>
+                        <input type="text" inputmode="decimal" value="{{ movement.amount > 0 ? movement.amount|input_num : '' }}" placeholder="{{ 62|input_num }}" data-fuel-target="total" data-action="input->fuel#edited" data-field="total" autocomplete="off" aria-label="{{ "Totale (uguale all'importo)"|trans }}">
                     </label>
                 </div>
-                <p class="hint">Inserisci due valori qualsiasi, il terzo si calcola da solo.</p>
+                <p class="hint">{{ 'Inserisci due valori qualsiasi, il terzo si calcola da solo.'|trans }}</p>
                 {% if errors.liters is defined %}<p class="field__error">{{ errors.liters }}</p>{% endif %}
             </div>
 
             <div>
                 <label class="switch">
-                    <span class="switch__text"><span>Pieno</span><small>serve per calcolare il consumo</small></span>
+                    <span class="switch__text"><span>{{ 'Pieno'|trans }}</span><small>{{ 'serve per calcolare il consumo'|trans }}</small></span>
                     <input type="checkbox" name="refuel[full]" value="1" {{ refuel is null or refuel.fullTank ? 'checked' }} data-fuel-target="full" data-action="fuel#update">
                 </label>
                 <label class="switch">
-                    <span class="switch__text"><span>Ho saltato un rifornimento</span><small>esclude questo pieno dalla media</small></span>
+                    <span class="switch__text"><span>{{ 'Ho saltato un rifornimento'|trans }}</span><small>{{ 'esclude questo pieno dalla media'|trans }}</small></span>
                     <input type="checkbox" name="refuel[missed]" value="1" {{ refuel and refuel.missedPrevious ? 'checked' }} data-action="fuel#update" data-fuel-target="missed">
                 </label>
             </div>
@@ -245,11 +245,11 @@
             <div class="grid-3 card--outline" style="border-radius: 18px; padding: 12px" data-fuel-target="preview" hidden>
                 <div class="stack-sm" style="align-items: center; gap: 2px"><span class="display strong text-accent" style="font-size: 18px" data-fuel-target="effValue">—</span><span class="xsmall muted" data-fuel-target="effUnit">km/l</span></div>
                 <div class="stack-sm" style="align-items: center; gap: 2px"><span class="display strong" style="font-size: 18px" data-fuel-target="per100Value">—</span><span class="xsmall muted" data-fuel-target="per100Unit">l/100 km</span></div>
-                <div class="stack-sm" style="align-items: center; gap: 2px"><span class="display strong" style="font-size: 18px" data-fuel-target="perKmValue">—</span><span class="xsmall muted">€ al km</span></div>
+                <div class="stack-sm" style="align-items: center; gap: 2px"><span class="display strong" style="font-size: 18px" data-fuel-target="perKmValue">—</span><span class="xsmall muted">{{ '€ al km'|trans }}</span></div>
             </div>
             <div class="fuel-average" data-fuel-target="average" hidden>
                 <div class="row row--between">
-                    <span class="small muted">Media dell'auto · <span data-fuel-target="averageLabel">12 mesi</span></span>
+                    <span class="small muted">{{ "Media dell'auto"|trans }} · <span data-fuel-target="averageLabel">{{ '12 mesi'|trans }}</span></span>
                     <strong class="small" style="white-space: nowrap" data-fuel-target="averageValue">—</strong>
                 </div>
                 <span class="xsmall strong" data-fuel-target="averageCompare"></span>
@@ -259,21 +259,22 @@
 
     {# Tastierino e Salva restano fissi in basso: sopra scorre il resto del modulo #}
     <div class="form-dock">
-        <div class="keypad" data-keypad-target="pad" aria-label="Tastierino">
+        <div class="keypad" data-keypad-target="pad" aria-label="{{ 'Tastierino'|trans }}">
             {% for k in ['1','2','3','4','5','6','7','8','9',','] %}
-                <button type="button" data-action="keypad#press" data-key="{{ k }}">{{ k }}</button>
+                {# Il tasto dei decimali mostra il separatore della lingua, data-key resta "," #}
+                <button type="button" data-action="keypad#press" data-key="{{ k }}">{{ k == ',' ? number_separators()[0] : k }}</button>
             {% endfor %}
             <button type="button" data-action="keypad#press" data-key="0">0</button>
-            <button type="button" data-action="keypad#back" aria-label="Cancella">{{ icon('delete', 22) }}</button>
+            <button type="button" data-action="keypad#back" aria-label="{{ 'Cancella'|trans }}">{{ icon('delete', 22) }}</button>
         </div>
         <div class="form-dock__actions {{ isNew ? 'has-another' : 'has-delete' }}">
             {# Salva per primo: e' quello che parte premendo Invio in un campo #}
-            <button type="submit" class="btn">{{ icon('check', 20) }}<span data-movement-form-target="submitLabel">{{ isNew ? 'Salva' : 'Salva modifiche' }}</span></button>
+            <button type="submit" class="btn">{{ icon('check', 20) }}<span data-movement-form-target="submitLabel">{{ isNew ? 'Salva'|trans : 'Salva modifiche'|trans }}</span></button>
             {% if isNew %}
-                <button type="submit" name="_another" value="1" class="btn btn--ghost form-dock__another">{{ icon('plus', 18) }}Salva e nuovo</button>
+                <button type="submit" name="_another" value="1" class="btn btn--ghost form-dock__another">{{ icon('plus', 18) }}{{ 'Salva e nuovo'|trans }}</button>
             {% else %}
                 {# Invia il modulo di eliminazione qui sotto (i form non si annidano) #}
-                <button type="submit" form="movement-delete" class="btn btn--danger form-dock__delete" aria-label="Elimina movimento" title="Elimina movimento">{{ icon('trash-2', 20) }}</button>
+                <button type="submit" form="movement-delete" class="btn btn--danger form-dock__delete" aria-label="{{ 'Elimina movimento'|trans }}" title="{{ 'Elimina movimento'|trans }}">{{ icon('trash-2', 20) }}</button>
             {% endif %}
         </div>
     </div>
@@ -282,7 +283,7 @@
 </form>
 
 {% if not isNew %}
-    <form id="movement-delete" method="post" action="{{ path('movement_delete', {id: movement.id}) }}" data-turbo-confirm="Eliminare questo movimento?" hidden>
+    <form id="movement-delete" method="post" action="{{ path('movement_delete', {id: movement.id}) }}" data-confirm-kind="delete" data-turbo-confirm="{{ 'Eliminare questo movimento?'|trans }}" hidden>
         <input type="hidden" name="_token" value="{{ csrf_token('delete-movement-' ~ movement.id) }}">
         <input type="hidden" name="_back" value="{{ back }}">
     </form>

@@ -55,12 +55,12 @@ final class AdminUserController extends AppController
         $user = $this->users->find($id) ?? throw $this->createNotFoundException();
         $this->checkCsrf($request, 'delete-user-'.$id);
         if ($user === $this->me()) {
-            $this->addFlash('error', 'Non puoi eliminare il tuo utente');
+            $this->addFlash('error', $this->trans('Non puoi eliminare il tuo utente'));
 
             return $this->redirectToRoute('admin_user_edit', ['id' => $id], 303);
         }
         if ($request->request->get('confirm') !== $user->getUsername()) {
-            $this->addFlash('error', 'Per eliminare scrivi il nome utente esatto');
+            $this->addFlash('error', $this->trans('Per eliminare scrivi il nome utente esatto'));
 
             return $this->redirectToRoute('admin_user_edit', ['id' => $id], 303);
         }
@@ -70,7 +70,7 @@ final class AdminUserController extends AppController
         $conn->executeStatement('DELETE FROM movement WHERE account_id IN (SELECT id FROM account WHERE user_id = ?) OR to_account_id IN (SELECT id FROM account WHERE user_id = ?)', [$id, $id]);
         $this->em->remove($user);
         $this->em->flush();
-        $this->addFlash('success', 'Utente e dati eliminati');
+        $this->addFlash('success', $this->trans('Utente e dati eliminati'));
 
         return $this->redirectToRoute('admin_user_index', [], 303);
     }
@@ -85,9 +85,9 @@ final class AdminUserController extends AppController
             if ($isNew) {
                 $username = mb_strtolower(trim((string) $data->get('username')));
                 if (!preg_match('/^[a-z0-9._-]{3,40}$/', $username)) {
-                    $errors['username'] = 'Da 3 a 40 caratteri: lettere, numeri, punto, trattino';
+                    $errors['username'] = $this->trans('Da 3 a 40 caratteri: lettere, numeri, punto, trattino');
                 } elseif ($this->users->findOneByUsername($username)) {
-                    $errors['username'] = 'Nome utente già usato';
+                    $errors['username'] = $this->trans('Nome utente già usato');
                 }
                 $user->setUsername($username);
             }
@@ -98,7 +98,7 @@ final class AdminUserController extends AppController
             $password = (string) $data->get('password');
             if ($isNew || $password !== '') {
                 if (mb_strlen($password) < 8) {
-                    $errors['password'] = 'Almeno 8 caratteri';
+                    $errors['password'] = $this->trans('Almeno 8 caratteri');
                 } else {
                     $user->setPassword($this->hasher->hashPassword($user, $password));
                 }
@@ -109,7 +109,7 @@ final class AdminUserController extends AppController
                     $seeder?->seed($user);
                 }
                 $this->em->flush();
-                $this->addFlash('success', $isNew ? 'Utente creato con conto e categorie di partenza' : 'Utente aggiornato');
+                $this->addFlash('success', $isNew ? $this->trans('Utente creato con conto e categorie di partenza') : $this->trans('Utente aggiornato'));
 
                 return $this->redirectToRoute('admin_user_index', [], 303);
             }

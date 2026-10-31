@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { t } from '../i18n.js';
 
 /* Tendina delle etichette: si apre e chiude dalla riga, resta aperta mentre si spuntano. */
 export default class extends Controller {
@@ -25,6 +26,6 @@ export default class extends Controller {
 
     changed() {
         const names = [...this.menuTarget.querySelectorAll('input:checked')].map((input) => `#${input.value}`);
-        this.summaryTarget.textContent = names.length ? names.join(', ') : 'nessuna';
+        this.summaryTarget.textContent = names.length ? names.join(', ') : t('nessuna');
     }
 }
