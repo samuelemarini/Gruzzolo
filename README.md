@@ -5,8 +5,8 @@
 <h1 align="center">Gruzzolo</h1>
 
 <p align="center">
-  Money manager personale e multi-utente, self-hosted.<br>
-  Entrate, uscite, conti condivisi, report, consumi dei veicoli e investimenti, in un'app web che si installa sul telefono.
+  A self-hosted, multi-user personal finance manager.<br>
+  Income, expenses, shared accounts, reports, vehicle running costs and investments, in a web app you can install on your phone.
 </p>
 
 <p align="center">
@@ -14,205 +14,215 @@
   <img alt="Symfony 8.1" src="https://img.shields.io/badge/Symfony-8.1-000000?logo=symfony&logoColor=white">
   <img alt="MariaDB" src="https://img.shields.io/badge/MariaDB-11.4-003545?logo=mariadb&logoColor=white">
   <img alt="Docker" src="https://img.shields.io/badge/Docker-compose-2496ED?logo=docker&logoColor=white">
-  <img alt="Senza Node" src="https://img.shields.io/badge/build-niente%20Node-success">
+  <img alt="No Node" src="https://img.shields.io/badge/build-no%20Node-success">
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/mobile.webp" alt="Gruzzolo sul telefono: home, modifica di un movimento col tastierino, report e statistiche di un'auto">
+  <img src="docs/screenshots/mobile.webp" alt="Gruzzolo on a phone: home, editing a transaction with the keypad, report and car statistics">
 </p>
 
-## Cosa fa
+> *Gruzzolo* is Italian for "nest egg". The interface is in Italian.
 
-- **Movimenti** — entrate, uscite e giroconti fra conti, con categorie e sottocategorie, etichette
-  (`#viaggio`, `#festa`…), note e ricerca. Sul telefono l'importo si scrive col tastierino dell'app.
-- **Conti** — corrente, risparmio, contanti; saldo sempre aggiornato e patrimonio complessivo.
-  Un conto si può **condividere** con altri utenti (es. il conto di casa), con le sue categorie.
-- **Report** — mese, anno o intervallo libero, su uno o più conti: spese per categoria, entrate e uscite
-  degli ultimi mesi, media al giorno, spesa più alta, spese per etichetta e rendimento degli investimenti.
-- **Veicoli** — rifornimenti con consumo da pieno a pieno, costo al km e al giorno, autonomia stimata;
-  qualsiasi spesa (bollo, tagliando, pedaggi…) si collega al veicolo.
-- **Investimenti** — versamenti, prelievi e valore di ogni titolo, rendimento e **stima del valore di
-  oggi** dai prezzi di mercato.
-- **Importazione** da Spendee, Wallet (BudgetBakers) e Money Manager, annullabile; **backup e
-  ripristino** dell'intera istanza da un file.
-- **Su misura** — tema chiaro, scuro o automatico, stile classico o *Liquid Glass*, colore d'accento e
-  icona dell'app a scelta, importi nascosti con un tocco quando si è in pubblico.
-- **PWA** — si aggiunge alla schermata Home e si usa come un'app, con trascina-giù per aggiornare.
+## Features
 
-## Schermate
+- **Transactions** — income, expenses and transfers between accounts, with categories and
+  subcategories, tags (`#trip`, `#party`…), notes and search. On phones the amount is typed on the
+  app's own keypad.
+- **Accounts** — checking, savings, cash; always up-to-date balances and overall net worth.
+  An account can be **shared** with other users (e.g. a household account), together with its categories.
+- **Reports** — month, year or any date range, across one or more accounts: spending by category,
+  income and expenses over recent months, daily average, largest expense, spending by tag and
+  investment returns.
+- **Vehicles** — fuel economy computed from full tank to full tank, cost per km and per day,
+  estimated range; any expense (road tax, servicing, tolls…) can be linked to a vehicle.
+- **Investments** — contributions, withdrawals and value of each holding, returns and an
+  **estimate of today's value** based on market prices.
+- **Import** from Spendee, Wallet (BudgetBakers) and Money Manager, with undo; **backup and
+  restore** of the whole instance from a single file.
+- **Make it yours** — light, dark or automatic theme, classic or *Liquid Glass* style, accent colour
+  and app icon of your choice, and a one-tap toggle to blur amounts when you're in public.
+- **PWA** — add it to your home screen and use it like a native app, with pull-to-refresh.
+
+## Screenshots
 
 **Desktop**
 
 <p align="center">
-  <img src="docs/screenshots/desktop-home.webp" alt="Home su desktop: saldo del mese, dove vanno i soldi, ultimi movimenti, conti e investimenti">
+  <img src="docs/screenshots/desktop-home.webp" alt="Desktop home: monthly balance, where the money goes, latest transactions, accounts and investments">
 </p>
 
 <details>
-<summary>Report e veicoli su desktop</summary>
+<summary>Reports and vehicles on desktop</summary>
 <br>
 <p align="center">
-  <img src="docs/screenshots/desktop-report.webp" alt="Report su desktop: saldo, spese per categoria, entrate e uscite degli ultimi mesi, spese per etichetta">
-  <img src="docs/screenshots/desktop-veicolo.webp" alt="Pagina di un'auto: costo totale, distanza, costi mese per mese, confronto dei costi, contachilometri">
+  <img src="docs/screenshots/desktop-report.webp" alt="Desktop report: balance, spending by category, income and expenses over recent months, spending by tag">
+  <img src="docs/screenshots/desktop-veicolo.webp" alt="Car page: total cost, distance, monthly costs, cost breakdown, odometer">
 </p>
 </details>
 
-**Storico, investimenti, etichette e conti**
+**History, investments, tags and accounts**
 
 <p align="center">
-  <img src="docs/screenshots/mobile-altro.webp" alt="Storico dei movimenti, investimenti con grafico, etichetta di un viaggio, patrimonio e conti">
+  <img src="docs/screenshots/mobile-altro.webp" alt="Transaction history, investments with chart, a trip tag, net worth and accounts">
 </p>
 
-**Tema scuro**
+**Dark theme**
 
 <p align="center">
-  <img src="docs/screenshots/scuro.webp" alt="Home, report e veicolo nel tema scuro">
+  <img src="docs/screenshots/scuro.webp" alt="Home, report and vehicle in the dark theme">
 </p>
 
-<sub>Le schermate usano i dati di esempio di `app:demo` e lo stile Liquid Glass.</sub>
+<sub>Screenshots show the sample data from `app:demo` in the Liquid Glass style.</sub>
 
-## Provalo in locale
+## Try it locally
 
-Serve solo Docker.
+All you need is Docker.
 
 ```bash
 git clone https://github.com/samuelemarini/Gruzzolo.git && cd Gruzzolo
-cp .env.example .env          # imposta DB_PASSWORD
+cp .env.example .env          # set DB_PASSWORD
 echo "APP_SECRET=$(openssl rand -hex 16)" > app/.env.local && chmod 644 app/.env.local
-docker compose up -d --build  # web su http://localhost:20029, MariaDB su 30029
+docker compose up -d --build  # web on http://localhost:20029, MariaDB on 30029
 docker compose exec -u application -w /app web composer install
 docker compose exec -u application -w /app web php bin/console doctrine:migrations:migrate -n
-# utente "demo" / "demo1234" con sei mesi di dati di esempio
+# "demo" / "demo1234" user with six months of sample data
 docker compose exec -u application -w /app web php bin/console app:demo
 ```
 
-Poi apri <http://localhost:20029> ed entra con `demo` / `demo1234`.
+Then open <http://localhost:20029> and sign in with `demo` / `demo1234`.
 
-Altri comandi (sempre come utente `application`, altrimenti la cache diventa illeggibile per php-fpm):
+More commands (always as the `application` user, otherwise the cache becomes unreadable for php-fpm):
 
 ```bash
-# utente vero (chiede la password); --admin per poter creare altri utenti dall'app
+# a real user (prompts for the password); --admin lets them create other users from the app
 docker compose exec -u application -w /app web php bin/console app:user:create mario "Mario" --admin
 ```
 
-## Tecnologia
+## Tech
 
-Symfony 8.1 + MariaDB, AssetMapper (niente Node né build), Turbo + Stimulus. I grafici sono SVG
-disegnati lato server. Font (Geist, Bricolage Grotesque) e icone (Lucide) sono nel repository:
-nessuna risorsa da CDN, nessun tracciamento.
+Symfony 8.1 + MariaDB, AssetMapper (no Node, no build step), Turbo + Stimulus. Charts are SVG
+rendered on the server. Fonts (Geist, Bricolage Grotesque) and icons (Lucide) ship with the
+repository: nothing is loaded from a CDN and there is no tracking.
 
-## Produzione (Portainer, stack da Git)
+## Production (Portainer, stack from Git)
 
-Compose: `docker-compose.prod.yml`. Variabili dello stack:
+Compose file: `docker-compose.prod.yml`. Stack variables:
 
-| Variabile | |
+| Variable | |
 |---|---|
-| `DB_PASSWORD` | obbligatoria, solo lettere e numeri |
-| `APP_SECRET` | obbligatoria, `openssl rand -hex 16` |
-| `ADMIN_PASSWORD` | crea l'utente `admin` al primo avvio (poi cambiala dalle Impostazioni) |
-| `TUNNEL_TOKEN` | obbligatoria, token del tunnel Cloudflare (Zero Trust › Networks › Tunnels) |
-| `WEB_PORT`, `DB_PORT`, `DB_BIND` | facoltative, default 8080 / 3308 / 127.0.0.1 |
+| `DB_PASSWORD` | required, letters and digits only |
+| `APP_SECRET` | required, `openssl rand -hex 16` |
+| `ADMIN_PASSWORD` | creates the `admin` user on first start (change it later from Settings) |
+| `TUNNEL_TOKEN` | required, Cloudflare tunnel token (Zero Trust › Networks › Tunnels) |
+| `WEB_PORT`, `DB_PORT`, `DB_BIND` | optional, defaults 8080 / 3308 / 127.0.0.1 |
 
-All'avvio il container esegue le migration (`docker/entrypoint.d/60-gruzzolo.sh`). Il codice è
-dentro l'immagine: dopo un aggiornamento del repository serve "Pull and redeploy" con rebuild.
-Il sito esce su Internet dal tunnel Cloudflare (servizio `cloudflared`): nel *Public Hostname*
-del tunnel il servizio è `http://web:80`, nessuna porta da aprire sul router. Gli header
-`X-Forwarded-*` del tunnel sono accettati (`TRUSTED_PROXIES=private_ranges`), altrimenti il login
-fallirebbe per il controllo CSRF.
+On start-up the container runs the migrations (`docker/entrypoint.d/60-gruzzolo.sh`). The code is
+baked into the image: after updating the repository, use "Pull and redeploy" with a rebuild.
+The site is exposed to the Internet through a Cloudflare tunnel (the `cloudflared` service): in the
+tunnel's *Public Hostname* the service is `http://web:80`, with no ports to open on your router. The
+tunnel's `X-Forwarded-*` headers are trusted (`TRUSTED_PROXIES=private_ranges`), otherwise login
+would fail the CSRF check.
 
-Backup: il volume `db_data`, `mariadb-dump` dal container `database`, oppure il backup dell'app
-(Altro › Backup, vedi sotto). Per portare i dati da un'istanza all'altra (es. sviluppo → produzione):
-"Scarica il backup" da una, "Ripristina" sull'altra.
+Backups: the `db_data` volume, `mariadb-dump` from the `database` container, or the app's own
+backup (More › Backup, see below). To move data between instances (e.g. development → production):
+download the backup from one and restore it on the other.
 
-## Come ragiona l'app
+## How the app works
 
-- **Movimenti**: importo sempre positivo, il tipo dà il segno. I **giroconti** spostano soldi fra
-  conti (o verso un investimento). Nei totali (Home, Movimenti, Report) contano dal punto di vista dei
-  conti considerati — quelli filtrati, quelli mostrati in home o tutti: se escono sono uscite (fetta
-  "Giroconti"), se arrivano da fuori entrate, fra due conti considerati non contano. Stessa regola in
-  `ReportService` (SQL) e `MovementRepository::totals()`.
-- **Conti**: saldo = saldo iniziale + entrate − uscite ± giroconti. Il conto accantonamento si
-  alimenta con giroconti e le spese annuali si pagano direttamente da lì.
-- **Rifornimenti**: categoria con l'opzione "Carburante" (di default *Trasporti › Carburante*).
-  Dei tre valori prezzo/litri/totale bastano due. Il consumo si calcola da pieno a pieno
-  (rabbocchi parziali compresi); "Ho saltato un rifornimento" spezza la catena.
-  Qualsiasi spesa può essere collegata a un veicolo per avere il costo totale al km.
-  La pagina del veicolo ha le statistiche alla Drivvo in tre schede (Generale, Rifornimenti, Spese):
-  costo al giorno e al km, volumi, prezzo e consumo minimo/massimo, km e giorni fra un rifornimento
-  e l'altro, autonomia stimata (serve la capacità del serbatoio), indicatori dell'ultimo pieno e grafici
-  mensili. Il costo al km di ogni pieno usa il prezzo alla pompa, non l'importo pagato.
-- **Investimenti**: per ogni titolo si registrano versamenti/prelievi e il valore del momento.
-  Rendimento = ultimo valore − somma dei versamenti. Un versamento può uscire da un conto
-  (giroconto, non spesa).
-  **Valore stimato oggi**: fra un aggiornamento e l'altro l'ultimo valore registrato si moltiplica per
-  la variazione del prezzo di mercato da quel giorno (`MarketPrices` su Yahoo Finance, gratuito e non
-  ufficiale; prezzi in valuta convertiti in euro; cache 20 minuti). Il simbolo si indica sul titolo
-  (es. SWDA.MI, BTC-EUR) o si cerca dall'ISIN. Se il servizio non risponde resta l'ultimo valore registrato.
-- **Trascina giù per aggiornare** (touch, `assets/pull_refresh.js`): dalla cima della pagina ricarica
-  con Turbo. Spento nei form (`form.form`), nei pannelli `<dialog>` e su `[data-no-pull]`; il
-  pull-to-refresh nativo del browser è disattivato da `overscroll-behavior-y` per non ricaricare due volte.
-- **Visualizza nella home**: ogni utente sceglie quali conti entrano nei totali della home (tabella
-  `account_home_hidden`): un conto escluso resta nell'elenco Conti col suo saldo, ma i suoi movimenti
-  restano fuori da totali del mese, "Dove vanno i soldi" e ultimi movimenti. Il proprietario lo imposta
-  dalla modifica del conto, chi l'ha ricevuto in condivisione dalla pagina del conto.
-- **Conti in Movimenti e Report**: di default solo il conto principale (`?account[]=…` per sceglierne
-  altri, `?account=all` per tutti; `MovementFilter::accountsFrom()`). I link dalla home portano gli stessi
-  conti dei totali della home.
-- **Patrimonio** (pagina Conti): saldo dei conti più il valore attuale degli investimenti; dai chip si
-  sceglie cosa contare (es. togliere il conto in comune). La scelta è per utente (`app_user.net_worth_excluded`,
-  voci escluse: id dei conti o "inv"), così un conto nuovo entra da solo.
-- **Investimenti nel Report**: il chip "Investimenti" li aggiunge come un conto (`?account[]=inv`, anche
-  insieme ad altri conti o a `all`): versamenti nei titoli = entrate, prelievi = uscite, una voce per titolo;
-  un versamento partito da un conto considerato è uno spostamento interno. La card "Rendimento del periodo"
-  mostra valore a inizio e fine periodo, versato e rendimento (`ReportService::investmentPeriod()`).
-- **Categorie per conto**: ogni conto ha le sue categorie (`category.account_id`); chi condivide il
-  conto usa e gestisce le stesse. Nel nuovo movimento le categorie proposte cambiano col conto scelto.
-  Un conto nuovo può partire dalle categorie di un altro conto, da quelle predefinite o vuoto; dalla
-  pagina Categorie si possono copiare in qualsiasi momento quelle di un altro conto (senza doppioni).
-- **Importazione CSV** (Altro › Importa): riconosce gli export di **Spendee**, **Wallet (BudgetBakers)** e **Money Manager**
-  (le celle non UTF-8 si leggono come Windows-1252 o Mac Roman).
-  Il file si parcheggia in `app/var/imports`, l'anteprima propone gli abbinamenti (wallet → conti,
-  categorie → categorie con lo stesso nome nel conto di destinazione, altrimenti nuove create in quel
-  conto; le etichette mancanti si creano), poi si importa. Ogni riga ha
-  un'impronta (`movement.import_hash`): reimportando lo stesso file i doppioni vengono saltati. Ogni
-  importazione è annullabile e toglie anche categorie, conti ed etichette creati apposta se inutilizzati.
-  Per un nuovo formato basta una classe che implementa `App\Import\ImportFormat` (si registra da sola).
-  Da terminale, per conto di un utente (i movimenti risultano suoi):
-  `php bin/console app:import <utente> <file.csv> --account=<id> [--dry-run]`, e `--undo=<id>` per annullare.
-- **Backup e ripristino** (Altro › Backup, solo admin; `BackupService`): un file JSON con tutte le tabelle
-  del database (lette da `information_schema`, quindi una tabella nuova entra da sola), utenti e password
-  cifrate compresi, e l'elenco delle migration. Il ripristino **sostituisce tutto**: anteprima con le righe
-  del file e quelle attuali, conferma scrivendo `RIPRISTINA`, poi in una transazione svuota le tabelle e
-  reinserisce le righe con i loro id (vincoli spenti, riferimenti controllati prima del commit: se qualcosa
-  non torna resta tutto com'era). Rifiuta backup di una versione più recente dell'app, colonne sconosciute e
-  file senza un admin attivo; alla fine fa logout. Accetta anche `.json.gz`. Da terminale:
-  `php bin/console app:backup:export [file.json|file.json.gz|-]` e `app:backup:restore <file> [--force]`.
-- **Stile Liquid Glass** (Impostazioni › Stile, `app_user.style`): superfici di vetro traslucido alla iOS 26/27
-  sopra il tema chiaro o scuro. Tutto in `assets/styles/glass.css`, scoperto da `html[data-style="glass"]`:
-  blur solo sulle superfici di primo livello (card, barre, bottoni), quelle interne sono solo velate; con
-  `prefers-reduced-transparency` o senza `backdrop-filter` il vetro diventa quasi opaco.
-- **Importi nascosti**: l'occhio (Home, Movimenti, Report, Conti, Investimenti, barra laterale) sfoca
-  gli importi su quel dispositivo (`localStorage`). `assets/privacy.js` riconosce gli importi dal formato
-  ("1.247,80 €") e li avvolge in `.money`; i saldi grandi sono `.hero-amount__value`.
-- **Multi-utente**: ogni tabella ha l'utente proprietario; i controller usano
-  `AppController::own()`, che risponde 404 sui dati altrui.
-- **Conti condivisi**: il proprietario condivide un conto con altri utenti (tabella `account_member`,
-  dalla modifica del conto). I membri vedono saldo e movimenti e ne aggiungono con le
-  categorie del conto; `movement.user` resta l'autore. Visibilità dei movimenti = conto accessibile
-  (`AccountRepository::ACCESSIBLE_DQL/SQL`, `AppController::accessibleMovement()`); nei report le
-  categorie con lo stesso nome dei due utenti si sommano. Modifica ed eliminazione del conto solo al proprietario.
+- **Transactions**: the amount is always positive, the type gives the sign. **Transfers** move money
+  between accounts (or into an investment). In totals (Home, Transactions, Reports) they count from
+  the point of view of the accounts in scope — the filtered ones, the ones shown on the home page, or
+  all of them: money leaving is an expense (the "Transfers" slice), money arriving from outside is
+  income, and transfers between two accounts in scope don't count. Same rule in `ReportService` (SQL)
+  and `MovementRepository::totals()`.
+- **Accounts**: balance = opening balance + income − expenses ± transfers. A savings account is fed by
+  transfers and yearly expenses are paid straight from it.
+- **Refuels**: a category with the "Fuel" option (by default *Transport › Fuel*). Two of the three
+  values price/litres/total are enough. Fuel economy is computed from full tank to full tank (partial
+  top-ups included); "I skipped a refuel" breaks the chain. Any expense can be linked to a vehicle to
+  get the total cost per km. The vehicle page has Drivvo-style statistics in three tabs (Overview,
+  Refuels, Expenses): cost per day and per km, volumes, min/max price and economy, km and days between
+  refuels, estimated range (needs the tank capacity), indicators for the last fill-up and monthly
+  charts. The cost per km of each fill-up uses the pump price, not the amount paid.
+- **Investments**: for each holding you record contributions/withdrawals and its current value.
+  Return = latest value − sum of contributions. A contribution can come from an account (a transfer,
+  not an expense).
+  **Estimated value today**: between updates, the latest recorded value is multiplied by the change in
+  market price since that day (`MarketPrices` on Yahoo Finance, free and unofficial; prices in other
+  currencies converted to euro; 20-minute cache). The ticker is set on the holding (e.g. SWDA.MI,
+  BTC-EUR) or looked up from the ISIN. If the service doesn't answer, the latest recorded value is used.
+- **Pull to refresh** (touch, `assets/pull_refresh.js`): from the top of the page it reloads with
+  Turbo. Disabled in forms (`form.form`), in `<dialog>` panels and on `[data-no-pull]`; the browser's
+  native pull-to-refresh is turned off with `overscroll-behavior-y` so the page doesn't reload twice.
+- **Show on home**: each user chooses which accounts count towards the home totals (table
+  `account_home_hidden`): an excluded account stays in the Accounts list with its balance, but its
+  transactions are left out of the monthly totals, "Where the money goes" and the latest transactions.
+  The owner sets it when editing the account, users it's shared with from the account page.
+- **Accounts in Transactions and Reports**: by default only the main account (`?account[]=…` to pick
+  others, `?account=all` for all of them; `MovementFilter::accountsFrom()`). Links from the home page
+  carry the same accounts as the home totals.
+- **Net worth** (Accounts page): account balances plus the current value of investments; chips choose
+  what to include (e.g. leave out the joint account). The choice is per user
+  (`app_user.net_worth_excluded`, excluded items: account ids or "inv"), so a new account is included
+  automatically.
+- **Investments in Reports**: the "Investments" chip adds them like an account (`?account[]=inv`, also
+  together with other accounts or `all`): contributions to holdings = income, withdrawals = expenses,
+  one line per holding; a contribution from an account in scope is an internal move. The "Period
+  return" card shows value at the start and end of the period, amount contributed and return
+  (`ReportService::investmentPeriod()`).
+- **Categories per account**: each account has its own categories (`category.account_id`); users
+  sharing the account use and manage the same ones. In a new transaction the suggested categories
+  follow the selected account. A new account can start from another account's categories, from the
+  defaults, or empty; from the Categories page you can copy another account's categories at any time
+  (without duplicates).
+- **CSV import** (More › Import): recognises exports from **Spendee**, **Wallet (BudgetBakers)** and
+  **Money Manager** (non-UTF-8 cells are read as Windows-1252 or Mac Roman). The file is parked in
+  `app/var/imports`, the preview suggests the mapping (wallets → accounts, categories → categories with
+  the same name in the target account, otherwise new ones created there; missing tags are created),
+  then it's imported. Every row has a fingerprint (`movement.import_hash`): re-importing the same file
+  skips duplicates. Every import can be undone, which also removes the categories, accounts and tags
+  created for it if they're unused. A new format only needs a class implementing
+  `App\Import\ImportFormat` (it registers itself). From the command line, on behalf of a user (the
+  transactions are theirs): `php bin/console app:import <user> <file.csv> --account=<id> [--dry-run]`,
+  and `--undo=<id>` to undo.
+- **Backup and restore** (More › Backup, admins only; `BackupService`): a JSON file with every database
+  table (read from `information_schema`, so a new table is picked up automatically), users and hashed
+  passwords included, plus the list of migrations. Restoring **replaces everything**: a preview compares
+  the rows in the file with the current ones, you confirm by typing `RIPRISTINA`, then in a single
+  transaction the tables are emptied and the rows re-inserted with their ids (constraints off,
+  references checked before commit: if anything doesn't add up, nothing changes). It rejects backups
+  from a newer version of the app, unknown columns and files without an active admin; at the end it
+  logs you out. `.json.gz` is accepted too. From the command line:
+  `php bin/console app:backup:export [file.json|file.json.gz|-]` and `app:backup:restore <file> [--force]`.
+- **Liquid Glass style** (Settings › Style, `app_user.style`): translucent glass surfaces à la
+  iOS 26/27 on top of the light or dark theme. All in `assets/styles/glass.css`, scoped by
+  `html[data-style="glass"]`: blur only on top-level surfaces (cards, bars, buttons), inner ones are
+  just tinted; with `prefers-reduced-transparency` or without `backdrop-filter` the glass becomes
+  almost opaque.
+- **Hidden amounts**: the eye icon (Home, Transactions, Reports, Accounts, Investments, sidebar) blurs
+  amounts on that device (`localStorage`). `assets/privacy.js` recognises amounts by their format
+  ("1.247,80 €") and wraps them in `.money`; large balances are `.hero-amount__value`.
+- **Multi-user**: every table has an owner; controllers use `AppController::own()`, which returns 404
+  for other users' data.
+- **Shared accounts**: the owner shares an account with other users (table `account_member`, from the
+  account's edit page). Members see the balance and transactions and add new ones with the account's
+  categories; `movement.user` stays the author. Transaction visibility = accessible account
+  (`AccountRepository::ACCESSIBLE_DQL/SQL`, `AppController::accessibleMovement()`); in reports,
+  categories with the same name from both users are added together. Only the owner can edit or delete
+  the account.
 
-## Struttura
+## Project layout
 
-- `src/Service/ReportService.php` aggregati SQL per Home e Report
-- `src/Service/VehicleStats.php` consumi e costi dei veicoli
-- `src/Service/InvestmentStats.php` rendimento dei titoli e del portafoglio
-- `src/Service/ChartBuilder.php` geometria dei grafici SVG (disegnati lato server)
-- `assets/styles/app.css` design system (token chiaro/scuro + componenti)
-- `assets/controllers/` Stimulus: form movimento, tastierino, rifornimento, etichette, sheet
-- `resources/icons/` icone Lucide usate (`{{ icon('nome') }}` in Twig)
+- `src/Service/ReportService.php` SQL aggregates for Home and Reports
+- `src/Service/VehicleStats.php` vehicle fuel economy and costs
+- `src/Service/InvestmentStats.php` returns for holdings and the portfolio
+- `src/Service/ChartBuilder.php` geometry of the SVG charts (rendered on the server)
+- `assets/styles/app.css` design system (light/dark tokens + components)
+- `assets/controllers/` Stimulus: transaction form, keypad, refuel, tags, sheet
+- `resources/icons/` the Lucide icons in use (`{{ icon('name') }}` in Twig)
 
-## Crediti
+## Credits
 
-Icone [Lucide](https://lucide.dev) (ISC, vedi `app/resources/icons/LICENSE-lucide`), font
-[Geist](https://vercel.com/font) e [Bricolage Grotesque](https://github.com/ateliertriay/bricolage)
-(SIL Open Font License). Prezzi di mercato da Yahoo Finance (servizio non ufficiale).
+Icons by [Lucide](https://lucide.dev) (ISC, see `app/resources/icons/LICENSE-lucide`), fonts
+[Geist](https://vercel.com/font) and [Bricolage Grotesque](https://github.com/ateliertriay/bricolage)
+(SIL Open Font License). Market prices from Yahoo Finance (unofficial service).
