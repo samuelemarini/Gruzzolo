@@ -85,6 +85,28 @@
     </nav>
 {% endif %}
 
+{% if app.user %}
+    {# Pannello delle conferme (data-turbo-confirm), riempito da confirm.js #}
+    <dialog id="confirm-dialog" class="sheet confirm" aria-labelledby="confirm-title" tabindex="-1">
+        <form method="dialog" class="sheet__inner confirm__inner">
+            <span class="sheet__grabber" aria-hidden="true"></span>
+            <span class="confirm__icon" aria-hidden="true">
+                {%- for i in ['trash-2', 'users', 'log-out', 'undo-2', 'arrow-down-up', 'layout-grid', 'info'] -%}
+                    <span data-icon="{{ i }}" hidden>{{ icon(i, 26) }}</span>
+                {%- endfor -%}
+            </span>
+            <div class="stack-sm" style="gap: 6px">
+                <h2 class="confirm__title" id="confirm-title"></h2>
+                <p class="confirm__text"></p>
+            </div>
+            <div class="confirm__actions">
+                <button type="submit" value="cancel" class="btn btn--ghost confirm__cancel">Annulla</button>
+                <button type="submit" value="ok" class="btn confirm__ok">Conferma</button>
+            </div>
+        </form>
+    </dialog>
+{% endif %}
+
 <div class="flashes" aria-live="polite">
     {% for type, messages in app.flashes %}
         {% for message in messages %}

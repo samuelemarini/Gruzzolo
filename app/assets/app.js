@@ -2,6 +2,7 @@ import './stimulus_bootstrap.js';
 import './styles/app.css';
 import './styles/glass.css';
 import './privacy.js';
+import './confirm.js';
 import './pull_refresh.js';
 import './no_zoom.js';
 
