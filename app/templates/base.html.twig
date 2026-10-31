@@ -78,7 +78,7 @@
     <div class="fade-bottom" aria-hidden="true"></div>
     <nav class="tabbar" aria-label="Navigazione principale">
         <a href="{{ path('app_home') }}" class="{{ section == 'home' ? 'is-active' }}">{{ icon('house', 22) }}Home</a>
-        <a href="{{ path('movement_index') }}" class="{{ section == 'movements' ? 'is-active' }}">{{ icon('list', 22) }}Movimenti</a>
+        <a href="{{ path('movement_index') }}" class="{{ section == 'movements' ? 'is-active' }}">{{ icon('list', 22) }}Storico</a>
         <a href="{{ path('movement_new') }}" class="fab" aria-label="Nuovo movimento">{{ icon('plus', 26) }}</a>
         <a href="{{ path('report_index') }}" class="{{ section == 'report' ? 'is-active' }}">{{ icon('chart-pie', 22) }}Report</a>
         <a href="{{ path('more_index') }}" class="{{ section not in ['home', 'movements', 'report'] ? 'is-active' }}">{{ icon('layout-grid', 22) }}Altro</a>
